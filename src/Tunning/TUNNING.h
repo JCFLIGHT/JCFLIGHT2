@@ -50,8 +50,8 @@ public:
     bool GetActivated(Tunning_Enum_Typedef TunningParam);
 
 private:
-    uint8_t ChannelControll;
-    uint8_t Mode;
+    uint8_t ChannelControll = NONE_TUNNING_CHANNEL;
+    uint8_t Mode = NONE_TUNNING_MODE;
     int16_t GetConfiguredChannelValue(Tunning_Enum_Typedef StateMode);
 };
 extern TunningClass TUNNING;
