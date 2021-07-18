@@ -44,7 +44,7 @@ void TPA_Initialization(void)
 #define AIRSPEED_MIN 9  //M/S ~ 32,4km/h
 #define AIRSPEED_MAX 22 //M/S ~ 79,2km/h
 
-float TPA_Scaling_Speed = 15; //CALCULA O TPA COM BASE NA VELOCIDADE DA FUSELAGEM ~ 0 É DESATIVADO / 15 É UM VALOR RECOMENDADO
+float TPA_Scaling_Speed = 15; //CALCULA A ATENUAÇÃO DO PID COM BASE NA VELOCIDADE DA FUSELAGEM ~ 0 É DESATIVADO / 15 É UM VALOR RECOMENDADO
 
 static float Get_PID_AirSpeed_Scaler(float ScalingSpeed)
 {
