@@ -28,7 +28,6 @@
 #include "Build/BOARDDEFS.h"
 #include "Param/PARAM.h"
 #include "Barometer/BAROFRONTEND.h"
-#include "Build/BOARDDEFS.h"
 #include "StorageManager/EEPROMSTORAGE.h"
 #include "BAR/BAR.h"
 
@@ -53,11 +52,7 @@ void AirSpeedClass::Initialization(void)
 
   PT1FilterInit(&Pitot_Smooth, PITOT_LPF_CUTOFF, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);
 
-#ifdef USE_AIRSPEED_AUTO_SCALE_CALIBRATION
-
   AIRSPEEDCALIBRATION.Initialization();
-
-#endif
 }
 
 float AirSpeedClass::Get_Raw_Pressure(void)
@@ -105,11 +100,7 @@ void AirSpeedClass::Update(void)
     return;
   }
 
-#ifdef USE_AIRSPEED_AUTO_SCALE_CALIBRATION
-
   AIRSPEEDCALIBRATION.Scale_Update();
-
-#endif
 
   AirSpeed.Raw.IASPressure = 0.0f;
 
