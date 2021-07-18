@@ -20,13 +20,12 @@
 #include "Math/MATHSUPPORT.h"
 #include "BAR/BAR.h"
 #include "PID/RCPID.h"
+#include "ASPA.h"
 #include "Build/GCC.h"
 
 FILE_COMPILE_FOR_SPEED
 
 TPA_Parameters_Struct TPA_Parameters;
-
-//#define TEST_AIRSPEED_PID_TPA //PARA TESTES FUTURAMENTE
 
 void TPA_Initialization(void)
 {
@@ -34,55 +33,14 @@ void TPA_Initialization(void)
   TPA_Parameters.ThrottlePercent = STORAGEMANAGER.Read_8Bits(TPA_PERCENT_ADDR); //ESSE PARAMETRO ACIMA DE 50% FUNCIONA BEM PARA AEROS E ASA-FIXA
 }
 
-#ifdef TEST_AIRSPEED_PID_TPA
-
-//AINDA É NECESSARIO TESTES
-
-#include "AirSpeed/AIRSPEED.h"
-#include "AirSpeed/AIRSPEEDBACKEND.h"
-
-#define AIRSPEED_MIN 9  //M/S ~ 32,4km/h
-#define AIRSPEED_MAX 22 //M/S ~ 79,2km/h
-
-float TPA_Scaling_Speed = 15; //CALCULA A ATENUAÇÃO DO PID COM BASE NA VELOCIDADE DA FUSELAGEM ~ 0 É DESATIVADO / 15 É UM VALOR RECOMENDADO
-
-static float Get_PID_AirSpeed_Scaler(float ScalingSpeed)
-{
-  float AirSpeedValue = AIRSPEED.Get_True_Value("In Meters");
-  float AirSpeed_Scaler = 0.0f;
-  if (Get_AirSpeed_Enabled()) //HEALTHY
-  {
-    if (AirSpeedValue > 0.0001f)
-    {
-      AirSpeed_Scaler = ScalingSpeed / AirSpeedValue;
-    }
-    else
-    {
-      AirSpeed_Scaler = 2.0f;
-    }
-    float Scale_Min = MIN(0.5f, (0.5f * AIRSPEED_MIN) / ScalingSpeed);
-    float Scale_Max = MAX(2.0f, (1.5f * AIRSPEED_MAX) / ScalingSpeed);
-    AirSpeed_Scaler = Constrain_Float(AirSpeed_Scaler, Scale_Min, Scale_Max);
-  }
-  else
-  {
-    AirSpeed_Scaler = 1.0f;
-  }
-  return AirSpeed_Scaler;
-}
-
-#endif
-
 float CalculateFixedWingTPAFactor(int16_t Throttle)
 {
 
 #ifdef TEST_AIRSPEED_PID_TPA
 
-  const float ParseScalingSpeed = TPA_Scaling_Speed;
-
-  if (ParseScalingSpeed > 0)
+  if (Get_ASPA_Enabled())
   {
-    return Get_PID_AirSpeed_Scaler(ParseScalingSpeed);
+    return Get_ASPA_Scaler();
   }
 
 #endif

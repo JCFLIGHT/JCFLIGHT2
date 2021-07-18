@@ -15,24 +15,10 @@
   junto com a JCFLIGHT. Caso contrário, consulte <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SERVOSMASTER_H_
-#define SERVOSMASTER_H_
-#include "Build/LIBDEPENDENCIES.h"
-#include "Common/STRUCTS.h"
-extern Servo_Struct Servo;
-class ServosMasterClass
-{
-public:
-  void Initialization(void);
-  void Update(const float DeltaTime);
-  void UpdateMiddlePoint(void);
-
-private:
-  bool LoadBiquadSettings(void);
-  void UpdateRates(void);
-  void UpdateMinAndMax(void);
-  void UpdateDirection(void);
-  void Rate_Apply(void);
-};
-extern ServosMasterClass SERVOSMASTER;
+#ifndef ASPA_H_
+#define ASPA_H_
+//#define TEST_AIRSPEED_PID_TPA //PARA TESTES FUTURAMENTE
+#include <stdbool.h>
+bool Get_ASPA_Enabled(void);
+float Get_ASPA_Scaler(void);
 #endif

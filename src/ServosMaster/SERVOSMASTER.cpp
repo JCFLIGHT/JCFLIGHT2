@@ -38,17 +38,7 @@ Servo_Struct Servo;
 
 #ifndef __AVR_ATmega2560__
 
-typedef struct ServoSpeedLimit
-{
-  float State;
-} ServoSpeedLimit_Stuct;
-
-static BiquadFilter_Struct Smooth_Servo1_Aileron;
-static BiquadFilter_Struct Smooth_Servo2_Aileron;
-static BiquadFilter_Struct Smooth_Servo_Rudder;
-static BiquadFilter_Struct Smooth_Servo_Elevator;
-
-static ServoSpeedLimit_Stuct ServoSpeedLimit[MAX_SUPPORTED_SERVOS];
+static BiquadFilter_Struct Smooth_Servo[MAX_SUPPORTED_SERVOS];
 
 #endif
 
@@ -59,7 +49,7 @@ void ServosMasterClass::Initialization(void)
     SERVOSMASTER.UpdateMinAndMax();
     SERVOSMASTER.UpdateMiddlePoint();
     SERVOSMASTER.UpdateDirection();
-    SERVOSMASTER.Rate_Update();
+    SERVOSMASTER.UpdateRates();
     Servo.ContinousTrim.Enabled = STORAGEMANAGER.Read_8Bits(CONT_SERVO_TRIM_STATE_ADDR) > 0 ? true : false;
   }
 }
@@ -75,17 +65,17 @@ bool ServosMasterClass::LoadBiquadSettings(void)
 
   //ATUALIZA A FREQUENCIA DE CORTE DO LPF DOS SERVOS
   Servo.Filter.CutOff = STORAGEMANAGER.Read_16Bits(SERVOS_LPF_ADDR);
-  BIQUADFILTER.Settings(&Smooth_Servo1_Aileron, Servo.Filter.CutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
-  BIQUADFILTER.Settings(&Smooth_Servo2_Aileron, Servo.Filter.CutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
-  BIQUADFILTER.Settings(&Smooth_Servo_Rudder, Servo.Filter.CutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
-  BIQUADFILTER.Settings(&Smooth_Servo_Elevator, Servo.Filter.CutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
+  BIQUADFILTER.Settings(&Smooth_Servo[SERVO1], Servo.Filter.CutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
+  BIQUADFILTER.Settings(&Smooth_Servo[SERVO2], Servo.Filter.CutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
+  BIQUADFILTER.Settings(&Smooth_Servo[SERVO3], Servo.Filter.CutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
+  BIQUADFILTER.Settings(&Smooth_Servo[SERVO4], Servo.Filter.CutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
 
 #endif
 
   return true;
 }
 
-void ServosMasterClass::Rate_Update(void)
+void ServosMasterClass::UpdateRates(void)
 {
   //OBTÉM O RATE DOS SERVOS
   Servo.Rate.GetAndSet[SERVO1] = GET_SERVO_RATE(SERVO1_RATE_ADDR);
@@ -122,51 +112,8 @@ void ServosMasterClass::UpdateDirection(void)
   CHECKSUM.UpdateServosReverse();
 }
 
-#ifndef __AVR_ATmega2560__
-
-float ServoSpeedLimitApply(ServoSpeedLimit_Stuct *ServoLimitPointer, float Input, float RateLimit, float DeltaTime)
-{
-  if (RateLimit > 0)
-  {
-    const float RateLimitPerSample = RateLimit * DeltaTime;
-    ServoLimitPointer->State = Constrain_Float(Input, ServoLimitPointer->State - RateLimitPerSample, ServoLimitPointer->State + RateLimitPerSample);
-  }
-  else
-  {
-    ServoLimitPointer->State = Input;
-  }
-  return ServoLimitPointer->State;
-}
-
-#endif
-
 void ServosMasterClass::Rate_Apply(void)
 {
-#ifndef __AVR_ATmega2560__
-
-  /*
- 0 = NENHUM LIMITE
- 1 = 10 SEGUNDOS
- 10 = 10 SEGUNDOS
- 100 = 1 SEGUNDO
-
- POR EXEMPLO:
- EM 100,O SERVO IRÁ LEVAR 1 SEGUNDO PARA IR DE UM PONTO A OUTRO,POR EXEMPLO DE 0° A 180°
-*/
-
-#define DEFAULT_SERVO_SPEED 0
-#define DELTA_TIME_VIRTUAL 1000 * 1e-6f //APENAS PARA TESTE
-
-  for (uint8_t ServoIndex = SERVO1; ServoIndex < MAX_SUPPORTED_SERVOS; ServoIndex++)
-  {
-    Servo.Signal.UnFiltered[ServoIndex] = (int16_t)ServoSpeedLimitApply(&ServoSpeedLimit[ServoIndex],
-                                                                        Servo.Signal.UnFiltered[ServoIndex],
-                                                                        DEFAULT_SERVO_SPEED * 10,
-                                                                        DELTA_TIME_VIRTUAL);
-  }
-
-#endif
-
   /*
   //CALCULA O PESO PARA OS SERVOS
   Servo.Signal.UnFiltered[SERVO1] += ((int32_t)Servo.Signal.UnFiltered[SERVO1] * Servo.Weight.GetAndSet[SERVO1]) / 100;
@@ -215,10 +162,10 @@ void ServosMasterClass::Update(const float DeltaTime)
   else
   {
     //APLICA O LOW PASS FILTER NO SINAL DOS SERVOS
-    Servo.Signal.Filtered[SERVO1] = BIQUADFILTER.ApplyAndGet(&Smooth_Servo1_Aileron, Servo.Signal.UnFiltered[SERVO1]);
-    Servo.Signal.Filtered[SERVO2] = BIQUADFILTER.ApplyAndGet(&Smooth_Servo2_Aileron, Servo.Signal.UnFiltered[SERVO2]);
-    Servo.Signal.Filtered[SERVO3] = BIQUADFILTER.ApplyAndGet(&Smooth_Servo_Rudder, Servo.Signal.UnFiltered[SERVO3]);
-    Servo.Signal.Filtered[SERVO4] = BIQUADFILTER.ApplyAndGet(&Smooth_Servo_Elevator, Servo.Signal.UnFiltered[SERVO4]);
+    Servo.Signal.Filtered[SERVO1] = BIQUADFILTER.ApplyAndGet(&Smooth_Servo[SERVO1], Servo.Signal.UnFiltered[SERVO1]);
+    Servo.Signal.Filtered[SERVO2] = BIQUADFILTER.ApplyAndGet(&Smooth_Servo[SERVO2], Servo.Signal.UnFiltered[SERVO2]);
+    Servo.Signal.Filtered[SERVO3] = BIQUADFILTER.ApplyAndGet(&Smooth_Servo[SERVO3], Servo.Signal.UnFiltered[SERVO3]);
+    Servo.Signal.Filtered[SERVO4] = BIQUADFILTER.ApplyAndGet(&Smooth_Servo[SERVO4], Servo.Signal.UnFiltered[SERVO4]);
 
     //PULSO MINIMO E MAXIMO PARA OS SERVOS
     MotorControl[MOTOR2] = Constrain_16Bits(Servo.Signal.Filtered[SERVO1], Servo.Pulse.Min[SERVO1], Servo.Pulse.Max[SERVO1]); //SERVO 1
@@ -227,5 +174,6 @@ void ServosMasterClass::Update(const float DeltaTime)
     MotorControl[MOTOR5] = Constrain_16Bits(Servo.Signal.Filtered[SERVO4], Servo.Pulse.Min[SERVO4], Servo.Pulse.Max[SERVO4]); //SERVO 4
   }
 #endif
+
   ServoAutoTrimRun(DeltaTime);
 }
