@@ -177,7 +177,7 @@ static void AccResolutionDetect(void)
 
   if (Resolution == MPU6050_NONE)
   {
-    LOG("IMU NONE");
+    LOG("SEM IMU");
     LINE_SPACE;
     IMU.Accelerometer.GravityForce.OneG = 256;
     return;

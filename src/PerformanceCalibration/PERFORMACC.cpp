@@ -23,6 +23,7 @@
 #include "IMU/IMUHEALTH.h"
 #include "Scheduler/SCHEDULERTIME.h"
 #include "GaussNewton/GAUSSNEWTON.h"
+#include "DEVICE.h"
 #include "Build/GCC.h"
 
 FILE_COMPILE_FOR_SPEED
@@ -30,62 +31,39 @@ FILE_COMPILE_FOR_SPEED
 AccCalibClass ACCCALIBRATION;
 
 Calibration_Struct Calibration;
-static Jacobian_Struct Jacobian_Matrices_To_Acc;
+Device_Struct AccDevice[3];
 
-#define CALIBRATING_ACC_TIME_MS 500 //TEMPO MAXIMO DE CALIBRAÇÃO DO ACC EM MS
+#define CALIBRATING_ACC_TIME_MS 500    //TEMPO MAXIMO DE CALIBRAÇÃO DO ACC EM MS
+#define ACC_CALIBRATION_VARIANCE 0.05f //5% MAXIMO ACEITAVEL DE DESVIO DURANTE A CALIBRAÇÃO
 
-void AccCalibClass::Start(void)
+enum Acc_Calibration_Enum
 {
-    Calibration.Accelerometer.Flags.InCalibration = true;
-    Calibration.Accelerometer.Time.Previous = Calibration.Accelerometer.Time.Actual;
-}
-
-bool AccCalibClass::GetRunning(void)
-{
-    return Calibration.Accelerometer.Time.Previous > 0;
-}
-
-static bool GetAccAxisCalibrationRunning(void)
-{
-    return Calibration.Accelerometer.Flags.InCalibration;
-}
-
-static bool GetFirstAccelerationCalibrationCycle(void)
-{
-    return (Calibration.Accelerometer.Time.Difference > (CALIBRATING_ACC_TIME_MS * 0.999f)); //99.9% DO TEMPO
-}
-
-static bool GetFinalAccelerationCalibrationCycle(void)
-{
-    return (Calibration.Accelerometer.Time.Difference < (CALIBRATING_ACC_TIME_MS * 0.05f)); //5% DO TEMPO
-}
+    ACC_CALIBRATION_NONE = 0,
+    ACC_CALIBRATION_IN_PROGRESS,
+    ACC_CALIBRATION_DONE,
+    ACC_CALIBRATION_FAIL,
+};
 
 static bool GetAllOrientationsHaveCalibrationDataCollected(void)
 {
-    return Calibration.Accelerometer.Flags.CalibratedPosition[0] && Calibration.Accelerometer.Flags.CalibratedPosition[1] &&
-           Calibration.Accelerometer.Flags.CalibratedPosition[2] && Calibration.Accelerometer.Flags.CalibratedPosition[3] &&
-           Calibration.Accelerometer.Flags.CalibratedPosition[4] && Calibration.Accelerometer.Flags.CalibratedPosition[5];
+    return Calibration.Accelerometer.Flags.CalibratedPosition[0] &&
+           Calibration.Accelerometer.Flags.CalibratedPosition[1] &&
+           Calibration.Accelerometer.Flags.CalibratedPosition[2] &&
+           Calibration.Accelerometer.Flags.CalibratedPosition[3] &&
+           Calibration.Accelerometer.Flags.CalibratedPosition[4] &&
+           Calibration.Accelerometer.Flags.CalibratedPosition[5];
 }
 
-static void PerformAccelerationCalibration(void)
+void AccCalibClass::Start(void)
 {
     int8_t GetActualPositionOfAcc = GetAxisInclinedToCalibration(IMU.Accelerometer.Read);
 
-    if ((GetActualPositionOfAcc == -1 && GetAccAxisCalibrationRunning()) ||
-        (Calibration.Accelerometer.Flags.CalibratedPosition[GetActualPositionOfAcc] && GetAccAxisCalibrationRunning()))
+    if (GetActualPositionOfAcc == -1)
     {
-        Calibration.Accelerometer.Flags.InCalibration = false;
-        Calibration.Accelerometer.Time.Previous = 0;
-        BEEPER.Play(BEEPER_ACTION_FAIL);
         return;
     }
 
-    RGB.Function(CALL_LED_ACC_CALIBRATION);
-
-    Calibration.Accelerometer.Time.Difference = Calibration.Accelerometer.Time.Actual - Calibration.Accelerometer.Time.Previous;
-
-    //RESETA TODOS OS PARAMETROS DA CALIBRAÇÃO E A MATRIX DE GAUSS NEWTON
-    if (GetActualPositionOfAcc == 0 && GetFirstAccelerationCalibrationCycle())
+    if (GetActualPositionOfAcc == 0)
     {
         for (uint8_t AxisIndex = 0; AxisIndex < 6; AxisIndex++)
         {
@@ -94,19 +72,106 @@ static void PerformAccelerationCalibration(void)
             Calibration.Accelerometer.Samples.Window[AxisIndex][PITCH] = 0;
             Calibration.Accelerometer.Samples.Window[AxisIndex][YAW] = 0;
         }
-        ClearGaussNewtonMatrices(&Jacobian_Matrices_To_Acc);
     }
+
+    //RESETA ALGUNS PARÂMETROS PARA INICIAR UMA NOVA CALIBRAÇÃO
+    Calibration.Accelerometer.Flags.State = ACC_CALIBRATION_IN_PROGRESS;
+    Calibration.Accelerometer.Time.Start = SCHEDULERTIME.GetMillis();
+    Calibration.Accelerometer.Samples.Count = 0;
+    Calibration.Accelerometer.Flags.InCalibration = true;
+    for (uint8_t IndexCount = 0; IndexCount < 3; IndexCount++)
+    {
+        Calibration.Accelerometer.Samples.Sum[IndexCount] = 0;
+        DeviceClear(&AccDevice[IndexCount]);
+    }
+
+    //INDICA COM O LED RGB QUE A CALIBRAÇÃO DO ACC INICIOU
+    RGB.Function(CALL_LED_ACC_CALIBRATION);
+}
+
+bool AccCalibClass::GetRunning(void)
+{
+    return Calibration.Accelerometer.Flags.InCalibration;
+}
+
+static void PerformAccelerationCalibration(void)
+{
+    if (Calibration.Accelerometer.Flags.State != ACC_CALIBRATION_IN_PROGRESS)
+    {
+        return;
+    }
+
+    int8_t GetActualPositionOfAcc = GetAxisInclinedToCalibration(IMU.Accelerometer.Read);
+
+    if (GetActualPositionOfAcc == -1)
+    {
+        return;
+    }
+
+    Vector3x3_Struct Acc_Vector;
 
     if (!Calibration.Accelerometer.Flags.CalibratedPosition[GetActualPositionOfAcc])
     {
-        GaussNewtonPushSampleForOffSetCalculation(&Jacobian_Matrices_To_Acc, IMU.Accelerometer.Read);
-        Calibration.Accelerometer.Samples.Window[GetActualPositionOfAcc][ROLL] += IMU.Accelerometer.Read[ROLL];
-        Calibration.Accelerometer.Samples.Window[GetActualPositionOfAcc][PITCH] += IMU.Accelerometer.Read[PITCH];
-        Calibration.Accelerometer.Samples.Window[GetActualPositionOfAcc][YAW] += IMU.Accelerometer.Read[YAW];
+        Acc_Vector.Vector[ROLL] = IMU.Accelerometer.Read[ROLL];
+        Acc_Vector.Vector[PITCH] = IMU.Accelerometer.Read[PITCH];
+        Acc_Vector.Vector[YAW] = IMU.Accelerometer.Read[YAW];
 
-        if (GetFinalAccelerationCalibrationCycle())
+        if (Calibration.Accelerometer.Flags.State == ACC_CALIBRATION_IN_PROGRESS)
         {
-            Calibration.Accelerometer.Flags.CalibratedPosition[GetActualPositionOfAcc] = true;
+            //ADICIONA NOVOS VALORES A CALIBRAÇÃO
+            for (uint8_t IndexCount = 0; IndexCount < 3; IndexCount++)
+            {
+                Calibration.Accelerometer.Samples.Sum[IndexCount] += Acc_Vector.Vector[IndexCount];
+                DevicePushValues(&AccDevice[IndexCount], Acc_Vector.Vector[IndexCount]);
+            }
+
+            Calibration.Accelerometer.Samples.Count++; //REALIZA A CONTAGEM DAS AMOSTRAS
+
+            //VERIFICA SE A CALIBRAÇÃO CONCLUIU
+            if ((SCHEDULERTIME.GetMillis() - Calibration.Accelerometer.Time.Start) > CALIBRATING_ACC_TIME_MS)
+            {
+                Calibration.Accelerometer.Flags.Fail = false;
+                for (uint8_t IndexCount = 0; IndexCount < 3 && !Calibration.Accelerometer.Flags.Fail; IndexCount++)
+                {
+                    const float CheckDeviationLevel = DeviceStandardDeviation(&AccDevice[IndexCount]);
+                    if (CheckDeviationLevel > (IMU.Accelerometer.GravityForce.OneG * ACC_CALIBRATION_VARIANCE))
+                    {
+                        Calibration.Accelerometer.Flags.Fail = true;
+                    }
+                }
+
+                if (Calibration.Accelerometer.Flags.Fail) //A CALIBRAÇÃO FALHOU?SIM...
+                {
+                    Calibration.Accelerometer.Flags.State = ACC_CALIBRATION_FAIL;
+                }
+                else
+                {
+                    Calibration.Accelerometer.Samples.Sum[ROLL] = Calibration.Accelerometer.Samples.Sum[ROLL] / Calibration.Accelerometer.Samples.Count;
+                    Calibration.Accelerometer.Samples.Sum[PITCH] = Calibration.Accelerometer.Samples.Sum[PITCH] / Calibration.Accelerometer.Samples.Count;
+                    Calibration.Accelerometer.Samples.Sum[YAW] = Calibration.Accelerometer.Samples.Sum[YAW] / Calibration.Accelerometer.Samples.Count;
+                    Calibration.Accelerometer.Flags.State = ACC_CALIBRATION_DONE;
+                }
+            }
+        }
+
+        if (Calibration.Accelerometer.Flags.State != ACC_CALIBRATION_IN_PROGRESS)
+        {
+            if (Calibration.Accelerometer.Flags.State == ACC_CALIBRATION_DONE)
+            {
+                Acc_Vector.Vector[ROLL] = Calibration.Accelerometer.Samples.Sum[ROLL];
+                Acc_Vector.Vector[PITCH] = Calibration.Accelerometer.Samples.Sum[PITCH];
+                Acc_Vector.Vector[YAW] = Calibration.Accelerometer.Samples.Sum[YAW];
+
+                Calibration.Accelerometer.Samples.Window[GetActualPositionOfAcc][ROLL] = Acc_Vector.Vector[ROLL];
+                Calibration.Accelerometer.Samples.Window[GetActualPositionOfAcc][PITCH] = Acc_Vector.Vector[PITCH];
+                Calibration.Accelerometer.Samples.Window[GetActualPositionOfAcc][YAW] = Acc_Vector.Vector[YAW];
+
+                Calibration.Accelerometer.Flags.CalibratedPosition[GetActualPositionOfAcc] = true;
+            }
+            else
+            {
+                Calibration.Accelerometer.Flags.CalibratedPosition[GetActualPositionOfAcc] = false;
+            }
             Calibration.Accelerometer.Flags.InCalibration = false;
             BEEPER.Play(BEEPER_CALIBRATION_DONE);
         }
@@ -114,9 +179,17 @@ static void PerformAccelerationCalibration(void)
 
     if (GetAllOrientationsHaveCalibrationDataCollected())
     {
-        bool CalibrationFailed = false;
+        Jacobian_Struct Jacobian_Matrices_To_Acc;
         float AccOffSetAndScaleBeta[3];
-        int16_t AccSampleToScale[3];
+        bool CalibrationFailed = false;
+
+        //CALCULA O OFFSET E VERIFICA SE A CALIBRAÇÃO FALHOU
+        ClearGaussNewtonMatrices(&Jacobian_Matrices_To_Acc);
+
+        for (uint8_t AxisIndex = 0; AxisIndex < 6; AxisIndex++)
+        {
+            GaussNewtonPushSampleForOffSetCalculation(&Jacobian_Matrices_To_Acc, Calibration.Accelerometer.Samples.Window[AxisIndex]);
+        }
 
         //CALCULA O OFFSET E VERIFICA SE A CALIBRAÇÃO FALHOU
         if (!GaussNewtonSolveForOffSet(&Jacobian_Matrices_To_Acc, AccOffSetAndScaleBeta))
@@ -136,11 +209,13 @@ static void PerformAccelerationCalibration(void)
 
         for (uint8_t AxisIndex = 0; AxisIndex < 6; AxisIndex++)
         {
-            AccSampleToScale[ROLL] = Calibration.Accelerometer.Samples.Window[AxisIndex][ROLL] - Calibration.Accelerometer.OffSet[ROLL];
-            AccSampleToScale[PITCH] = Calibration.Accelerometer.Samples.Window[AxisIndex][PITCH] - Calibration.Accelerometer.OffSet[PITCH];
-            AccSampleToScale[YAW] = Calibration.Accelerometer.Samples.Window[AxisIndex][YAW] - Calibration.Accelerometer.OffSet[YAW];
+            int32_t AccSample[3];
 
-            GaussNewtonPushSampleForScaleCalculation(&Jacobian_Matrices_To_Acc, AxisIndex / 2, AccSampleToScale, IMU.Accelerometer.GravityForce.OneG);
+            AccSample[ROLL] = Calibration.Accelerometer.Samples.Window[AxisIndex][ROLL] - Calibration.Accelerometer.OffSet[ROLL];
+            AccSample[PITCH] = Calibration.Accelerometer.Samples.Window[AxisIndex][PITCH] - Calibration.Accelerometer.OffSet[PITCH];
+            AccSample[YAW] = Calibration.Accelerometer.Samples.Window[AxisIndex][YAW] - Calibration.Accelerometer.OffSet[YAW];
+
+            GaussNewtonPushSampleForScaleCalculation(&Jacobian_Matrices_To_Acc, AxisIndex / 2, AccSample, IMU.Accelerometer.GravityForce.OneG);
         }
 
         //CALCULA A ESCALA E VERIFICA SE A CALIBRAÇÃO FALHOU
@@ -152,9 +227,10 @@ static void PerformAccelerationCalibration(void)
             CalibrationFailed = true;
         }
 
-        Calibration.Accelerometer.Scale[ROLL] = lrintf(AccOffSetAndScaleBeta[ROLL] * 4096);
-        Calibration.Accelerometer.Scale[PITCH] = lrintf(AccOffSetAndScaleBeta[PITCH] * 4096);
-        Calibration.Accelerometer.Scale[YAW] = lrintf(AccOffSetAndScaleBeta[YAW] * 4096);
+        for (uint8_t AxisIndex = 0; AxisIndex < 3; AxisIndex++)
+        {
+            Calibration.Accelerometer.Scale[AxisIndex] = lrintf(AccOffSetAndScaleBeta[AxisIndex] * 4096);
+        }
 
         if (!CalibrationFailed) //A CALIBRAÇÃO FALHOU?NÃO...
         {
@@ -167,24 +243,15 @@ static void PerformAccelerationCalibration(void)
                 Calibration.Accelerometer.Flags.CalibratedPosition[AxisIndex] = false;
             }
         }
-
-        Calibration.Accelerometer.Time.Previous = 0;
     }
 }
 
 void AccCalibClass::Update(void)
 {
-    Calibration.Accelerometer.Time.Actual = SCHEDULERTIME.GetMillis();
+    PerformAccelerationCalibration();
 
-    if (GetAccAxisCalibrationRunning())
-    {
-        PerformAccelerationCalibration();
-    }
-    else
-    {
-        //APLICA A ACELERAÇÃO ZERO
-        IMU.Accelerometer.Read[ROLL] = (((int32_t)(IMU.Accelerometer.Read[ROLL] - Calibration.Accelerometer.OffSet[ROLL])) * Calibration.Accelerometer.Scale[ROLL]) / 4096;
-        IMU.Accelerometer.Read[PITCH] = (((int32_t)(IMU.Accelerometer.Read[PITCH] - Calibration.Accelerometer.OffSet[PITCH])) * Calibration.Accelerometer.Scale[PITCH]) / 4096;
-        IMU.Accelerometer.Read[YAW] = (((int32_t)(IMU.Accelerometer.Read[YAW] - Calibration.Accelerometer.OffSet[YAW])) * Calibration.Accelerometer.Scale[YAW]) / 4096;
-    }
+    //APLICA A ACELERAÇÃO ZERO
+    IMU.Accelerometer.Read[ROLL] = (((int32_t)(IMU.Accelerometer.Read[ROLL] - Calibration.Accelerometer.OffSet[ROLL])) * Calibration.Accelerometer.Scale[ROLL]) / 4096;
+    IMU.Accelerometer.Read[PITCH] = (((int32_t)(IMU.Accelerometer.Read[PITCH] - Calibration.Accelerometer.OffSet[PITCH])) * Calibration.Accelerometer.Scale[PITCH]) / 4096;
+    IMU.Accelerometer.Read[YAW] = (((int32_t)(IMU.Accelerometer.Read[YAW] - Calibration.Accelerometer.OffSet[YAW])) * Calibration.Accelerometer.Scale[YAW]) / 4096;
 }

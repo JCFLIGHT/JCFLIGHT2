@@ -163,20 +163,22 @@ typedef struct
 
     struct Flags_Struct
     {
+      bool Fail = false;
       bool InCalibration = false;
       bool CalibratedPosition[6] = {false, false, false, false, false, false};
+      uint8_t State = 0;
     } Flags;
 
     struct Time_Struct
     {
-      uint32_t Actual = 0;
-      uint32_t Previous = 0;
-      uint32_t Difference = 0;
+      uint32_t Start = 0;
     } Time;
 
     struct Samples_Struct
     {
-      int16_t Window[6][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+      float Sum[3] = {0, 0, 0};
+      uint16_t Count = 0;
+      int32_t Window[6][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
     } Samples;
 
     int16_t OffSet[3] = {0, 0, 0};
@@ -192,7 +194,6 @@ typedef struct
 
       struct Time_Struct
       {
-        uint32_t Actual = 0;
         uint32_t Previous = 0;
       } Time;
 
@@ -217,7 +218,6 @@ typedef struct
 
     struct Time_Struct
     {
-      uint32_t Actual = 0;
       uint32_t Previous = 0;
     } Time;
 

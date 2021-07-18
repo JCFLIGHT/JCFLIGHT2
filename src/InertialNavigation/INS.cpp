@@ -365,8 +365,7 @@ void InertialNavigationClass::ResetZState(void)
 #define ACC_BIAS_ACCEPTANCE_VALUE (GRAVITY_CMSS * 0.25f) //0.25G
 #define POSITION_RATE 50                                 //HZ
 #define ACC_CLIPPING_RC_CONSTANT (0.010f)                //10MS DE DELAY
-#define ACC_CLIPPING_THRESHOLD_G 7.9f                    //80% DA GRAVIDADE EM M/S^2
-//#define ACC_CLIPPING_THRESHOLD_G (GRAVITY_MSS * 0.8056f) //80% DA GRAVIDADE EM M/S^2
+#define ACC_CLIPPING_THRESHOLD_G 7.9f                    //7.9G
 
 //CLI
 #define Weight_Acc_Bias 0.01f         //GANHO PARA CALCULAR A ESTIMATIVA DE DRIFT DO ACELERÔMETRO

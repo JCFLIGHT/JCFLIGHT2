@@ -199,7 +199,7 @@ void AirSpeedCalibrationClass::Scale_Update(void)
             AIRSPEEDCALIBRATION.Previous_Scale > (1.05f * AirSpeed.Param.Factor))
         {
             //GUARDA UM NOVO VALOR DE CALIBRAÇÃO NA EEPROM A CADA 2 MINUTOS
-            STORAGEMANAGER.Write_Float(AIRSPEED_FACTOR_ADDR, AirSpeed.Param.Factor);
+            STORAGEMANAGER.Write_32Bits(AIRSPEED_FACTOR_ADDR, (int32_t)(AirSpeed.Param.Factor * 10000.0f));
             AIRSPEEDCALIBRATION.Previous_Scale = AirSpeed.Param.Factor;
             AIRSPEEDCALIBRATION.Scale_Counter = 0;
         }
