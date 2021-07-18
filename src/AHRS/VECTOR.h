@@ -74,4 +74,12 @@ static inline Vector3x3_Struct *VectorScale(Vector3x3_Struct *Result, const Vect
     *Result = CalcedVector;
     return Result;
 }
+
+static inline void VectorZero(Vector3x3_Struct *VectorPointer)
+{
+    VectorPointer->Roll = 0.0f;
+    VectorPointer->Pitch = 0.0f;
+    VectorPointer->Yaw = 0.0f;
+}
+
 #endif

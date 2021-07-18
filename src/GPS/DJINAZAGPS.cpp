@@ -40,11 +40,11 @@ typedef struct
 typedef struct
 {
   uint32_t Unused_Time;
-  int32_t Longitude; //4
-  int32_t Latitude;  //8
-  int32_t Altitude;  //12
-  int32_t Unused_Horizontal_Acc;
-  int32_t Unused_Vertical_Acc;
+  int32_t Longitude;      //4
+  int32_t Latitude;       //8
+  int32_t Altitude;       //12
+  int32_t Horizontal_Acc; //16
+  int32_t Vertical_Acc;   //20
   int32_t Null;
   int32_t NED_North;
   int32_t NED_East;
@@ -107,6 +107,8 @@ typedef struct
   int16_t GroundSpeed;
   int16_t GroundCourse;
   uint16_t HDOP_State;
+  int32_t Horizontal_Acc;
+  int32_t Vertical_Acc;
 } Struct_SolutionData;
 
 Struct_SolutionData GPSSolutionData; //INSTANCIA
@@ -176,6 +178,8 @@ static void NazaGPS_Check_Valid_Data(void)
     GPSSolutionData.GPS_Location_Data.Longitude = Decode32BitsValues(NazaGPS_Buffer_Read.NazaGPS_GPS_Data.Longitude, Data_Mask);
     GPSSolutionData.GPS_Location_Data.Latitude = Decode32BitsValues(NazaGPS_Buffer_Read.NazaGPS_GPS_Data.Latitude, Data_Mask);
     GPSSolutionData.GPS_Location_Data.Altitude = Decode32BitsValues(NazaGPS_Buffer_Read.NazaGPS_GPS_Data.Altitude, Data_Mask) / 10.0f;
+    GPSSolutionData.Horizontal_Acc = NazaGPS_Buffer_Read.NazaGPS_GPS_Data.Horizontal_Acc;
+    GPSSolutionData.Vertical_Acc = NazaGPS_Buffer_Read.NazaGPS_GPS_Data.Vertical_Acc;
 
     //DECODE GPS FIX
     uint8_t FixType = NazaGPS_Buffer_Read.NazaGPS_GPS_Data.Fix_Type ^ Data_Mask;
@@ -325,6 +329,8 @@ void DjiNazaGpsNewFrame(uint8_t SerialReceiverBuffer)
   GPS_Resources.Navigation.Coordinates.Actual[COORD_LATITUDE] = GPSSolutionData.GPS_Location_Data.Latitude;
   GPS_Resources.Navigation.Coordinates.Actual[COORD_LONGITUDE] = GPSSolutionData.GPS_Location_Data.Longitude;
   GPS_Resources.Navigation.Misc.Get.Altitude = (uint16_t)GPSSolutionData.GPS_Location_Data.Altitude;
+  GPS_Resources.Navigation.Misc.Get.EstimatedPositionHorizontal = (GPSSolutionData.Horizontal_Acc / 10);
+  GPS_Resources.Navigation.Misc.Get.EstimatedPositionVertical = (GPSSolutionData.Vertical_Acc / 10);
   GPS_Resources.Navigation.Misc.Get.GroundCourse = (uint16_t)GPSSolutionData.GroundCourse;
   GPS_Resources.Navigation.Misc.Get.GroundSpeed = (uint16_t)GPSSolutionData.GroundSpeed;
   GPS_Resources.Navigation.Misc.Velocity.Get[NORTH] = GPSSolutionData.VelocityNED[NORTH];

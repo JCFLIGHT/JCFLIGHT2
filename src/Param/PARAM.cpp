@@ -70,7 +70,6 @@ const Resources_Of_Param Params_Table[] = {
     {"GimbalMinValue",                     GIMBAL_MIN_ADDR,                      VAR_16BITS,             &JCF_Param.GimbalMinValue,                  800,           2200,            1000},
     {"GimbalMaxValue",                     GIMBAL_MAX_ADDR,                      VAR_16BITS,             &JCF_Param.GimbalMaxValue,                  800,           2200,            2000},
     {"Land_CheckAcc",                      LAND_CHECKACC_ADDR,                   VAR_8BITS,              &JCF_Param.Land_Check_Acc,                  0,             20,              3},
-    {"ThrottleMixGain",                    THROTTLE_FACTOR_ADDR,                 VAR_FLOAT,              &JCF_Param.Throttle_Mix_Gain,               0,             1,               1.0f},
     {"AutoDisarm_Time",                    AUTODISARM_ADDR,                      VAR_8BITS,              &JCF_Param.AutoDisarm_Time,                 0,             255,             5},
     {"AutoDisarm_Throttle_Min",            AUTODISARM_THR_MIN_ADDR,              VAR_16BITS,             &JCF_Param.AutoDisarm_Throttle_Min,         800,           1500,            1100},
     {"AutoDisarm_YPR_Min",                 AUTODISARM_YPR_MIN_ADDR,              VAR_16BITS,             &JCF_Param.AutoDisarm_YPR_Min,              800,           1500,            1450},
@@ -120,7 +119,6 @@ void ParamClass::Initialization(void)
   JCF_Param.Continuous_Servo_Trim_Rot_Limit = 15;
 
 #endif
-
 }
 
 void ParamClass::Default_List(void)
@@ -177,37 +175,28 @@ void ParamClass::Load_Sketch(void)
     case VAR_32BITS:
       *(int32_t *)Params_Table[Table_Counter].Ptr = STORAGEMANAGER.Read_32Bits(Params_Table[Table_Counter].Address);
       break;
-
-    case VAR_FLOAT:
-      *(float *)Params_Table[Table_Counter].Ptr = STORAGEMANAGER.Read_Float(Params_Table[Table_Counter].Address);
-      break;
     }
   }
 }
 
-static void Param_Set_And_Save_Value(const Resources_Of_Param *VariablePointer, const Variable_Union Variable)
+static void Param_Set_And_Save_Value(const Resources_Of_Param *VariablePointer, const int32_t NewValue)
 {
   switch (VariablePointer->Variable_Type)
   {
 
   case VAR_8BITS:
-    *(uint8_t *)VariablePointer->Ptr = (uint8_t)Variable.Type_Int32;
-    STORAGEMANAGER.Write_8Bits(VariablePointer->Address, Variable.Type_Int32);
+    *(uint8_t *)VariablePointer->Ptr = (uint8_t)NewValue;
+    STORAGEMANAGER.Write_8Bits(VariablePointer->Address, NewValue);
     break;
 
   case VAR_16BITS:
-    *(int16_t *)VariablePointer->Ptr = (int16_t)Variable.Type_Int32;
-    STORAGEMANAGER.Write_16Bits(VariablePointer->Address, Variable.Type_Int32);
+    *(int16_t *)VariablePointer->Ptr = (int16_t)NewValue;
+    STORAGEMANAGER.Write_16Bits(VariablePointer->Address, NewValue);
     break;
 
   case VAR_32BITS:
-    *(int32_t *)VariablePointer->Ptr = (int32_t)Variable.Type_Int32;
-    STORAGEMANAGER.Write_32Bits(VariablePointer->Address, Variable.Type_Int32);
-    break;
-
-  case VAR_FLOAT:
-    *(float *)VariablePointer->Ptr = (float)Variable.Type_Float;
-    STORAGEMANAGER.Write_Float(VariablePointer->Address, Variable.Type_Float);
+    *(int32_t *)VariablePointer->Ptr = (int32_t)NewValue;
+    STORAGEMANAGER.Write_32Bits(VariablePointer->Address, NewValue);
     break;
   }
 }
@@ -231,10 +220,6 @@ static void Param_Print_Value(const Resources_Of_Param *VariablePointer)
     New_Value = STORAGEMANAGER.Read_32Bits(VariablePointer->Address);
     DEBUG("%ld", New_Value);
     return;
-
-  case VAR_FLOAT:
-    DEBUG("%.4f", STORAGEMANAGER.Read_Float(VariablePointer->Address));
-    return;
   }
   DEBUG("%d", New_Value);
 }
@@ -243,7 +228,6 @@ void ParamClass::Process_Command(char *ParamCommandLine)
 {
   const Resources_Of_Param *ParamValue;
   char *PtrInput = NULL;
-  float New_Value_Float = 0;
   int32_t New_Value = 0;
   uint32_t Table_Counter;
   uint32_t StringLength;
@@ -272,7 +256,6 @@ void ParamClass::Process_Command(char *ParamCommandLine)
   {
     PtrInput++;
     New_Value = ATO_Int(PtrInput);
-    New_Value_Float = ATO_Float(PtrInput);
     for (Table_Counter = 0; Table_Counter < TABLE_COUNT; Table_Counter++)
     {
       ParamValue = &Params_Table[Table_Counter];
@@ -280,16 +263,7 @@ void ParamClass::Process_Command(char *ParamCommandLine)
       {
         if (New_Value >= Params_Table[Table_Counter].Value_Min && New_Value <= Params_Table[Table_Counter].Value_Max)
         {
-          Variable_Union Variable_Parse;
-          if (Params_Table[Table_Counter].Variable_Type == VAR_FLOAT)
-          {
-            Variable_Parse.Type_Float = New_Value_Float;
-          }
-          else
-          {
-            Variable_Parse.Type_Int32 = New_Value;
-          }
-          Param_Set_And_Save_Value(ParamValue, Variable_Parse);
+          Param_Set_And_Save_Value(ParamValue, New_Value);
           DEBUG_WITHOUT_NEW_LINE("%s setado para ", Params_Table[Table_Counter].Param_Name);
           Param_Print_Value(ParamValue);
           LINE_SPACE;

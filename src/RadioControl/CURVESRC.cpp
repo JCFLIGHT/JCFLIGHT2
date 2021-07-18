@@ -32,9 +32,10 @@ void CurvesRC_SetValues()
 {
   RC_Resources.Middle.Throttle = STORAGEMANAGER.Read_8Bits(THROTTLE_MIDDLE_ADDR);
   RC_Resources.Expo.Throttle = STORAGEMANAGER.Read_8Bits(THROTTLE_EXPO_ADDR);
-  RC_Resources.Rate.PitchRoll = STORAGEMANAGER.Read_8Bits(RC_RATE_ADDR);
-  RC_Resources.Expo.YawPitchRoll = STORAGEMANAGER.Read_8Bits(RC_EXPO_ADDR);
+  RC_Resources.Rate.PitchRoll = STORAGEMANAGER.Read_8Bits(PR_RATE_ADDR);
+  RC_Resources.Expo.PitchRoll = STORAGEMANAGER.Read_8Bits(PR_EXPO_ADDR);
   RC_Resources.Rate.Yaw = STORAGEMANAGER.Read_8Bits(YAW_RATE_ADDR);
+  RC_Resources.Expo.Yaw = STORAGEMANAGER.Read_8Bits(YAW_EXPO_ADDR);
   RC_Resources.Attitude.ThrottleMin = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MIN_ADDR);
   RC_Resources.Attitude.ThrottleMax = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MAX_ADDR);
 }
@@ -45,8 +46,10 @@ void CurvesRC_CalculeValue()
   {
     return;
   }
+
   int8_t NewValueCalculed;
   uint8_t ThrottleMiddlePoint;
+
   for (uint8_t IndexOfLookUpThrottle = 0; IndexOfLookUpThrottle < THROTTLE_LOOKUP_LENGTH; IndexOfLookUpThrottle++)
   {
     NewValueCalculed = 10 * IndexOfLookUpThrottle - RC_Resources.Middle.Throttle;

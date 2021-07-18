@@ -15,7 +15,7 @@
   junto com a JCFLIGHT. Caso contrário, consulte <http://www.gnu.org/licenses/>.
 */
 
-#include "inttypes.h"
+#include <inttypes.h>
 #include "math.h"
 #include "HardwareSerial.h"
 #include "wiring_private.h"

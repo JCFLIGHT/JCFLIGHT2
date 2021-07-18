@@ -79,7 +79,7 @@ static void ProcessFlightModesToMultirotor(void)
           Do_Pos_Hold_Call_Alt_Hold = false;
           ENABLE_THIS_FLIGHT_MODE(HEADING_HOLD_MODE);
           RESET_THIS_FLIGHT_MODE_ONCE(HEADING_HOLD_MODE);
-          Do_Mode_RTH_Now();
+          Multirotor_Do_Mode_RTH_Now();
         }
         else if (IS_FLIGHT_MODE_ACTIVE(POS_HOLD_MODE))
         {
@@ -88,7 +88,7 @@ static void ProcessFlightModesToMultirotor(void)
           Do_Pos_Hold_Call_Alt_Hold = true;
           ENABLE_THIS_FLIGHT_MODE(HEADING_HOLD_MODE);
           RESET_THIS_FLIGHT_MODE_ONCE(HEADING_HOLD_MODE);
-          MultirotorSetThisPointToPositionHold();
+          SetThisPointToPositionHold();
         }
         else if (IS_FLIGHT_MODE_ACTIVE(LAND_MODE))
         {
@@ -97,7 +97,7 @@ static void ProcessFlightModesToMultirotor(void)
           Do_Pos_Hold_Call_Alt_Hold = false;
           ENABLE_THIS_FLIGHT_MODE(HEADING_HOLD_MODE);
           RESET_THIS_FLIGHT_MODE_ONCE(HEADING_HOLD_MODE);
-          MultirotorSetThisPointToPositionHold();
+          SetThisPointToPositionHold();
         }
         else
         {
@@ -153,9 +153,9 @@ static void ProcessFlightModesToAirPlane(void)
 
   if (IS_FLIGHT_MODE_ACTIVE(RTH_MODE))
   {
-    GPS_Resources.Mode.Navigation = DO_RTH_ENROUTE; //INDICA PARA O TECS QUE O RTH SERÁ USADO
-    ENABLE_THIS_FLIGHT_MODE(CIRCLE_MODE);           //ATIVA O CONTROLE HORIZONTAL X,Y & HEADING
-    ENABLE_THIS_FLIGHT_MODE(CLIMBOUT_MODE);         //ATIVA O CONTROLE VERTICAL Z
+    GPS_Resources.Mode.Navigation = DO_START_RTH; //INDICA PARA O TECS QUE O RTH SERÁ USADO
+    ENABLE_THIS_FLIGHT_MODE(CIRCLE_MODE);         //ATIVA O CONTROLE HORIZONTAL X,Y & HEADING
+    ENABLE_THIS_FLIGHT_MODE(CLIMBOUT_MODE);       //ATIVA O CONTROLE VERTICAL Z
   }
   else
   {
@@ -163,16 +163,19 @@ static void ProcessFlightModesToAirPlane(void)
     {
       GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
       ENABLE_THIS_FLIGHT_MODE(CLIMBOUT_MODE);
+      SetThisPointToPositionHold();
     }
     else if (IS_FLIGHT_MODE_ACTIVE(CIRCLE_MODE))
     {
       GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
       ENABLE_THIS_FLIGHT_MODE(CLIMBOUT_MODE);
+      SetThisPointToPositionHold();
     }
     else if (IS_FLIGHT_MODE_ACTIVE(CRUISE_MODE))
     {
       GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
       ENABLE_THIS_FLIGHT_MODE(CLIMBOUT_MODE);
+      SetThisPointToPositionHold();
     }
     else
     {

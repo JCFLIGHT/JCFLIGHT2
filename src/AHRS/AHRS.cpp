@@ -37,10 +37,15 @@ FILE_COMPILE_FOR_SPEED
 AHRSClass AHRS;
 
 #ifdef __AVR_ATmega2560__
+
 #define NEARNESS 100.0f //FATOR DE GANHO DE CORREÇÃO DO ACELEROMETRO NO AHRS
+
 #else
+
 #define NEARNESS 1.0f //FATOR DE GANHO DE CORREÇÃO DO ACELEROMETRO NO AHRS
+
 #endif
+
 #define SPIN_RATE_LIMIT 20     //VALOR DE GYRO^2 PARA CORTAR A CORREÇÃO DO INTEGRAL NO AHRS
 #define MAX_ACC_NEARNESS 0.33f //33% (0.67G - 1.33G)
 
@@ -52,8 +57,6 @@ Matrix3x3_Struct Rotation;
 
 static Vector3x3_Struct CorrectedMagneticFieldNorth;
 static AHRS_Configuration_Struct AHRSConfiguration;
-
-static bool GPSHeadingInitialized = false;
 
 static void ComputeRotationMatrix(void)
 {
@@ -410,11 +413,11 @@ void AHRSClass::Update(float DeltaTime)
     if (I2CResources.Found.Compass)
     {
       SafeToUseCompass = true;
-      GPSHeadingInitialized = true;
+      GPS_Resources.Navigation.Misc.Get.HeadingInitialized = true;
     }
     else if (SafeToUseCOG)
     {
-      if (GPSHeadingInitialized)
+      if (GPS_Resources.Navigation.Misc.Get.HeadingInitialized)
       {
         CourseOverGround = ConvertDeciDegreesToRadians(GPS_Resources.Navigation.Misc.Get.GroundCourse);
         SafeToUseGPSHeading = true;
@@ -422,7 +425,7 @@ void AHRSClass::Update(float DeltaTime)
       else
       {
         ComputeQuaternionFromRPY(Attitude.EulerAngles.Roll, Attitude.EulerAngles.Pitch, GPS_Resources.Navigation.Misc.Get.GroundCourse);
-        GPSHeadingInitialized = true;
+        GPS_Resources.Navigation.Misc.Get.HeadingInitialized = true;
       }
     }
   }

@@ -208,7 +208,7 @@ void __vector_52(void)
     }
 }
 
-//SERIAL 3 (MATEK3901L0X,SD LOGGER & OSD)
+//SERIAL 3 (CARTÃO SD PARA CAIXA PRETA OU OSD)
 //ROTINA DE INTERRUPÇÃO PARA O PINO TX
 extern "C" void __vector_55(void) __attribute__((signal, used, externally_visible));
 void __vector_55(void)

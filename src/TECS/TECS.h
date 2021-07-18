@@ -19,6 +19,7 @@
 #define TECS_H_
 #include "Build/LIBDEPENDENCIES.h"
 #include "Common/STRUCTS.h"
+extern TECS_Resources_Struct TECS_Resources;
 class TecsClass
 {
 public:

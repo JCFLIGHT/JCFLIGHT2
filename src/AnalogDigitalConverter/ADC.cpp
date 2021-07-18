@@ -29,8 +29,12 @@ int16_t AnalogReadClass::Read(uint8_t AnalogPin)
 float AnalogReadClass::Read_Voltage_Ratiometric(uint8_t AnalogPin)
 {
 #ifndef __AVR_ATmega2560__
+
   return (float)ANALOGSOURCE.Read(AnalogPin) * (ADC_VOLTAGE_OPERATION / ADC_MAX_SAMPLES);
+
 #else
+
   return (float)ANALOGSOURCE.Read(AnalogPin) * (ADC_VOLTAGE_OPERATION / ADC_MAX_SAMPLES);
+  
 #endif
 }

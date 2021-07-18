@@ -237,7 +237,7 @@ void GPS_Process_FlightModes(float DeltaTime)
   }
 }
 
-void Do_Mode_RTH_Now(void)
+void Multirotor_Do_Mode_RTH_Now(void)
 {
   if (Barometer.INS.Altitude.Estimated < ConverMetersToCM(GPS_Resources.Home.Altitude))
   {
@@ -247,7 +247,7 @@ void Do_Mode_RTH_Now(void)
   {
     SetNewAltitudeToHold(Barometer.INS.Altitude.Estimated);
   }
-  MultirotorSetThisPointToPositionHold();
+  SetThisPointToPositionHold();
 }
 
 void Set_Next_Point_To_Navigation(int32_t Latitude_Destiny, int32_t Longitude_Destiny)

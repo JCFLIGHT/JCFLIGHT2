@@ -37,21 +37,26 @@ FILE_COMPILE_FOR_SPEED
 IMU_Struct IMU;
 
 #ifdef USE_IMU_FILTERS
+
 //INSTANCIAS PARA O LPF
 static BiquadFilter_Struct BiquadAccLPF[3];
 static BiquadFilter_Struct BiquadGyroLPF[3];
+
 //INSTANCIAS PARA O NOTCH
 static BiquadFilter_Struct BiquadAccNotch[3];
 static BiquadFilter_Struct BiquadGyroNotch[3];
+
 #endif
 
 bool KalmanFilterEnabled = false;
 
 #ifdef USE_IMU_FILTERS
+
 int16_t Biquad_Acc_LPF = 0;
 int16_t Biquad_Gyro_LPF = 0;
 int16_t Biquad_Acc_Notch = 0;
 int16_t Biquad_Gyro_Notch = 0;
+
 #endif
 
 static void IMU_Filters_Initialization(void)
@@ -61,6 +66,7 @@ static void IMU_Filters_Initialization(void)
   KALMAN.Initialization();
 
 #ifdef USE_IMU_FILTERS
+
   //CARREGA OS VALORES GUARDADOS DO LPF
   Biquad_Acc_LPF = STORAGEMANAGER.Read_16Bits(BI_ACC_LPF_ADDR);
   Biquad_Gyro_LPF = STORAGEMANAGER.Read_16Bits(BI_GYRO_LPF_ADDR);
@@ -83,6 +89,7 @@ static void IMU_Filters_Initialization(void)
   BIQUADFILTER.Settings(&BiquadGyroNotch[ROLL], Biquad_Gyro_Notch, 1, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), NOTCH);
   BIQUADFILTER.Settings(&BiquadGyroNotch[PITCH], Biquad_Gyro_Notch, 1, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), NOTCH);
   BIQUADFILTER.Settings(&BiquadGyroNotch[YAW], Biquad_Gyro_Notch, 1, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), NOTCH);
+
 #endif
 }
 
@@ -114,7 +121,7 @@ static MPUDetectionResult_Enum MPU6050DeviceDetect(void)
 
   } while (ForceRepetition--);
 
-  I2C.RegisterBuffer(ADDRESS_IMU_MPU6050, 0x06, RevisionBuffer, 6);
+  I2C.RegisterBuffer(ADDRESS_IMU_MPU6050, 0x06, RevisionBuffer, 0x06);
 
   uint8_t Revision = ((RevisionBuffer[5] & 0x01) << 2) | ((RevisionBuffer[3] & 0x01) << 1) | (RevisionBuffer[1] & 0x01);
 
@@ -166,11 +173,11 @@ static void AccResolutionDetect(void)
 {
   MPUDetectionResult_Enum Resolution = MPU6050DeviceDetect();
 
-  IMU.Gyroscope.Scale = 1.0f / 16.4f;
+  IMU.Gyroscope.Scale = 1.0f / 16.4f; //MPU6050
 
   if (Resolution == MPU6050_NONE)
   {
-    LOG("IMU NONE");
+    LOG("SEM IMU");
     LINE_SPACE;
     IMU.Accelerometer.GravityForce.OneG = 256;
     return;
@@ -297,30 +304,41 @@ void MPU6050AccAndGyroInitialization(void)
   IMU_Filters_Initialization();
 }
 
-#ifdef ESP32
-void IMU_Get_Data()
+void IMU_Get_Data(void)
 {
-  uint8_t Data_Read[14];
-  I2C.RegisterBuffer(ADDRESS_IMU_MPU6050, 0x3B, Data_Read, 14);
-  IMU.Accelerometer.Read[ROLL] = -(Data_Read[0] << 8 | Data_Read[1]);
-  IMU.Accelerometer.Read[PITCH] = -(Data_Read[2] << 8 | Data_Read[3]);
-  IMU.Accelerometer.Read[YAW] = Data_Read[4] << 8 | Data_Read[5];
-  IMU.Gyroscope.Read[PITCH] = -(Data_Read[8] << 8 | Data_Read[9]);
-  IMU.Gyroscope.Read[ROLL] = Data_Read[10] << 8 | Data_Read[11];
-  IMU.Gyroscope.Read[YAW] = -(Data_Read[12] << 8 | Data_Read[13]);
-}
+  uint8_t Data_Read_Buffer[14];
+  I2C.RegisterBuffer(ADDRESS_IMU_MPU6050, 0x3B, Data_Read_Buffer, 14);
+
+#ifdef __AVR_ATmega2560__
+
+  IMU.Accelerometer.Read[ROLL] = -(((Data_Read_Buffer[0] << 8) | Data_Read_Buffer[1]) >> 3);
+  IMU.Accelerometer.Read[PITCH] = -(((Data_Read_Buffer[2] << 8) | Data_Read_Buffer[3]) >> 3);
+  IMU.Accelerometer.Read[YAW] = ((Data_Read_Buffer[4] << 8) | Data_Read_Buffer[5]) >> 3;
+
+  IMU.Accelerometer.Temperature = ConvertDeciDegreesToDegrees(((Data_Read_Buffer[6] << 8) | Data_Read_Buffer[7]) / 34 + 365);
+
+  IMU.Gyroscope.Read[PITCH] = -((Data_Read_Buffer[8] << 8) | Data_Read_Buffer[9]) >> 2;
+  IMU.Gyroscope.Read[ROLL] = ((Data_Read_Buffer[10] << 8) | Data_Read_Buffer[11]) >> 2;
+  IMU.Gyroscope.Read[YAW] = -((Data_Read_Buffer[12] << 8) | Data_Read_Buffer[13]) >> 2;
+
+#else
+
+  IMU.Accelerometer.Read[ROLL] = -((Data_Read_Buffer[0] << 8) | Data_Read_Buffer[1]);
+  IMU.Accelerometer.Read[PITCH] = -((Data_Read_Buffer[2] << 8) | Data_Read_Buffer[3]);
+  IMU.Accelerometer.Read[YAW] = ((Data_Read_Buffer[4] << 8) | Data_Read_Buffer[5]);
+
+  IMU.Accelerometer.Temperature = ConvertDeciDegreesToDegrees(((Data_Read_Buffer[6] << 8) | Data_Read_Buffer[7]) / 34 + 365);
+
+  IMU.Gyroscope.Read[PITCH] = -((Data_Read_Buffer[8] << 8) | Data_Read_Buffer[9]);
+  IMU.Gyroscope.Read[ROLL] = ((Data_Read_Buffer[10] << 8) | Data_Read_Buffer[11]);
+  IMU.Gyroscope.Read[YAW] = -((Data_Read_Buffer[12] << 8) | Data_Read_Buffer[13]);
+
 #endif
+}
 
 void Acc_ReadBufferData(void)
 {
-#ifdef __AVR_ATmega2560__
-  I2C.RegisterBuffer(ADDRESS_IMU_MPU6050, 0x3B, I2CResources.Buffer.Data, 0x06);
-  IMU.Accelerometer.Read[ROLL] = -(((I2CResources.Buffer.Data[0] << 8) | I2CResources.Buffer.Data[1]) >> 3);
-  IMU.Accelerometer.Read[PITCH] = -(((I2CResources.Buffer.Data[2] << 8) | I2CResources.Buffer.Data[3]) >> 3);
-  IMU.Accelerometer.Read[YAW] = ((I2CResources.Buffer.Data[4] << 8) | I2CResources.Buffer.Data[5]) >> 3;
-#elif defined ESP32
   IMU_Get_Data();
-#endif
 
   ACCCALIBRATION.Update();
 
@@ -352,20 +370,13 @@ void Acc_ReadBufferData(void)
 
 #endif
 
-  IMU.Accelerometer.ReadFloat[ROLL] = (float)IMU.Accelerometer.Read[ROLL] / IMU.Accelerometer.GravityForce.OneG;
-  IMU.Accelerometer.ReadFloat[PITCH] = (float)IMU.Accelerometer.Read[PITCH] / IMU.Accelerometer.GravityForce.OneG;
-  IMU.Accelerometer.ReadFloat[YAW] = (float)IMU.Accelerometer.Read[YAW] / IMU.Accelerometer.GravityForce.OneG;
+  IMU.Accelerometer.ReadFloat[ROLL] = (float)IMU.Accelerometer.Read[ROLL] / (float)IMU.Accelerometer.GravityForce.OneG;
+  IMU.Accelerometer.ReadFloat[PITCH] = (float)IMU.Accelerometer.Read[PITCH] / (float)IMU.Accelerometer.GravityForce.OneG;
+  IMU.Accelerometer.ReadFloat[YAW] = (float)IMU.Accelerometer.Read[YAW] / (float)IMU.Accelerometer.GravityForce.OneG;
 }
 
 void Gyro_ReadBufferData(void)
 {
-#ifdef __AVR_ATmega2560__
-  I2C.RegisterBuffer(ADDRESS_IMU_MPU6050, 0x43, I2CResources.Buffer.Data, 0x06);
-  IMU.Gyroscope.Read[PITCH] = -(((I2CResources.Buffer.Data[0] << 8) | I2CResources.Buffer.Data[1]) >> 2);
-  IMU.Gyroscope.Read[ROLL] = ((I2CResources.Buffer.Data[2] << 8) | I2CResources.Buffer.Data[3]) >> 2;
-  IMU.Gyroscope.Read[YAW] = -(((I2CResources.Buffer.Data[4] << 8) | I2CResources.Buffer.Data[5]) >> 2);
-#endif
-
   GYROCALIBRATION.Update();
 
   //KALMAN

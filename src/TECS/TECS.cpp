@@ -263,7 +263,7 @@ void TecsClass::UpdateAutoPilotControl(float DeltaTime)
 {
     if (IS_FLIGHT_MODE_ACTIVE(CIRCLE_MODE) || IS_FLIGHT_MODE_ACTIVE(CRUISE_MODE))
     {
-        TECS_Resources.Position.AutoPilot.RollAngle = Constrain_16Bits(TECS_PID_Position_Navigation.AutoPilotControl[ROLL], -ConvertDegreesToDecidegrees(GET_SET[ROLL_BANK_MAX].MaxValue), ConvertDegreesToDecidegrees(GET_SET[ROLL_BANK_MAX].MaxValue));
+        TECS_Resources.Position.AutoPilot.RollAngle = Constrain_16Bits(TECS_PID_Position_Navigation.AutoPilotControl[ROLL], -ConvertDegreesToDecidegrees(GET_SET[NAV_ROLL_BANK_MAX].MaxValue), ConvertDegreesToDecidegrees(GET_SET[NAV_ROLL_BANK_MAX].MaxValue));
         GPS_Resources.Navigation.AutoPilot.Control.Angle[ROLL] = PIDAngleToRcController(TECS_Resources.Position.AutoPilot.RollAngle, ConvertDegreesToDecidegrees(GET_SET[MAX_ROLL_LEVEL].MaxValue));
     }
 
@@ -372,8 +372,8 @@ void TecsClass::UpdateEnergyPositionController(float DeltaTime)
                                                                       TECS_Resources.Heading.AHRSYawInCentiDegress + TECS_Resources.Heading.Error,
                                                                       TECS_Resources.Heading.AHRSYawInCentiDegress,
                                                                       1.0f, 1.0f,
-                                                                      -ConvertDegreesToCentiDegrees(GET_SET[ROLL_BANK_MAX].MaxValue),
-                                                                      ConvertDegreesToCentiDegrees(GET_SET[ROLL_BANK_MAX].MaxValue),
+                                                                      -ConvertDegreesToCentiDegrees(GET_SET[NAV_ROLL_BANK_MAX].MaxValue),
+                                                                      ConvertDegreesToCentiDegrees(GET_SET[NAV_ROLL_BANK_MAX].MaxValue),
                                                                       TECS_PID_USE_TRACKING_ERROR | (TECS_Resources.Heading.Flags.ErrorTrasborded ? TECS_PID_USE_SHRINK_INTEGRATOR : TECS_PID_USE_NONE),
                                                                       DeltaTime);
 
@@ -465,14 +465,14 @@ void TecsClass::Update(float DeltaTime)
 
     if (INERTIALNAVIGATION.WaitForSample() && !TECS_Resources.Position.HomePointOnce)
     {
-        TECS_Resources.Position.HomePoint.X = INS.EarthFrame.Position[INS_LATITUDE];
-        TECS_Resources.Position.HomePoint.Y = INS.EarthFrame.Position[INS_LONGITUDE];
+        TECS_Resources.Position.HomePoint.X = INS.EarthFrame.Position[INS_LATITUDE] + INS.EarthFrame.Velocity[INS_LATITUDE];
+        TECS_Resources.Position.HomePoint.Y = INS.EarthFrame.Position[INS_LONGITUDE] + INS.EarthFrame.Velocity[INS_LONGITUDE];
         TECS_Resources.Position.HomePointOnce = true;
     }
     else if (!INERTIALNAVIGATION.WaitForSample()) //SISTEMA DESARMADO
     {
-        TECS_Resources.Position.HomePoint.X = 0;
-        TECS_Resources.Position.HomePoint.Y = 0;
+        TECS_Resources.Position.HomePoint.X = 0.0f;
+        TECS_Resources.Position.HomePoint.Y = 0.0f;
         TECS_Resources.Position.HomePointOnce = false;
     }
 
@@ -499,10 +499,10 @@ void TecsClass::Update(float DeltaTime)
 
             if (GPS_Resources.Mode.Navigation == DO_POSITION_HOLD)
             {
-                TECS_Resources.Position.DestinationNEU.X = INS.EarthFrame.Position[INS_LATITUDE];
-                TECS_Resources.Position.DestinationNEU.Y = INS.EarthFrame.Position[INS_LONGITUDE];
+                TECS_Resources.Position.DestinationNEU.X = INS.Position.Hold[INS_LATITUDE];
+                TECS_Resources.Position.DestinationNEU.Y = INS.Position.Hold[INS_LONGITUDE];
             }
-            else if (GPS_Resources.Mode.Navigation == DO_RTH_ENROUTE)
+            else if (GPS_Resources.Mode.Navigation == DO_START_RTH)
             {
                 TECS_Resources.Position.DestinationNEU.X = TECS_Resources.Position.HomePoint.X;
                 TECS_Resources.Position.DestinationNEU.Y = TECS_Resources.Position.HomePoint.Y;
@@ -560,7 +560,7 @@ void TecsClass::Update(float DeltaTime)
     }
 
 #ifdef PRINTLN_TECS
-    /*
+
     DEBUG("%.f %.f %.f %.f %.f %.f",
           TECS_Resources.Position.DestinationNEU.X,
           TECS_Resources.Position.DestinationNEU.Y,
@@ -568,17 +568,17 @@ void TecsClass::Update(float DeltaTime)
           TECS_Resources.Position.HomePoint.Y,
           INS.EarthFrame.Position[INS_LATITUDE],
           INS.EarthFrame.Position[INS_LONGITUDE]);
-*/
+
     /*
     DEBUG("%ld %.2f %.2f ",
           TECS_Resources.Position.DestinationNEU.Altitude,
           TECS_Resources.Position.Virtual.X,
           TECS_Resources.Position.Virtual.Y);
 */
-
+/*
     DEBUG("%d %d",
           (int16_t)TECS.GetFuselageVelocity(),
           GPS_Resources.Navigation.Misc.Get.GroundSpeed);
-
+*/
 #endif
 }

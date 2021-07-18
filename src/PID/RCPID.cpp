@@ -50,9 +50,9 @@ static void GetRCDataConvertedAndApplyFilter(void)
   CalcedThrottle = Constrain_16Bits(DECODE.GetRxChannelOutput(THROTTLE), RC_Resources.Attitude.ThrottleMin, MAX_STICKS_PULSE);
   CalcedThrottle = (uint32_t)(CalcedThrottle - RC_Resources.Attitude.ThrottleMin) * MIN_STICKS_PULSE / (MAX_STICKS_PULSE - RC_Resources.Attitude.ThrottleMin);
   RC_Resources.Attitude.Controller[THROTTLE] = CalcedLookupThrottle(CalcedThrottle);
-  RC_Resources.Attitude.Controller[YAW] = -CalcedAttitudeRC(YAW, RC_Resources.Expo.YawPitchRoll);
-  RC_Resources.Attitude.Controller[PITCH] = CalcedAttitudeRC(PITCH, RC_Resources.Expo.YawPitchRoll);
-  RC_Resources.Attitude.Controller[ROLL] = CalcedAttitudeRC(ROLL, RC_Resources.Expo.YawPitchRoll);
+  RC_Resources.Attitude.Controller[YAW] = -CalcedAttitudeRC(YAW, RC_Resources.Expo.PitchRoll);
+  RC_Resources.Attitude.Controller[PITCH] = CalcedAttitudeRC(PITCH, RC_Resources.Expo.PitchRoll);
+  RC_Resources.Attitude.Controller[ROLL] = CalcedAttitudeRC(ROLL, RC_Resources.Expo.Yaw);
 
   //APLICA O FILTRO LPF NO RC DA ATTITUDE
   RCInterpolationApply();

@@ -19,12 +19,13 @@
 #define STRUCTS_H_
 
 #include "ENUM.h"
-#include "inttypes.h"
+#include <inttypes.h>
 
 typedef struct
 {
   struct Accelerometer_Struct
   {
+    uint8_t Temperature = 0;
     int16_t Read[3] = {0, 0, 0};
     float ReadFloat[3] = {0.0f, 0.0f, 0.0f};
 
@@ -162,21 +163,22 @@ typedef struct
 
     struct Flags_Struct
     {
+      bool Fail = false;
       bool InCalibration = false;
       bool CalibratedPosition[6] = {false, false, false, false, false, false};
+      uint8_t State = 0;
     } Flags;
 
     struct Time_Struct
     {
-      uint32_t Actual = 0;
-      uint32_t Previous = 0;
-      uint32_t Difference = 0;
+      uint32_t Start = 0;
     } Time;
 
     struct Samples_Struct
     {
-      int16_t Counter = 0;
-      int32_t Window[6][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+      float Sum[3] = {0, 0, 0};
+      uint16_t Count = 0;
+      int32_t Window[6][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
     } Samples;
 
     int16_t OffSet[3] = {0, 0, 0};
@@ -192,7 +194,6 @@ typedef struct
 
       struct Time_Struct
       {
-        uint32_t Actual = 0;
         uint32_t Previous = 0;
       } Time;
 
@@ -217,7 +218,6 @@ typedef struct
 
     struct Time_Struct
     {
-      uint32_t Actual = 0;
       uint32_t Previous = 0;
     } Time;
 
@@ -336,11 +336,14 @@ typedef struct
       struct Get_Struct
       {
         bool Marked3DFix = false;
+        bool HeadingInitialized = false;
         uint8_t Satellites = 0;
         uint16_t GroundCourse = 0;
         uint16_t Altitude = 0;
         uint16_t GroundSpeed = 0;
         uint16_t HDOP = 0;
+        uint32_t EstimatedPositionHorizontal;
+        uint32_t EstimatedPositionVertical;
       } Get;
 
     } Misc;
@@ -754,12 +757,6 @@ typedef struct
 
 } PID_Resources_Struct;
 
-typedef union
-{
-  float Type_Float;
-  int32_t Type_Int32;
-} Variable_Union;
-
 typedef struct
 {
   struct Flags_Struct
@@ -992,8 +989,9 @@ typedef struct
 
   struct Expo_Struct
   {
-    uint8_t YawPitchRoll = 0;
     uint8_t Throttle = 0;
+    uint8_t Yaw = 0;
+    uint8_t PitchRoll = 0;
   } Expo;
 
   struct Middle_Struct

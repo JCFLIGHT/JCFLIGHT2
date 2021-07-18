@@ -191,6 +191,8 @@ void ApplyMixingForMotorsAndServos(float DeltaTime)
 
 #else
 
+  JCF_Param.Throttle_Mix_Gain = 1.0f; //MOVER PARA AS CONFIGURAÇÕES INTERMEDIARIAS - RANGE:0.0f A 1.0f
+
   MixerThrottleController = ((MixerThrottleController - RC_Resources.Attitude.ThrottleMin) * JCF_Param.Throttle_Mix_Gain) + RC_Resources.Attitude.ThrottleMin;
 
 #endif

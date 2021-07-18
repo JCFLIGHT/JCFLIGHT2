@@ -1,7 +1,7 @@
 #ifndef __SD_H__
 #define __SD_H__
 
-#include "inttypes.h"
+#include <inttypes.h>
 #include "Stream.h"
 #include "SDFAT.h"
 

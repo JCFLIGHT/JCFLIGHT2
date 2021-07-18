@@ -1,7 +1,7 @@
 #ifndef SDCARD_h
 #define SDCARD_h
 
-#include "inttypes.h"
+#include <inttypes.h>
 #include "SDINFO.h"
 
 extern uint8_t _SPI3_SCK;   //SCLK

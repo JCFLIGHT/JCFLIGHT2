@@ -48,7 +48,7 @@ void HALSerialClass::Initialization()
         //CONFIGURAÇÃO DA UART_NUMB_2 PARA IBUS
         Serial_Begin(UART_NUMB_2, 115200);
     }
-    //MATEK3901L0X,SD LOGGER & OSD
+    //CARTÃO SD PARA CAIXA PRETA OU OSD
     Serial_Begin(UART_NUMB_3, 115200);
 }
 

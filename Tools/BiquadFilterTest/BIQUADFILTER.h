@@ -1,6 +1,6 @@
 #ifndef BIQUADFILTER_h
 #define BIQUADFILTER_h
-#include "inttypes.h"
+#include <inttypes.h>
 #include "math.h"
 #include "HardwareSerial.h"
 #include "wiring_private.h"

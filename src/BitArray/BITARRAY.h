@@ -17,7 +17,7 @@
 
 #ifndef BITARRAY_H_
 #define BITARRAY_H_
-#include "inttypes.h"
+#include <inttypes.h>
 bool IS_FLIGHT_MODE_ACTIVE(uint8_t FlightModeName);
 bool IS_FLIGHT_MODE_ACTIVE_ONCE(uint8_t FlightModeName);
 void RESET_THIS_FLIGHT_MODE_ONCE(uint8_t FlightModeName);

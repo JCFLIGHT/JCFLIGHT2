@@ -17,7 +17,7 @@
 
 #ifndef FRAMESTATUS_H_
 #define FRAMESTATUS_H_
-#include "inttypes.h"
+#include <inttypes.h>
 void SetPlatformType(uint8_t _FrameType);
 uint8_t GetActualPlatformType(void);
 bool GetMultirotorEnabled(void);

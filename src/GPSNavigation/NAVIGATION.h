@@ -23,7 +23,7 @@ extern GPS_Resources_Struct GPS_Resources;
 void Load_GPS_Navigation_Params(void);
 void GPS_Reset_Navigation(void);
 void GPS_Process_FlightModes(float DeltaTime);
-void Do_Mode_RTH_Now(void);
+void Multirotor_Do_Mode_RTH_Now(void);
 void Set_Next_Point_To_Navigation(int32_t Latitude_Destiny, int32_t Longitude_Destiny);
 bool Get_Safe_State_To_Apply_Position_Hold(void);
 #endif

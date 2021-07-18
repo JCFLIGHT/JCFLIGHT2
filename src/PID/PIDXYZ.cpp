@@ -344,7 +344,7 @@ float PIDXYZClass::ApplyDerivativeBoostYaw(float ActualGyro, float PrevGyro, flo
 
 float PIDXYZClass::LevelRoll(float DeltaTime)
 {
-  float RcControllerAngle = 0;
+  float RcControllerAngle = 0.0f;
 
   if (GPS_Resources.Navigation.AutoPilot.Control.Enabled)
   {
@@ -352,26 +352,31 @@ float PIDXYZClass::LevelRoll(float DeltaTime)
   }
   else
   {
-    RcControllerAngle = RcControllerToAngle(RC_Resources.Attitude.Controller[ROLL], ConvertDegreesToDecidegrees(GET_SET[MAX_ROLL_LEVEL].MaxValue));
+    if (GetMultirotorEnabled() && IS_FLIGHT_MODE_ACTIVE(ATTACK_MODE))
+    {
+      RcControllerAngle = RcControllerToAngle(RC_Resources.Attitude.Controller[ROLL], ConvertDegreesToDecidegrees(GET_SET[ATTACK_BANK_MAX].MaxValue));
+    }
+    else
+    {
+      RcControllerAngle = RcControllerToAngle(RC_Resources.Attitude.Controller[ROLL], ConvertDegreesToDecidegrees(GET_SET[MAX_ROLL_LEVEL].MaxValue));
+    }
   }
 
   float AngleErrorInDegrees = ConvertDeciDegreesToDegrees(RcControllerAngle - Attitude.Raw[ROLL]);
 
-  float ThisBankAngleMax = ConvertDegreesToDecidegrees(GET_SET[ROLL_BANK_MAX].MaxValue);
-
-  if (GetMultirotorEnabled() && IS_FLIGHT_MODE_ACTIVE(ATTACK_MODE))
-  {
-    ThisBankAngleMax = ConvertDegreesToDecidegrees(GET_SET[ATTACK_BANK_MAX].MaxValue);
-  }
-
-  float AngleRateTarget = Constrain_Float(AngleErrorInDegrees * (GET_SET[PI_AUTO_LEVEL].kP / 6.56f), -ThisBankAngleMax, ThisBankAngleMax);
+  float AngleRateTarget = Constrain_Float(AngleErrorInDegrees * (GET_SET[PI_AUTO_LEVEL].kP / 6.56f), -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
 
   if (GET_SET[PI_AUTO_LEVEL].kI > 0)
   {
+
 #ifndef __AVR_ATmega2560__
+
     AngleRateTarget = PT1FilterApply(&Angle_Roll_Smooth, AngleRateTarget, GET_SET[PI_AUTO_LEVEL].kI, DeltaTime);
+
 #else
+
     AngleRateTarget = PT1FilterApply(&Angle_Roll_Smooth, AngleRateTarget, GET_SET[PI_AUTO_LEVEL].kI, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);
+
 #endif
   }
   return AngleRateTarget;
@@ -379,7 +384,7 @@ float PIDXYZClass::LevelRoll(float DeltaTime)
 
 float PIDXYZClass::LevelPitch(float DeltaTime)
 {
-  float RcControllerAngle = 0;
+  float RcControllerAngle = 0.0f;
 
   if (GPS_Resources.Navigation.AutoPilot.Control.Enabled)
   {
@@ -387,7 +392,14 @@ float PIDXYZClass::LevelPitch(float DeltaTime)
   }
   else
   {
-    RcControllerAngle = RcControllerToAngle(RC_Resources.Attitude.Controller[PITCH], ConvertDegreesToDecidegrees(GET_SET[MAX_PITCH_LEVEL].MaxValue));
+    if (GetMultirotorEnabled() && IS_FLIGHT_MODE_ACTIVE(ATTACK_MODE))
+    {
+      RcControllerAngle = RcControllerToAngle(RC_Resources.Attitude.Controller[PITCH], ConvertDegreesToDecidegrees(GET_SET[ATTACK_BANK_MAX].MaxValue));
+    }
+    else
+    {
+      RcControllerAngle = RcControllerToAngle(RC_Resources.Attitude.Controller[PITCH], ConvertDegreesToDecidegrees(GET_SET[MAX_PITCH_LEVEL].MaxValue));
+    }
   }
 
   RcControllerAngle += TECS.AutoPitchDown(MinThrottleDownPitchAngle);
@@ -399,21 +411,18 @@ float PIDXYZClass::LevelPitch(float DeltaTime)
 
   float AngleErrorInDegrees = ConvertDeciDegreesToDegrees(RcControllerAngle - Attitude.Raw[PITCH]);
 
-  float ThisBankAngleMax = ConvertDegreesToDecidegrees(GET_SET[PITCH_BANK_MAX].MaxValue);
-
-  if (GetMultirotorEnabled() && IS_FLIGHT_MODE_ACTIVE(ATTACK_MODE))
-  {
-    ThisBankAngleMax = ConvertDegreesToDecidegrees(GET_SET[ATTACK_BANK_MAX].MaxValue);
-  }
-
-  float AngleRateTarget = Constrain_Float(AngleErrorInDegrees * (GET_SET[PI_AUTO_LEVEL].kP / 6.56f), -ThisBankAngleMax, ThisBankAngleMax);
+  float AngleRateTarget = Constrain_Float(AngleErrorInDegrees * (GET_SET[PI_AUTO_LEVEL].kP / 6.56f), -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
 
   if (GET_SET[PI_AUTO_LEVEL].kI > 0)
   {
+
 #ifndef __AVR_ATmega2560__
+
     AngleRateTarget = PT1FilterApply(&Angle_Pitch_Smooth, AngleRateTarget, GET_SET[PI_AUTO_LEVEL].kI, DeltaTime);
 #else
+
     AngleRateTarget = PT1FilterApply(&Angle_Pitch_Smooth, AngleRateTarget, GET_SET[PI_AUTO_LEVEL].kI, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);
+
 #endif
   }
   return AngleRateTarget;
@@ -654,9 +663,9 @@ void PIDXYZClass::GetNewControllerForPlaneWithTurn(void)
       float AirSpeedForCoordinatedTurn = Get_AirSpeed_Enabled() ? AIRSPEED.Get_True_Value("In Centimeters") : PID_Resources.Param.ReferenceAirSpeed;
       //LIMITE DE 10KM/H - 216KM/H
       AirSpeedForCoordinatedTurn = Constrain_Float(AirSpeedForCoordinatedTurn, 300, 6000);
-      float BankAngleTarget = ConvertDeciDegreesToRadians(RcControllerToAngle(RC_Resources.Attitude.Controller[ROLL], ConvertDegreesToDecidegrees(GET_SET[ROLL_BANK_MAX].MaxValue)));
+      float BankAngleTarget = ConvertDeciDegreesToRadians(RcControllerToAngle(RC_Resources.Attitude.Controller[ROLL], ConvertDegreesToDecidegrees(GET_SET[NAV_ROLL_BANK_MAX].MaxValue)));
       float FinalBankAngleTarget = Constrain_Float(BankAngleTarget, -ConvertToRadians(60), ConvertToRadians(60));
-      float PitchAngleTarget = ConvertDeciDegreesToRadians(RcControllerToAngle(RC_Resources.Attitude.Controller[PITCH], ConvertDegreesToDecidegrees(GET_SET[PITCH_BANK_MAX].MaxValue)));
+      float PitchAngleTarget = ConvertDeciDegreesToRadians(RcControllerToAngle(RC_Resources.Attitude.Controller[PITCH], ConvertDegreesToDecidegrees(GET_SET[NAV_PITCH_BANK_MAX].MaxValue)));
       float TurnRatePitchAdjustmentFactor = Fast_Cosine(ABS(PitchAngleTarget));
       CoordinatedTurnRateEarthFrame = ConvertToDegrees(GRAVITY_CMSS * Fast_Tangent(-FinalBankAngleTarget) / AirSpeedForCoordinatedTurn * TurnRatePitchAdjustmentFactor);
       TurnControllerRates.Yaw = CoordinatedTurnRateEarthFrame;

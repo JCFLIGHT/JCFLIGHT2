@@ -66,11 +66,11 @@ enum PID_Params_Enum
     PI_AUTO_LEVEL,
     P_YAW_RATE,
     P_YAW_RATE_LIMIT,
-    ROLL_BANK_MAX,
-    PITCH_BANK_MIN,
-    PITCH_BANK_MAX,
+    NAV_ROLL_BANK_MAX,
+    NAV_PITCH_BANK_MIN,
+    NAV_PITCH_BANK_MAX,
     ATTACK_BANK_MAX,
-    GPS_BANK_MAX,
+    NAV_GPS_BANK_MAX,
     MAX_ROLL_LEVEL,
     MAX_PITCH_LEVEL,
 
@@ -373,8 +373,7 @@ enum VarType_Enum
 {
     VAR_8BITS,
     VAR_16BITS,
-    VAR_32BITS,
-    VAR_FLOAT
+    VAR_32BITS
 };
 
 enum Led_Pattern_Enum

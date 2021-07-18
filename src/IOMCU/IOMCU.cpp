@@ -224,9 +224,10 @@ struct _Send_Radio_Control_Parameters
 {
     uint8_t SendThrottleMiddle;
     uint8_t SendThrottleExpo;
-    uint8_t SendRCRate;
-    uint8_t SendRCExpo;
+    uint8_t SendPRRate;
+    uint8_t SendPRExpo;
     uint8_t SendYawRate;
+    uint8_t SendYawExpo;
     int16_t SendRCPulseMin;
     int16_t SendRCPulseMax;
     int16_t SendThrottleMin;
@@ -283,9 +284,10 @@ struct _Get_Radio_Control_Parameters
 {
     uint8_t GetThrottleMiddle;
     uint8_t GetThrottleExpo;
-    uint8_t GetRCRate;
-    uint8_t GetRCExpo;
+    uint8_t GetPRRate;
+    uint8_t GetPRExpo;
     uint8_t GetYawRate;
+    uint8_t GetYawExpo;
     int16_t GetRCPulseMin;
     int16_t GetRCPulseMax;
     int16_t GetThrottleMin;
@@ -1395,7 +1397,7 @@ void GCSClass::First_Packet_Request_Parameters(void)
     Essential_First_Packet_Parameters.SendActualFlightMode = AUXFLIGHT.FlightMode;
     Essential_First_Packet_Parameters.SendFrameType = GetActualPlatformType();
     Essential_First_Packet_Parameters.SendHomePointState = GPS_Resources.Home.Marked;
-    Essential_First_Packet_Parameters.SendTemperature = ConvertCentiDegreesToDegrees(Barometer.Raw.Temperature);
+    Essential_First_Packet_Parameters.SendTemperature = IMU.Accelerometer.Temperature;
     Essential_First_Packet_Parameters.SendHomePointDistance = GPS_Resources.Home.Distance;
     Essential_First_Packet_Parameters.SendCurrentInMah = BATTERY.Get_Current_In_Mah();
 #ifndef MACHINE_CYCLE
@@ -1431,12 +1433,12 @@ void GCSClass::Second_Packet_Request_Parameters(void)
     Essential_Second_Packet_Parameters.SendAttitudeRollValue = PID_Resources.RcRateTarget.GCS.Roll;
     Essential_Second_Packet_Parameters.SendMemoryRamUsed = MEMORY.Check();
     Essential_Second_Packet_Parameters.SendMemoryRamUsedPercent = MEMORY.GetPercentageRAMUsed();
-    Essential_Second_Packet_Parameters.SendAccX = IMU.Accelerometer.Read[ROLL];
-    Essential_Second_Packet_Parameters.SendAccY = IMU.Accelerometer.Read[PITCH];
-    Essential_Second_Packet_Parameters.SendAccZ = IMU.Accelerometer.Read[YAW];
-    Essential_Second_Packet_Parameters.SendGyroX = IMU.Gyroscope.Read[ROLL];
-    Essential_Second_Packet_Parameters.SendGyroY = IMU.Gyroscope.Read[PITCH];
-    Essential_Second_Packet_Parameters.SendGyroZ = IMU.Gyroscope.Read[YAW];
+    Essential_Second_Packet_Parameters.SendAccX = IMU.Accelerometer.ReadFloat[ROLL] * 100;
+    Essential_Second_Packet_Parameters.SendAccY = IMU.Accelerometer.ReadFloat[PITCH] * 100;
+    Essential_Second_Packet_Parameters.SendAccZ = IMU.Accelerometer.ReadFloat[YAW] * 100;
+    Essential_Second_Packet_Parameters.SendGyroX = IMU.Gyroscope.ReadFloat[ROLL] * 100;
+    Essential_Second_Packet_Parameters.SendGyroY = IMU.Gyroscope.ReadFloat[PITCH] * 100;
+    Essential_Second_Packet_Parameters.SendGyroZ = IMU.Gyroscope.ReadFloat[YAW] * 100;
     Essential_Second_Packet_Parameters.SendGPSGroundSpeed = GPS_Resources.Navigation.Misc.Get.GroundSpeed;
     Essential_Second_Packet_Parameters.SendI2CError = I2CResources.Error.Count;
     Essential_Second_Packet_Parameters.SendAirSpeedValue = AirSpeed.Raw.IASPressureInCM;
@@ -1542,9 +1544,10 @@ void GCSClass::Save_Radio_Control_Configuration(void)
 {
     STORAGEMANAGER.Write_8Bits(THROTTLE_MIDDLE_ADDR, Get_Radio_Control_Parameters.GetThrottleMiddle);
     STORAGEMANAGER.Write_8Bits(THROTTLE_EXPO_ADDR, Get_Radio_Control_Parameters.GetThrottleExpo);
-    STORAGEMANAGER.Write_8Bits(RC_RATE_ADDR, Get_Radio_Control_Parameters.GetRCRate);
-    STORAGEMANAGER.Write_8Bits(RC_EXPO_ADDR, Get_Radio_Control_Parameters.GetRCExpo);
+    STORAGEMANAGER.Write_8Bits(PR_RATE_ADDR, Get_Radio_Control_Parameters.GetPRRate);
+    STORAGEMANAGER.Write_8Bits(PR_EXPO_ADDR, Get_Radio_Control_Parameters.GetPRExpo);
     STORAGEMANAGER.Write_8Bits(YAW_RATE_ADDR, Get_Radio_Control_Parameters.GetYawRate);
+    STORAGEMANAGER.Write_8Bits(YAW_EXPO_ADDR, Get_Radio_Control_Parameters.GetYawExpo);
     STORAGEMANAGER.Write_16Bits(THR_ATTITUDE_MIN_ADDR, Get_Radio_Control_Parameters.GetRCPulseMin);
     STORAGEMANAGER.Write_16Bits(THR_ATTITUDE_MAX_ADDR, Get_Radio_Control_Parameters.GetRCPulseMax);
     STORAGEMANAGER.Write_16Bits(THROTTLE_MIN_ADDR, Get_Radio_Control_Parameters.GetThrottleMin);
@@ -1701,9 +1704,10 @@ void GCSClass::Default_RadioControl_Configuration(void)
     //LIMPA TODAS AS CONFIGURAÇÕES SALVAS DO RÁDIO E DOS SERVOS
     STORAGEMANAGER.Write_8Bits(THROTTLE_MIDDLE_ADDR, 50);
     STORAGEMANAGER.Write_8Bits(THROTTLE_EXPO_ADDR, 0);
-    STORAGEMANAGER.Write_8Bits(RC_EXPO_ADDR, 65);
-    STORAGEMANAGER.Write_8Bits(RC_RATE_ADDR, 90);
+    STORAGEMANAGER.Write_8Bits(PR_RATE_ADDR, 20);
+    STORAGEMANAGER.Write_8Bits(PR_EXPO_ADDR, 70);
     STORAGEMANAGER.Write_8Bits(YAW_RATE_ADDR, 20);
+    STORAGEMANAGER.Write_8Bits(YAW_EXPO_ADDR, 20);
     STORAGEMANAGER.Write_16Bits(THR_ATTITUDE_MIN_ADDR, 1000);
     STORAGEMANAGER.Write_16Bits(THR_ATTITUDE_MAX_ADDR, 1850);
     STORAGEMANAGER.Write_16Bits(THROTTLE_MIN_ADDR, 1050);
@@ -1731,6 +1735,7 @@ void GCSClass::Default_RadioControl_Configuration(void)
     STORAGEMANAGER.Write_16Bits(SERVO2_MAX_ADDR, 2000);
     STORAGEMANAGER.Write_16Bits(SERVO3_MAX_ADDR, 2000);
     STORAGEMANAGER.Write_16Bits(SERVO4_MAX_ADDR, 2000);
+    STORAGEMANAGER.Write_8Bits(SERVOS_REVERSE_ADDR, 0);
     STORAGEMANAGER.Write_16Bits(SERVO1_RATE_ADDR, 100);
     STORAGEMANAGER.Write_16Bits(SERVO2_RATE_ADDR, 100);
     STORAGEMANAGER.Write_16Bits(SERVO3_RATE_ADDR, 100);
@@ -1739,7 +1744,7 @@ void GCSClass::Default_RadioControl_Configuration(void)
     STORAGEMANAGER.Write_8Bits(MAX_PITCH_LEVEL_ADDR, 30);
     STORAGEMANAGER.Write_8Bits(MAX_ROLL_LEVEL_ADDR, 30);
     STORAGEMANAGER.Write_8Bits(AUTO_PILOT_MODE_ADDR, 0);
-    STORAGEMANAGER.Write_32Bits(AIRSPEED_FACTOR_ADDR, 19936);
+    STORAGEMANAGER.Write_32Bits(AIRSPEED_FACTOR_ADDR, 10000);
     STORAGEMANAGER.Write_8Bits(CH_TUNNING_ADDR, 0);
     STORAGEMANAGER.Write_8Bits(TUNNING_ADDR, 0);
     STORAGEMANAGER.Write_8Bits(LAND_AFTER_RTH_ADDR, 1);
@@ -1833,9 +1838,10 @@ void GCSClass::LoadAllParameters(void)
     //ATUALIZA OS PARAMETROS DO RADIO CONTROLE
     Send_Radio_Control_Parameters.SendThrottleMiddle = STORAGEMANAGER.Read_8Bits(THROTTLE_MIDDLE_ADDR);
     Send_Radio_Control_Parameters.SendThrottleExpo = STORAGEMANAGER.Read_8Bits(THROTTLE_EXPO_ADDR);
-    Send_Radio_Control_Parameters.SendRCRate = STORAGEMANAGER.Read_8Bits(RC_RATE_ADDR);
-    Send_Radio_Control_Parameters.SendRCExpo = STORAGEMANAGER.Read_8Bits(RC_EXPO_ADDR);
+    Send_Radio_Control_Parameters.SendPRRate = STORAGEMANAGER.Read_8Bits(PR_RATE_ADDR);
+    Send_Radio_Control_Parameters.SendPRExpo = STORAGEMANAGER.Read_8Bits(PR_EXPO_ADDR);
     Send_Radio_Control_Parameters.SendYawRate = STORAGEMANAGER.Read_8Bits(YAW_RATE_ADDR);
+    Send_Radio_Control_Parameters.SendYawExpo = STORAGEMANAGER.Read_8Bits(YAW_EXPO_ADDR);
     Send_Radio_Control_Parameters.SendRCPulseMin = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MIN_ADDR);
     Send_Radio_Control_Parameters.SendRCPulseMax = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MAX_ADDR);
     Send_Radio_Control_Parameters.SendThrottleMin = STORAGEMANAGER.Read_16Bits(THROTTLE_MIN_ADDR);

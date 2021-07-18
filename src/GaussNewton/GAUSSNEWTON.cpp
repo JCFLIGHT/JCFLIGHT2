@@ -37,7 +37,7 @@ void ClearGaussNewtonMatrices(Jacobian_Struct *JacobianPointer)
   }
 }
 
-void GaussNewtonPushSampleForOffSetCalculation(Jacobian_Struct *JacobianPointer, int16_t SensorSample[3])
+void GaussNewtonPushSampleForOffSetCalculation(Jacobian_Struct *JacobianPointer, int32_t SensorSample[3])
 {
   JacobianPointer->Matrix_JtJ[0][0] += (float)SensorSample[0] * SensorSample[0];
   JacobianPointer->Matrix_JtJ[0][1] += (float)SensorSample[0] * SensorSample[1];
@@ -66,7 +66,7 @@ void GaussNewtonPushSampleForOffSetCalculation(Jacobian_Struct *JacobianPointer,
   JacobianPointer->Matrix_JtR[3] += SquareObservation;
 }
 
-void GaussNewtonPushSampleForScaleCalculation(Jacobian_Struct *JacobianPointer, int16_t AxisIndex, int16_t SensorSample[3], int16_t Target)
+void GaussNewtonPushSampleForScaleCalculation(Jacobian_Struct *JacobianPointer, int16_t AxisIndex, int32_t SensorSample[3], int16_t Target)
 {
   for (int16_t IndexCount = 0; IndexCount < 3; IndexCount++)
   {
