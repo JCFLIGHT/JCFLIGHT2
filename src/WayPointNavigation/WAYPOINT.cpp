@@ -354,10 +354,11 @@ static void ResetWayPointNavigation(void)
   {
     GPS_Resources.Mode.Navigation = DO_NONE;
     Do_Pos_Hold_Call_Alt_Hold = false;
-    //DESTIVA ALGUNS MODOS DE VOO USADO PELO MODO WP
+    //DESATIVA ALGUNS MODOS DE VOO USADO PELO MODO WP
     DISABLE_THIS_FLIGHT_MODE(RTH_MODE);
     DISABLE_THIS_FLIGHT_MODE(CRUISE_MODE);
     DISABLE_THIS_FLIGHT_MODE(CIRCLE_MODE);
+    DISABLE_THIS_FLIGHT_MODE(CLIMBOUT_MODE);
     WayPoint_Resources.Mission.Flags.OnceFlight[WAYPOINT_RESET_POS_Z] = true;
   }
 }
@@ -374,7 +375,7 @@ void WayPointClass::Update(void)
     return;
   }
 
-  if (WayPoint_Resources.Mission.Coordinates.Latitude[0] == 0 || WayPoint_Resources.Mission.Coordinates.Longitude[0] == 0)
+  if (WayPoint_Resources.Mission.Coordinates.Latitude[0] == NONE || WayPoint_Resources.Mission.Coordinates.Longitude[0] == NONE)
   {
     return;
   }
@@ -493,6 +494,7 @@ void WayPointClass::Update(void)
     {
       GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
       ENABLE_THIS_FLIGHT_MODE(CRUISE_MODE);
+      ENABLE_THIS_FLIGHT_MODE(CLIMBOUT_MODE);
       WayPoint_Resources.Mission.OthersParams.Mode = WAYPOINT_START_MISSION;
     }
     break;
@@ -513,7 +515,9 @@ void WayPointClass::Update(void)
     Set_Next_Point_To_Navigation(WayPoint_Resources.Mission.Coordinates.Latitude[WayPoint_Resources.Mission.OthersParams.Number], WayPoint_Resources.Mission.Coordinates.Longitude[WayPoint_Resources.Mission.OthersParams.Number]);
     if (GetAirPlaneEnabled())
     {
-      RESET_THIS_FLIGHT_MODE_ONCE(CRUISE_MODE); //RESETA O MODO CRUISE PARA OBTER OS NOVOS PARAMETROS DE NAVEGAÇÃO
+      //RESETA OS MODOS PARA OBTER OS NOVOS PARAMETROS DE NAVEGAÇÃO
+      RESET_THIS_FLIGHT_MODE_ONCE(CRUISE_MODE);
+      RESET_THIS_FLIGHT_MODE_ONCE(CLIMBOUT_MODE);
       TECS_Resources.Position.DestinationNEU.X = INS.Position.Hold[INS_LATITUDE];
       TECS_Resources.Position.DestinationNEU.Y = INS.Position.Hold[INS_LONGITUDE];
       TECS_Resources.Position.DestinationNEU.Altitude = ConverMetersToCM(WayPoint_Resources.Mission.OthersParams.Altitude[WayPoint_Resources.Mission.OthersParams.Number]);
@@ -535,20 +539,44 @@ void WayPointClass::Update(void)
     }
 
     GPS_Resources.Navigation.HeadingHoldTarget = WRap_18000(GPS_Resources.Navigation.Bearing.ActualTarget) / 100;
+
     if ((GPS_Resources.Navigation.Coordinates.Distance <= ConverMetersToCM(JCF_Param.GPS_WP_Radius)) || GetWaypointMissed())
     {
       for (uint8_t MissionCount = 0; MissionCount < WAYPOINTS_MAXIMUM; MissionCount++)
       {
         if (WayPoint_Resources.Mission.Flags.Reached &&
             WayPoint_Resources.Mission.OthersParams.Number == MissionCount &&
-            WayPoint_Resources.Mission.Coordinates.Latitude[MissionCount + 1] != 0 &&
-            WayPoint_Resources.Mission.Coordinates.Longitude[MissionCount + 1] != 0)
+            WayPoint_Resources.Mission.Coordinates.Latitude[MissionCount + 1] != NONE &&
+            WayPoint_Resources.Mission.Coordinates.Longitude[MissionCount + 1] != NONE)
         {
           WayPoint_Resources.Mission.OthersParams.Number = MissionCount + 1;
           WayPoint_Resources.Mission.Flags.Reached = false;
           return;
         }
       }
+
+      /*
+      //ESSA VARIAVEL DEVE SER GLOBAL,ELA PRECISA SER RESETADA SEMPRE QUE O MODO WAYPOINT FOR DESATIVADO.
+      static uint8_t NextMachineCycleCounter = 0;
+
+      //OK...ENCONTRAMOS UMA MISSÃO QUE NÃO TEM COORDENADAS PARA A NAVEGAÇÃO.
+      if (WayPoint_Resources.Mission.Coordinates.Latitude[WayPoint_Resources.Mission.OthersParams.Number + 1] == NONE &&
+          WayPoint_Resources.Mission.Coordinates.Longitude[WayPoint_Resources.Mission.OthersParams.Number + 1] == NONE)
+      {
+        NextMachineCycleCounter++;
+        //DEVEMOS REALIZAR A TOMADA DE DECISÃO APÓS A ÚLTIMA MISSÃO COM COORDENADAS VALIDAS PARA A NAVEGAÇÃO.
+        if (NextMachineCycleCounter >= 2)
+        {
+          //TALVEZ O RTH PARA MULTIROTORES OU AEROS SEJA A MELHOR DECISÃO.
+          ENABLE_THIS_FLIGHT_MODE(RTH_MODE);
+          RESET_THIS_FLIGHT_MODE_ONCE(RTH_MODE);
+        }
+      }
+      else
+      {
+        NextMachineCycleCounter = 0;
+      }
+*/
 
       //AVANÇA O WAYPOINT
       if (WayPoint_Resources.Mission.OthersParams.FlightMode[WayPoint_Resources.Mission.OthersParams.Number] == WAYPOINT_ADVANCE)
@@ -575,8 +603,8 @@ void WayPointClass::Update(void)
           SetThisPointToPositionHold();
           if (GetAirPlaneEnabled())
           {
-            ENABLE_THIS_FLIGHT_MODE(CIRCLE_MODE);
-            RESET_THIS_FLIGHT_MODE_ONCE(CIRCLE_MODE); //RESETA O MODO CIRCULO PARA OBTER NOVAS COORDENADAS
+            ENABLE_THIS_FLIGHT_MODE(CIRCLE_MODE);     //ATIVA O MODO CÍRCULO PARA A ESPERA DO MODO
+            RESET_THIS_FLIGHT_MODE_ONCE(CIRCLE_MODE); //RESETA O MODO CÍRCULO PARA OBTER NOVAS COORDENADAS
           }
           WayPoint_Resources.Mission.Flags.OnceFlight[WAYPOINT_PREDICT_POS_XY] = true;
         }
@@ -585,7 +613,7 @@ void WayPointClass::Update(void)
         {
           if (GetAirPlaneEnabled())
           {
-            DISABLE_THIS_FLIGHT_MODE(CIRCLE_MODE);
+            DISABLE_THIS_FLIGHT_MODE(CIRCLE_MODE);    //DESATIVA O MODO CÍRCULO
             RESET_THIS_FLIGHT_MODE_ONCE(CRUISE_MODE); //RESETA O MODO CRUISE PARA OBTER NOVAS COORDENADAS
           }
           WayPoint_Resources.Mission.OthersParams.Mode = WAYPOINT_SET_ALTITUDE;
@@ -602,9 +630,8 @@ void WayPointClass::Update(void)
           Do_Pos_Hold_Call_Alt_Hold = false;
           if (GetMultirotorEnabled())
           {
-            ENABLE_THIS_FLIGHT_MODE(HEADING_HOLD_MODE);
-            RESET_THIS_FLIGHT_MODE_ONCE(HEADING_HOLD_MODE);
-            SetThisPointToPositionHold();
+            ENABLE_THIS_FLIGHT_MODE(LAND_MODE);
+            RESET_THIS_FLIGHT_MODE_ONCE(LAND_MODE);
           }
           WayPoint_Resources.Mission.Flags.OnceFlight[WAYPOINT_PREDICT_POS_XY] = true;
         }
@@ -618,16 +645,8 @@ void WayPointClass::Update(void)
           GPS_Resources.Mode.Navigation = DO_START_RTH;
           Do_RTH_Or_Land_Call_Alt_Hold = true;
           Do_Pos_Hold_Call_Alt_Hold = false;
-          if (GetMultirotorEnabled())
-          {
-            ENABLE_THIS_FLIGHT_MODE(HEADING_HOLD_MODE);
-            RESET_THIS_FLIGHT_MODE_ONCE(HEADING_HOLD_MODE);
-            //Multirotor_Do_Mode_RTH_Now();
-          }
-          //else if (GetAirPlaneEnabled())
-          {
-            ENABLE_THIS_FLIGHT_MODE(RTH_MODE);
-          }
+          ENABLE_THIS_FLIGHT_MODE(RTH_MODE);
+          RESET_THIS_FLIGHT_MODE_ONCE(RTH_MODE);
           WayPoint_Resources.Mission.Flags.OnceFlight[WAYPOINT_PREDICT_POS_XY] = true;
         }
       }

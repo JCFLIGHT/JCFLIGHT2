@@ -507,7 +507,7 @@ void TecsClass::Update(float DeltaTime)
                 TECS_Resources.Position.DestinationNEU.X = TECS_Resources.Position.HomePoint.X;
                 TECS_Resources.Position.DestinationNEU.Y = TECS_Resources.Position.HomePoint.Y;
                 //ADICIONA UM NOVO VALOR DE ALTITUDE
-                if (TECS_Resources.Position.Altitude < ConverMetersToCM(GPS_Resources.Home.Altitude))
+                if (TECS_Resources.Position.Altitude != ConverMetersToCM(GPS_Resources.Home.Altitude))
                 {
                     TECS_Resources.Position.DestinationNEU.Altitude = ConverMetersToCM(GPS_Resources.Home.Altitude);
                 }
