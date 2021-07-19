@@ -494,7 +494,6 @@ void WayPointClass::Update(void)
     {
       GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
       ENABLE_THIS_FLIGHT_MODE(CRUISE_MODE);
-      ENABLE_THIS_FLIGHT_MODE(CLIMBOUT_MODE);
       WayPoint_Resources.Mission.OthersParams.Mode = WAYPOINT_START_MISSION;
     }
     break;
