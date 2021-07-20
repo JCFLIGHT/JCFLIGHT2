@@ -642,7 +642,7 @@ typedef struct
   void *Ptr;
   const int32_t Value_Min;
   const int32_t Value_Max;
-  const float DefaultValue;
+  const int32_t DefaultValue;
 } Resources_Of_Param;
 
 typedef struct

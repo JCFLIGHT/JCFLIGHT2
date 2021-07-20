@@ -21,8 +21,8 @@
 #include "BAR/BAR.h"
 #include "Build/BOARDDEFS.h"
 #include "Param/PARAM.h"
-#include "FastSerial/PRINTF.h"
 #include "WayPointNavigation/WAYPOINT.h"
+
 #ifdef ESP32
 #include "EEPROM.h"
 #endif
@@ -77,14 +77,12 @@ void FirmwareOrganizeAllParams(void)
 #ifdef ESP32
     EEPROM.begin(SIZE_OF_EEPROM);
 #endif
+
     if (!CheckActualFormatVersion())
     {
-        LOG("Resetando os parametros para os valores de frabrica...");
         for (uint8_t IndexCount = 0; IndexCount < MAX_RETRY_COUNT; IndexCount++)
         {
             RecallAllParams();
         }
-        LOG("Ok...Parametros reconfigurados!");
-        LINE_SPACE;
     }
 }

@@ -54,6 +54,7 @@
 #include "PID/PIDPARAMS.h"
 #include "BitArray/BITARRAY.h"
 #include "RadioControl/DECODE.h"
+#include "Build/BOARDDEFS.h"
 
 GCSClass GCS;
 
@@ -636,19 +637,18 @@ void GCSClass::Send_String_To_GCS(const char *String)
 
 void GCSClass::Serial_Parse_Protocol(void)
 {
+#ifdef USE_CLI
+
     if (GCS.CliMode)
     {
         return;
     }
 
+#endif
+
     SerialAvailableGuard = FASTSERIAL.Available(UART_NUMB_0);
     while (SerialAvailableGuard--)
     {
-        if (FASTSERIAL.UsedTXBuffer(UART_NUMB_0) > 78)
-        {
-            return;
-        }
-
         SerialBuffer = FASTSERIAL.Read(UART_NUMB_0);
         ProtocolTaskOrder = PreviousProtocolTaskOrder;
 
@@ -660,10 +660,15 @@ void GCSClass::Serial_Parse_Protocol(void)
             {
                 ProtocolTaskOrder = 1;
             }
+
+#ifdef USE_CLI
+
             if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) && SerialBuffer == 0x23)
             {
                 GCS.CliMode = true;
             }
+
+#endif
             break;
 
         case 1:
@@ -675,11 +680,6 @@ void GCSClass::Serial_Parse_Protocol(void)
             break;
 
         case 3:
-            if (SerialBuffer > 78)
-            {
-                ProtocolTaskOrder = 0;
-                continue;
-            }
             SerialDataSize = SerialBuffer;
             SerialCheckSum = SerialBuffer;
             SerialOffSet = 0;
@@ -1447,60 +1447,118 @@ void GCSClass::Second_Packet_Request_Parameters(void)
 
 void GCSClass::WayPoint_Request_Coordinates_Parameters(void)
 {
-    Send_WayPoint_Coordinates.SendLatitudeOne = STORAGEMANAGER.Read_32Bits(704);
-    Send_WayPoint_Coordinates.SendLatitudeTwo = STORAGEMANAGER.Read_32Bits(708);
-    Send_WayPoint_Coordinates.SendLatitudeThree = STORAGEMANAGER.Read_32Bits(712);
-    Send_WayPoint_Coordinates.SendLatitudeFour = STORAGEMANAGER.Read_32Bits(716);
-    Send_WayPoint_Coordinates.SendLatitudeFive = STORAGEMANAGER.Read_32Bits(720);
-    Send_WayPoint_Coordinates.SendLatitudeSix = STORAGEMANAGER.Read_32Bits(724);
-    Send_WayPoint_Coordinates.SendLatitudeSeven = STORAGEMANAGER.Read_32Bits(728);
-    Send_WayPoint_Coordinates.SendLatitudeEight = STORAGEMANAGER.Read_32Bits(732);
-    Send_WayPoint_Coordinates.SendLatitudeNine = STORAGEMANAGER.Read_32Bits(736);
-    Send_WayPoint_Coordinates.SendLatitudeTen = STORAGEMANAGER.Read_32Bits(740);
-    Send_WayPoint_Coordinates.SendLongitudeOne = STORAGEMANAGER.Read_32Bits(744);
-    Send_WayPoint_Coordinates.SendLongitudeTwo = STORAGEMANAGER.Read_32Bits(748);
-    Send_WayPoint_Coordinates.SendLongitudeThree = STORAGEMANAGER.Read_32Bits(752);
-    Send_WayPoint_Coordinates.SendLongitudeFour = STORAGEMANAGER.Read_32Bits(756);
-    Send_WayPoint_Coordinates.SendLongitudeFive = STORAGEMANAGER.Read_32Bits(760);
-    Send_WayPoint_Coordinates.SendLongitudeSix = STORAGEMANAGER.Read_32Bits(764);
-    Send_WayPoint_Coordinates.SendLongitudeSeven = STORAGEMANAGER.Read_32Bits(768);
-    Send_WayPoint_Coordinates.SendLongitudeEight = STORAGEMANAGER.Read_32Bits(772);
-    Send_WayPoint_Coordinates.SendLongitudeNine = STORAGEMANAGER.Read_32Bits(776);
-    Send_WayPoint_Coordinates.SendLongitudeTen = STORAGEMANAGER.Read_32Bits(780);
+    int16_t AddressCount = 0;
+
+    Send_WayPoint_Coordinates.SendLatitudeOne = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeTwo = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeThree = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeFour = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeFive = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeSix = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeSeven = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeEight = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeNine = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeTen = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeOne = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeTwo = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeThree = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeFour = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeFive = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeSix = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeSeven = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeEight = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeNine = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeTen = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
 }
 
 void GCSClass::WayPoint_Request_Misc_Parameters(void)
 {
-    Send_WayPoint_Misc_Parameters.SendAltitudeOne = STORAGEMANAGER.Read_8Bits(804);
-    Send_WayPoint_Misc_Parameters.SendAltitudeTwo = STORAGEMANAGER.Read_8Bits(805);
-    Send_WayPoint_Misc_Parameters.SendAltitudeThree = STORAGEMANAGER.Read_8Bits(806);
-    Send_WayPoint_Misc_Parameters.SendAltitudeFour = STORAGEMANAGER.Read_8Bits(807);
-    Send_WayPoint_Misc_Parameters.SendAltitudeFive = STORAGEMANAGER.Read_8Bits(808);
-    Send_WayPoint_Misc_Parameters.SendAltitudeSix = STORAGEMANAGER.Read_8Bits(809);
-    Send_WayPoint_Misc_Parameters.SendAltitudeSeven = STORAGEMANAGER.Read_8Bits(810);
-    Send_WayPoint_Misc_Parameters.SendAltitudeEight = STORAGEMANAGER.Read_8Bits(811);
-    Send_WayPoint_Misc_Parameters.SendAltitudeNine = STORAGEMANAGER.Read_8Bits(812);
-    Send_WayPoint_Misc_Parameters.SendAltitudeTen = STORAGEMANAGER.Read_8Bits(813);
-    Send_WayPoint_Misc_Parameters.SendFlightModeOne = STORAGEMANAGER.Read_8Bits(794);
-    Send_WayPoint_Misc_Parameters.SendFlightModeTwo = STORAGEMANAGER.Read_8Bits(795);
-    Send_WayPoint_Misc_Parameters.SendFlightModeThree = STORAGEMANAGER.Read_8Bits(796);
-    Send_WayPoint_Misc_Parameters.SendFlightModeFour = STORAGEMANAGER.Read_8Bits(797);
-    Send_WayPoint_Misc_Parameters.SendFlightModeFive = STORAGEMANAGER.Read_8Bits(798);
-    Send_WayPoint_Misc_Parameters.SendFlightModeSix = STORAGEMANAGER.Read_8Bits(799);
-    Send_WayPoint_Misc_Parameters.SendFlightModeSeven = STORAGEMANAGER.Read_8Bits(800);
-    Send_WayPoint_Misc_Parameters.SendFlightModeEight = STORAGEMANAGER.Read_8Bits(801);
-    Send_WayPoint_Misc_Parameters.SendFlightModeNine = STORAGEMANAGER.Read_8Bits(802);
-    Send_WayPoint_Misc_Parameters.SendFlightModeTen = STORAGEMANAGER.Read_8Bits(803);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedOne = STORAGEMANAGER.Read_8Bits(784);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedTwo = STORAGEMANAGER.Read_8Bits(785);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedThree = STORAGEMANAGER.Read_8Bits(786);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedFour = STORAGEMANAGER.Read_8Bits(787);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedFive = STORAGEMANAGER.Read_8Bits(788);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedSix = STORAGEMANAGER.Read_8Bits(789);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedSeven = STORAGEMANAGER.Read_8Bits(790);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedEight = STORAGEMANAGER.Read_8Bits(791);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedNine = STORAGEMANAGER.Read_8Bits(792);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedTen = STORAGEMANAGER.Read_8Bits(793);
+    int16_t AddressCount = 0;
+
+    //TEMPO DO POS-HOLD
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedOne = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedTwo = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedThree = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedFour = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedFive = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedSix = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedSeven = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedEight = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedNine = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedTen = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+
+    //MODO DE VOO
+    Send_WayPoint_Misc_Parameters.SendFlightModeOne = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeTwo = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeThree = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeFour = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeFive = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeSix = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeSeven = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeEight = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeNine = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeTen = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+
+    //ALTITUDE DE NAVEGAÇÃO
+    Send_WayPoint_Misc_Parameters.SendAltitudeOne = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeTwo = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeThree = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeFour = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeFive = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeSix = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeSeven = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeEight = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeNine = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeTen = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
 }
 
 void GCSClass::Save_Basic_Configuration(void)

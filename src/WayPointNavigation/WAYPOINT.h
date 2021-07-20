@@ -47,7 +47,7 @@ typedef struct
   uint8_t AltitudeFive;
   uint8_t FlightModeFive;
   uint8_t GPSHoldTimedFive;
-  void Reset()
+  void Reset(void)
   {
     LatitudeOne = 0;
     LongitudeOne = 0;
@@ -104,7 +104,7 @@ typedef struct
   uint8_t AltitudeTen;
   uint8_t FlightModeTen;
   uint8_t GPSHoldTimedTen;
-  void Reset()
+  void Reset(void)
   {
     LatitudeSix = 0;
     LongitudeSix = 0;
@@ -134,8 +134,8 @@ typedef struct
   }
 } _GetWayPointPacketTwo;
 
-#define COORDINATES_ADDR_TO_COMPARE ((INITIAL_ADDR_OF_COORDINATES + FINAL_ADDR_OF_COORDINATES + 2) / 2)
-#define GPS_HOLD_TIMED_ADDR_TO_COMPARE (INITIAL_ADDR_OF_OTHERS_PARAMS + WAYPOINTS_MAXIMUM - 1)
+#define COORDINATES_ADDR_TO_COMPARE ((INITIAL_ADDR_OF_COORDINATES + FINAL_ADDR_OF_COORDINATES) / 2)
+#define GPS_HOLD_TIMED_ADDR_TO_COMPARE (INITIAL_ADDR_OF_OTHERS_PARAMS + WAYPOINTS_MAXIMUM)
 #define FLIGHT_MODE_ADDR_TO_COMPARE ((WAYPOINTS_MAXIMUM * (OTHERS_PARAMS_MAXIMUM - 1)) + INITIAL_ADDR_OF_OTHERS_PARAMS)
 #define ALTITUDE_ADDR_TO_COMPARE ((WAYPOINTS_MAXIMUM * OTHERS_PARAMS_MAXIMUM) + INITIAL_ADDR_OF_OTHERS_PARAMS)
 
@@ -231,6 +231,18 @@ typedef struct
   {
     uint8_t Function = WAYPOINT_STORAGE_NONE;
     uint8_t ArrayCount = 0;
+    uint8_t GetArrayCount(void)
+    {
+      return ArrayCount;
+    }
+    void IncrementArrayCount(void)
+    {
+      ArrayCount++;
+    }
+    void ResetArrayCount(void)
+    {
+      ArrayCount = 0;
+    }
   } Storage;
 
 } WayPoint_Resources_Struct;

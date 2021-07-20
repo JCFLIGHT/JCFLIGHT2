@@ -31,7 +31,6 @@ NÃO INDENTE ESSA EXTENSÃO
 #include "PARAM.h"
 #include "StorageManager/EEPROMSTORAGE.h"
 #include "BAR/BAR.h"
-#include "StorageManager/EEPROMCHECK.h"
 #include "Common/ENUM.h"
 #include "Build/BOARDDEFS.h"
 #include "IOMCU/IOMCU.h"
@@ -42,12 +41,10 @@ NÃO INDENTE ESSA EXTENSÃO
 
 ParamClass PARAM;
 
-//#define OPERATOR_CHECK_EEPROM
-//#define ERASE_ALL_EEPROM
-
 JCF_Param_Adjustable_Struct JCF_Param;
 
 const Resources_Of_Param Params_Table[] = {
+
 #ifdef USE_CLI
 
     //NOME                                 ENDEREÇO NA EEPROM                    TIPO                    VARIAVEL                                    MIN            MAX              VALOR PADRÃO
@@ -84,25 +81,15 @@ const Resources_Of_Param Params_Table[] = {
     {"Disarm_Time_Safety",                 DISARM_TIME_SAFETY_ADDR,              VAR_8BITS,              &JCF_Param.Disarm_Time_Safety,              0,             255,             2},
     {"Compass_Cal_Timer",                  COMPASS_CAL_TIME_ADDR,                VAR_8BITS,              &JCF_Param.Compass_Cal_Timer,               0,             120,             60},
     {"Cont_Servo_Trim_Rot_Limit",          CONT_SERVO_TRIM_ROTATION_LIMIT_ADDR,  VAR_8BITS,              &JCF_Param.Continuous_Servo_Trim_Rot_Limit, 1,             60,              15},
+
 #endif 
+
 };
 
 #define TABLE_COUNT (sizeof(Params_Table) / sizeof(Resources_Of_Param))
 
 void ParamClass::Initialization(void)
 {
-#ifdef OPERATOR_CHECK_EEPROM
-
-  Operator_Check_Values_In_Address(SIZE_OF_EEPROM);
-
-#endif
-
-#ifdef ERASE_ALL_EEPROM
-
-  STORAGEMANAGER.Erase(INITIAL_ADDRESS_EEPROM_TO_CLEAR, FINAL_ADDRESS_EEPROM_TO_CLEAR);
-
-#endif
-
 #ifdef USE_CLI
 
   PARAM.Load_Sketch();
@@ -144,11 +131,6 @@ void ParamClass::Default_List(void)
     case VAR_32BITS:
       *(int32_t *)Params_Table[Table_Counter].Ptr = Params_Table[Table_Counter].DefaultValue;
       STORAGEMANAGER.Write_32Bits(Params_Table[Table_Counter].Address, Params_Table[Table_Counter].DefaultValue);
-      break;
-
-    case VAR_FLOAT:
-      *(float *)Params_Table[Table_Counter].Ptr = Params_Table[Table_Counter].DefaultValue;
-      STORAGEMANAGER.Write_Float(Params_Table[Table_Counter].Address, Params_Table[Table_Counter].DefaultValue);
       break;
     }
   }

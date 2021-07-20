@@ -69,6 +69,7 @@
 #include "SafetyButton/SAFETYBUTTON.h"
 #include "Build/BOARDDEFS.h"
 #include "StorageManager/DEFAULT.h"
+#include "StorageManager/EEPROMSTORAGE.h"
 #include "TaskSystem/TASKSYSTEM.h"
 #include "ParamsToGCS/CHECKSUM.h"
 #include "IMU/GFORCE.h"
