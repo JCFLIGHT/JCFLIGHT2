@@ -136,14 +136,14 @@ typedef struct
     float AltitudeOffSet = 0.0f;
   } GPS;
 
-  struct Estimate_Struct
+  struct Estimated_Struct
   {
     uint32_t LastUpdateTime = 0;
     Vector3x3_Struct Position;
     Vector3x3_Struct Velocity;
     float EstimatedPositionHorizontal = 0.0f;
     float EstimatedPositionVertical = 0.0f;
-  } Estimate;
+  } Estimated;
 
   struct Math_Struct
   {
