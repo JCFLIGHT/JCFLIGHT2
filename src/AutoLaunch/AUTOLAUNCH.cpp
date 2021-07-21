@@ -35,6 +35,7 @@
 #include "BitArray/BITARRAY.h"
 #include "RadioControl/CURVESRC.h"
 #include "PID/PIDPARAMS.h"
+#include "InertialNavigation/INS.h"
 
 AutoLaunchClass AUTOLAUNCH;
 
@@ -228,7 +229,7 @@ bool AutoLaunchClass::GetMaxAltitudeReached(void)
     return false;
   }
 
-  return ((AUTO_LAUCH_MAX_ALTITUDE * 100) > 0) && (Barometer.INS.Altitude.Estimated >= (AUTO_LAUCH_MAX_ALTITUDE * 100));
+  return ((AUTO_LAUCH_MAX_ALTITUDE * 100) > 0) && (INS_Resources.Estimated.Position.Yaw >= (AUTO_LAUCH_MAX_ALTITUDE * 100));
 }
 
 bool AutoLaunchClass::GetStatusCompleted(void)

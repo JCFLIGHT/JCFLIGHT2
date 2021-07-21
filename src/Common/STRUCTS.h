@@ -164,8 +164,6 @@ typedef struct
   struct EarthFrame_Struct
   {
     float AccelerationNEU[3] = {0.0f, 0.0f, 0.0f};
-    float Velocity[3] = {0.0f, 0.0f, 0.0f};
-    float Position[3] = {0.0f, 0.0f, 0.0f};
   } EarthFrame;
 
   struct Position_Struct
@@ -195,20 +193,6 @@ typedef struct
     int32_t Actual = 0;
     int32_t GroundOffSet = 0;
   } Altitude;
-
-  struct INS_Struct
-  {
-    struct Velocity_Struct
-    {
-      int16_t Vertical = 0;
-    } Velocity;
-
-    struct Altitude_Struct
-    {
-      int32_t Estimated = 0;
-    } Altitude;
-
-  } INS;
 
 } Barometer_Struct;
 

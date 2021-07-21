@@ -519,13 +519,6 @@ enum GPS_Type_Enum
     GPS_DJI_NAZA
 };
 
-enum Inertial_Navigation_Enum
-{
-    INS_LATITUDE = 0,
-    INS_LONGITUDE,
-    INS_VERTICAL_Z
-};
-
 enum INS_Flags_Enum
 {
     EST_GPS_XY_VALID = (1 << 0),

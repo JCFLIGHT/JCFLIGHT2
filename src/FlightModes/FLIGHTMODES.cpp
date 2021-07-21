@@ -114,7 +114,7 @@ static void ProcessFlightModesToMultirotor(void)
       {
         if (Do_RTH_Or_Land_Call_Alt_Hold)
         {
-          SetNewAltitudeToHold(Barometer.INS.Altitude.Estimated);
+          SetNewAltitudeToHold(INS_Resources.Estimated.Position.Yaw);
         }
       }
       GPS_Reset_Navigation();

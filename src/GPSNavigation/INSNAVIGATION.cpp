@@ -32,8 +32,8 @@
 
 void SetThisPointToPositionHold(void)
 {
-    INS_Resources.Position.Hold[INS_LATITUDE] = INS_Resources.EarthFrame.Position[INS_LATITUDE] + INS_Resources.EarthFrame.Velocity[INS_LATITUDE] * PositionHoldPID.kI;
-    INS_Resources.Position.Hold[INS_LONGITUDE] = INS_Resources.EarthFrame.Position[INS_LONGITUDE] + INS_Resources.EarthFrame.Velocity[INS_LONGITUDE] * PositionHoldPID.kI;
+    INS_Resources.Position.Hold[COORD_LATITUDE] = INS_Resources.Estimated.Position.Roll + INS_Resources.Estimated.Velocity.Roll * PositionHoldPID.kI;
+    INS_Resources.Position.Hold[COORD_LONGITUDE] = INS_Resources.Estimated.Position.Pitch + INS_Resources.Estimated.Velocity.Pitch * PositionHoldPID.kI;
 }
 
 static void MultirotorApplyINSPositionHoldPIDControl(float DeltaTime)
@@ -52,8 +52,8 @@ static void MultirotorApplyINSPositionHoldPIDControl(float DeltaTime)
             const float NEUVelocityPitch = RadioControllVelocityRoll * INS_Resources.Math.Sine.Yaw + RadioControllVelocityPitch * INS_Resources.Math.Cosine.Yaw;
 
             //CALCULA UMA NOVA POSIÇÃO
-            INS_Resources.Position.Hold[INS_LATITUDE] = INS_Resources.EarthFrame.Position[INS_LATITUDE] + (NEUVelocityRoll * PositionHoldPID.kI);
-            INS_Resources.Position.Hold[INS_LONGITUDE] = INS_Resources.EarthFrame.Position[INS_LONGITUDE] + (NEUVelocityPitch * PositionHoldPID.kI);
+            INS_Resources.Position.Hold[COORD_LATITUDE] = INS_Resources.Estimated.Position.Roll + (NEUVelocityRoll * PositionHoldPID.kI);
+            INS_Resources.Position.Hold[COORD_LONGITUDE] = INS_Resources.Estimated.Position.Pitch + (NEUVelocityPitch * PositionHoldPID.kI);
 
             NewPointToPositionHold = true;
         }
@@ -67,23 +67,23 @@ static void MultirotorApplyINSPositionHoldPIDControl(float DeltaTime)
         }
     }
 
-    for (uint8_t IndexCount = 0; IndexCount < 2; IndexCount++)
-    {
-        int32_t PositionError = INS_Resources.Position.Hold[IndexCount] - INS_Resources.EarthFrame.Position[IndexCount];
-        int32_t TargetPositionError = Constrain_32Bits(GPSGetProportional(PositionError, &PositionHoldPID), -1000, 1000);
-        int32_t FinalPositionError = Constrain_32Bits(TargetPositionError - INS_Resources.EarthFrame.Velocity[IndexCount], -1000, 1000);
-        GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount] = GPSGetProportional(FinalPositionError, &PositionHoldRatePID) + GPSGetIntegral(FinalPositionError, DeltaTime, &PositionHoldRatePIDArray[IndexCount], &PositionHoldRatePID);
-        if (IndexCount == INS_LATITUDE)
-        {
-            GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount] -= Constrain_16Bits((INS_Resources.IMU.AccelerationNEU.Roll * PositionHoldRatePID.kD), -2000, 2000);
-        }
-        else
-        {
-            GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount] -= Constrain_16Bits((INS_Resources.IMU.AccelerationNEU.Pitch * PositionHoldRatePID.kD), -2000, 2000);
-        }
-        GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount] = Constrain_16Bits(GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount], -ConvertDegreesToDecidegrees(GET_SET[NAV_GPS_BANK_MAX].MaxValue), ConvertDegreesToDecidegrees(GET_SET[NAV_GPS_BANK_MAX].MaxValue));
-        NavigationPIDArray[IndexCount].GPSFilter.IntegralSum = PositionHoldRatePIDArray[IndexCount].GPSFilter.IntegralSum;
-    }
+    //CALCULA A APLICAÇÃO DE CONTROLE DO PILOTO AUTOMATICO PARA O EIXO X
+    int32_t PositionErrorX = INS_Resources.Position.Hold[COORD_LATITUDE] - INS_Resources.Estimated.Position.Roll;
+    int32_t TargetPositionErrorX = Constrain_32Bits(GPSGetProportional(PositionErrorX, &PositionHoldPID), -1000, 1000);
+    int32_t FinalPositionErrorX = Constrain_32Bits(TargetPositionErrorX - INS_Resources.Estimated.Velocity.Roll, -1000, 1000);
+    GPS_Resources.Navigation.AutoPilot.INS.Angle[ROLL] = GPSGetProportional(FinalPositionErrorX, &PositionHoldRatePID) + GPSGetIntegral(FinalPositionErrorX, DeltaTime, &PositionHoldRatePIDArray[COORD_LATITUDE], &PositionHoldRatePID);
+    GPS_Resources.Navigation.AutoPilot.INS.Angle[ROLL] -= Constrain_16Bits((INS_Resources.IMU.AccelerationNEU.Roll * PositionHoldRatePID.kD), -2000, 2000);
+    GPS_Resources.Navigation.AutoPilot.INS.Angle[ROLL] = Constrain_16Bits(GPS_Resources.Navigation.AutoPilot.INS.Angle[ROLL], -ConvertDegreesToDecidegrees(GET_SET[NAV_GPS_BANK_MAX].MaxValue), ConvertDegreesToDecidegrees(GET_SET[NAV_GPS_BANK_MAX].MaxValue));
+    NavigationPIDArray[COORD_LATITUDE].GPSFilter.IntegralSum = PositionHoldRatePIDArray[COORD_LATITUDE].GPSFilter.IntegralSum;
+
+    //CALCULA A APLICAÇÃO DE CONTROLE DO PILOTO AUTOMATICO PARA O EIXO Y
+    int32_t PositionErrorY = INS_Resources.Position.Hold[COORD_LONGITUDE] - INS_Resources.Estimated.Position.Pitch;
+    int32_t TargetPositionErrorY = Constrain_32Bits(GPSGetProportional(PositionErrorY, &PositionHoldPID), -1000, 1000);
+    int32_t FinalPositionErrorY = Constrain_32Bits(TargetPositionErrorY - INS_Resources.Estimated.Velocity.Pitch, -1000, 1000);
+    GPS_Resources.Navigation.AutoPilot.INS.Angle[PITCH] = GPSGetProportional(FinalPositionErrorY, &PositionHoldRatePID) + GPSGetIntegral(FinalPositionErrorY, DeltaTime, &PositionHoldRatePIDArray[COORD_LONGITUDE], &PositionHoldRatePID);
+    GPS_Resources.Navigation.AutoPilot.INS.Angle[PITCH] -= Constrain_16Bits((INS_Resources.IMU.AccelerationNEU.Pitch * PositionHoldRatePID.kD), -2000, 2000);
+    GPS_Resources.Navigation.AutoPilot.INS.Angle[PITCH] = Constrain_16Bits(GPS_Resources.Navigation.AutoPilot.INS.Angle[PITCH], -ConvertDegreesToDecidegrees(GET_SET[NAV_GPS_BANK_MAX].MaxValue), ConvertDegreesToDecidegrees(GET_SET[NAV_GPS_BANK_MAX].MaxValue));
+    NavigationPIDArray[COORD_LONGITUDE].GPSFilter.IntegralSum = PositionHoldRatePIDArray[COORD_LONGITUDE].GPSFilter.IntegralSum;
 }
 
 static void MultirotorApplyPosHoldPIDControl(float DeltaTime)

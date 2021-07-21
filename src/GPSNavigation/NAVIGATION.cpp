@@ -168,7 +168,7 @@ void GPS_Process_FlightModes(float DeltaTime)
           }
           else
           {
-            SetNewAltitudeToHold(Barometer.INS.Altitude.Estimated);
+            SetNewAltitudeToHold(INS_Resources.Estimated.Position.Yaw);
             GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
           }
           GPS_Resources.Navigation.HeadingHoldTarget = GPS_Resources.Navigation.Bearing.InitialTarget;
@@ -200,7 +200,7 @@ void GPS_Process_FlightModes(float DeltaTime)
 
       case DO_LAND_INIT:
         Do_RTH_Or_Land_Call_Alt_Hold = true;
-        SetNewAltitudeToHold(Barometer.INS.Altitude.Estimated);
+        SetNewAltitudeToHold(INS_Resources.Estimated.Position.Yaw);
         GPS_Resources.DeltaTime.InitLand = SCHEDULERTIME.GetMillis() + TIME_TO_INIT_LAND;
         GPS_Resources.Mode.Navigation = DO_LAND_SETTLE;
         break;
@@ -243,13 +243,13 @@ void GPS_Process_FlightModes(float DeltaTime)
 
 void Multirotor_Do_Mode_RTH_Now(void)
 {
-  if (Barometer.INS.Altitude.Estimated < ConverMetersToCM(GPS_Resources.Home.Altitude))
+  if (INS_Resources.Estimated.Position.Yaw < ConverMetersToCM(GPS_Resources.Home.Altitude))
   {
     SetNewAltitudeToHold(ConverMetersToCM(GPS_Resources.Home.Altitude));
   }
   else
   {
-    SetNewAltitudeToHold(Barometer.INS.Altitude.Estimated);
+    SetNewAltitudeToHold(INS_Resources.Estimated.Position.Yaw);
   }
   SetThisPointToPositionHold();
 }
@@ -261,8 +261,8 @@ void Set_Next_Point_To_Navigation(int32_t Latitude_Destiny, int32_t Longitude_De
   GPS_Calcule_Longitude_Scaling(Latitude_Destiny);
   GPS_Calcule_Bearing(GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE], GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE], &GPS_Resources.Navigation.Bearing.ActualTarget);
   GPS_Calcule_Distance_In_CM(GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE], GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE], &GPS_Resources.Navigation.Coordinates.Distance);
-  INS_Resources.Position.Hold[INS_LATITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE] - GPS_Resources.Home.Coordinates[COORD_LATITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
-  INS_Resources.Position.Hold[INS_LONGITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE] - GPS_Resources.Home.Coordinates[COORD_LONGITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * GPS_Resources.ScaleDownOfLongitude;
+  INS_Resources.Position.Hold[COORD_LATITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE] - GPS_Resources.Home.Coordinates[COORD_LATITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
+  INS_Resources.Position.Hold[COORD_LONGITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE] - GPS_Resources.Home.Coordinates[COORD_LONGITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * GPS_Resources.ScaleDownOfLongitude;
   GPS_Resources.Navigation.Bearing.TargetPrev = GPS_Resources.Navigation.Bearing.ActualTarget;
 }
 

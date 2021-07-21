@@ -101,21 +101,14 @@ void InertialNavigationClass::Update(void)
 
     /*
     DEBUG("%.f %.f %.f %.f %ld %.f %.f",
-          INS_Resources.Estimated.Position.Roll,  //X POS
-          INS_Resources.Estimated.Position.Pitch, //Y POS
-          INS_Resources.Estimated.Velocity.Roll,  //X VEL
-          INS_Resources.Estimated.Velocity.Pitch, //Y VEL
-          Barometer.Altitude.Actual,             //BARO ALT
-          INS_Resources.Estimated.Position.Yaw,   //Z POS
-          INS_Resources.Estimated.Velocity.Yaw);  //Z VEL
+          INS_Resources.Estimated.Position.Roll,  //POSIÇÃO FINAL X ESTIMADA PELO INS
+          INS_Resources.Estimated.Position.Pitch, //POSIÇÃO FINAL Y ESTIMADA PELO INS
+          INS_Resources.Estimated.Velocity.Roll,  //VELOCIDADE FINAL X ESTIMADA PELO INS
+          INS_Resources.Estimated.Velocity.Pitch, //VELOCIDADE FINAL Y ESTIMADA PELO INS
+          Barometer.Altitude.Actual,              //REAL BARO ALT
+          INS_Resources.Estimated.Position.Yaw,   //ALTITUDE FINAL ESTIMADA PELO INS
+          INS_Resources.Estimated.Velocity.Yaw);  //VELOCIDADE VERTICAL(Z) FINAL ESTIMADA PELO INS
 */
-
-    INS_Resources.EarthFrame.Position[INS_LATITUDE] = INS_Resources.Estimated.Position.Roll;   //POSIÇÃO FINAL X ESTIMADA PELO INS
-    INS_Resources.EarthFrame.Position[INS_LONGITUDE] = INS_Resources.Estimated.Position.Pitch; //POSIÇÃO FINAL Y ESTIMADA PELO INS
-    INS_Resources.EarthFrame.Velocity[INS_LATITUDE] = INS_Resources.Estimated.Velocity.Roll;   //VELOCIDADE FINAL X ESTIMADA PELO INS
-    INS_Resources.EarthFrame.Velocity[INS_LONGITUDE] = INS_Resources.Estimated.Velocity.Pitch; //VELOCIDADE FINAL Y ESTIMADA PELO INS
-    Barometer.INS.Altitude.Estimated = INS_Resources.Estimated.Position.Yaw;                   //ALTITUDE FINAL ESTIMADA PELO INS
-    Barometer.INS.Velocity.Vertical = INS_Resources.Estimated.Velocity.Yaw;                    //VELOCIDADE VERTICAL(Z) FINAL ESTIMADA PELO INS
 
 #ifdef PRINTLN_INS_COS_SIN
 
@@ -142,10 +135,10 @@ void InertialNavigationClass::Update(void)
 #ifdef PRINTLN_INS_POS_VEL_XY
 
     DEBUG("%.f %.f %.f %.f",
-          INS_Resources.EarthFrame.Position[INS_LATITUDE],
-          INS_Resources.EarthFrame.Position[INS_LONGITUDE],
-          INS_Resources.EarthFrame.Velocity[INS_LATITUDE],
-          INS_Resources.EarthFrame.Velocity[INS_LONGITUDE]);
+          INS_Resources.Estimated.Position.Roll,
+          INS_Resources.Estimated.Position.Pitch,
+          INS_Resources.Estimated.Velocity.Roll,
+          INS_Resources.Estimated.Velocity.Pitch);
 
 #endif
 
