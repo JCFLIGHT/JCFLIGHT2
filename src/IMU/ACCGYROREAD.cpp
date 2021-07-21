@@ -336,7 +336,7 @@ void IMU_Get_Data(void)
 #endif
 }
 
-void Acc_ReadBufferData(void)
+void Update_Accelerometer(void)
 {
   IMU_Get_Data();
 
@@ -375,7 +375,7 @@ void Acc_ReadBufferData(void)
   IMU.Accelerometer.ReadFloat[YAW] = (float)IMU.Accelerometer.Read[YAW] / (float)IMU.Accelerometer.GravityForce.OneG;
 }
 
-void Gyro_ReadBufferData(void)
+void Update_Gyroscope(void)
 {
   GYROCALIBRATION.Update();
 

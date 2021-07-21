@@ -108,8 +108,10 @@ void MultirotorUpdateAutoPilotControl(void)
         return;
     }
 
-    bool AltHoldControlApplied = ApplyAltitudeHoldControl();
     static Scheduler_Struct GPSControlTimer;
+
+    const bool AltHoldControlApplied = ApplyAltitudeHoldControl();
+
     if (!AltHoldControlApplied && Scheduler(&GPSControlTimer, SCHEDULER_SET_FREQUENCY(50, "Hz")))
     {
         if (GPS_Resources.Navigation.AutoPilot.Control.Enabled)

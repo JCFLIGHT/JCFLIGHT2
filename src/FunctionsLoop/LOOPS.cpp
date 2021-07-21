@@ -87,8 +87,8 @@ void Integral_Loop(void)
         Super_Fast_Loop();
 #endif
 
-        Acc_ReadBufferData();
-        Gyro_ReadBufferData();
+        Update_Accelerometer();
+        Update_Gyroscope();
         AHRS.Update(ThisDeltaTime);
         RC_PID_Update();
         WAYPOINT.Update();

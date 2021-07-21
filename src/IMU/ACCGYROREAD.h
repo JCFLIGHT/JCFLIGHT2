@@ -21,6 +21,6 @@
 #include "Common/STRUCTS.h"
 extern IMU_Struct IMU;
 void MPU6050AccAndGyroInitialization(void);
-void Acc_ReadBufferData(void);
-void Gyro_ReadBufferData(void);
+void Update_Accelerometer(void);
+void Update_Gyroscope(void);
 #endif
