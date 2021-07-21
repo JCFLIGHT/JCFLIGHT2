@@ -36,13 +36,10 @@
 InertialNavigationClass INERTIALNAVIGATION;
 INS_Resources_Struct INS_Resources;
 
-#define GPS_DEFAULT_EPH 200.0f                           //2M
-#define GPS_DEFAULT_EPV 500.0f                           //5M
-#define GPS_ACCEPTANCE_EPE 500.0f                        //5M
-#define GPS_GLITCH_RADIUS 250.0f                         //2.5M GPS
-#define GPS_GLITCH_ACCEL 1000.0f                         //10M/S/S
-#define GPS_TIMEOUT_MS 1500                              //MS
-#define BARO_TIMEOUT_MS 200                              //MS
+#define GPS_DEFAULT_EPH 200.0f                           //2M MAXIMO DE ERRO NA POSIÇÃO HORIZONTAL
+#define GPS_DEFAULT_EPV 500.0f                           //5M MAXIMO DE ERRO NA POSIÇÃO VERTICAL
+#define GPS_TIMEOUT_MS 1500                              //TEMPO MAXIMO DE ESPERA DE RESPOSTA DO GPS (MS)
+#define BARO_TIMEOUT_MS 200                              //TEMPO MAXIMO DE ESPERA DE RESPOSTA DO BARÔMETRO (MS)
 #define ACC_BIAS_ACCEPTANCE_VALUE (GRAVITY_CMSS * 0.25f) //0.25G
 #define POSITION_RATE 50                                 //HZ
 #define ACC_CLIPPING_RC_CONSTANT (0.010f)                //10MS DE DELAY
@@ -327,11 +324,8 @@ bool InertialNavigationClass::CorrectXYStateWithGPS(INS_Context_Struct *Context)
       const float GPSVelocityYResidual = INS_Resources.GPS.Velocity.Pitch - INS_Resources.Estimated.Velocity.Pitch;
       const float GPSPositionResidualMag = sqrtf(SquareFloat(GPSPositionXResidual) + SquareFloat(GPSPositionYResidual));
 
-      //const float GPSWeightScaler = ScaleRangeFloat(Sine_Curve(GPSPositionResidualMag, GPS_ACCEPTANCE_EPE), 0.0f, 1.0f, 0.1f, 1.0f);
-      const float GPSWeightScaler = 1.0f;
-
-      const float New_Weight_XY_GPS_Position = Weight_XY_GPS_Position * GPSWeightScaler;
-      const float New_Weight_XY_GPS_Velocity = Weight_XY_GPS_Velocity * SquareFloat(GPSWeightScaler);
+      const float New_Weight_XY_GPS_Position = Weight_XY_GPS_Position;
+      const float New_Weight_XY_GPS_Velocity = Weight_XY_GPS_Velocity;
 
       //NOVAS COORDENADAS
       Context->EstimatedPosistionCorrected.Roll += GPSPositionXResidual * New_Weight_XY_GPS_Position * Context->DeltaTime;
@@ -522,8 +516,8 @@ void InertialNavigationClass::UpdateEstimationPredictXYZ(uint32_t ActualTimeInUs
 
   if (Weight_Acc_Bias > 0.0f)
   {
-    const float accelBiasCorrMagnitudeSq = SquareFloat(Context.AccBiasCorrected.Roll) + SquareFloat(Context.AccBiasCorrected.Pitch) + SquareFloat(Context.AccBiasCorrected.Yaw);
-    if (accelBiasCorrMagnitudeSq < SquareFloat(ACC_BIAS_ACCEPTANCE_VALUE))
+    const float AccelerationBiasMagnitude = SquareFloat(Context.AccBiasCorrected.Roll) + SquareFloat(Context.AccBiasCorrected.Pitch) + SquareFloat(Context.AccBiasCorrected.Yaw);
+    if (AccelerationBiasMagnitude < SquareFloat(ACC_BIAS_ACCEPTANCE_VALUE))
     {
       //TRANFORMA DE EARTH PARA BODY
       AHRS.TransformVectorEarthFrameToBodyFrame(&Context.AccBiasCorrected);
