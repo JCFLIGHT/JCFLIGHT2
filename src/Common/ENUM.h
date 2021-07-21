@@ -526,6 +526,15 @@ enum Inertial_Navigation_Enum
     INS_VERTICAL_Z
 };
 
+enum INS_Flags_Enum
+{
+    EST_GPS_XY_VALID = (1 << 0),
+    EST_GPS_Z_VALID = (1 << 1),
+    EST_BARO_VALID = (1 << 2),
+    EST_XY_VALID = (1 << 3),
+    EST_Z_VALID = (1 << 4)
+};
+
 enum GPS_Orientation_Enum
 {
     COORD_LATITUDE = 0,

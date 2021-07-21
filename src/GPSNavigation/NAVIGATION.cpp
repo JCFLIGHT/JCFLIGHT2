@@ -261,8 +261,8 @@ void Set_Next_Point_To_Navigation(int32_t Latitude_Destiny, int32_t Longitude_De
   GPS_Calcule_Longitude_Scaling(Latitude_Destiny);
   GPS_Calcule_Bearing(GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE], GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE], &GPS_Resources.Navigation.Bearing.ActualTarget);
   GPS_Calcule_Distance_In_CM(GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE], GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE], &GPS_Resources.Navigation.Coordinates.Distance);
-  INS.Position.Hold[INS_LATITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE] - GPS_Resources.Home.Coordinates[COORD_LATITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
-  INS.Position.Hold[INS_LONGITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE] - GPS_Resources.Home.Coordinates[COORD_LONGITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * GPS_Resources.ScaleDownOfLongitude;
+  INS_Resources.Position.Hold[INS_LATITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE] - GPS_Resources.Home.Coordinates[COORD_LATITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
+  INS_Resources.Position.Hold[INS_LONGITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE] - GPS_Resources.Home.Coordinates[COORD_LONGITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * GPS_Resources.ScaleDownOfLongitude;
   GPS_Resources.Navigation.Bearing.TargetPrev = GPS_Resources.Navigation.Bearing.ActualTarget;
 }
 

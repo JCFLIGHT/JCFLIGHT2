@@ -90,13 +90,60 @@ typedef struct
 
 typedef struct
 {
-  //LPF
-  float AccelerationEarthFrame_LPF[3] = {0.0f, 0.0f, 0.0f};
+  float DeltaTime = 0.0f;
+  float NewEstimatedPositionVertical = 0.0f;
+  float NewEstimatedPositionHorizontal = 0.0f;
+  uint32_t NewFlags = 0;
+  Vector3x3_Struct EstimatedPosistionCorrected;
+  Vector3x3_Struct EstimatedVelocityCorrected;
+  Vector3x3_Struct AccBiasCorrected;
+} INS_Context_Struct;
 
-  //AVERAGE
-  uint8_t AccelerationEarthFrame_Sum_Count[3] = {0, 0, 0};
-  float AccelerationEarthFrame_Filtered[3] = {0.0f, 0.0f, 0.0f};
-  float AccelerationEarthFrame_Sum[3] = {0.0f, 0.0f, 0.0f};
+typedef struct
+{
+
+  uint32_t Flags;
+
+  struct State_Struct
+  {
+    bool BaroGroundValid = false;
+    float BaroGroundAlt = 0.0f;
+    uint32_t BaroGroundTimeout = 0;
+  } State;
+
+  struct IMU_Struct
+  {
+    uint32_t LastUpdateTime = 0;
+    Vector3x3_Struct AccelerationNEU;
+    Vector3x3_Struct AccelerationBias;
+    float AccWeightFactor;
+  } IMU;
+
+  struct Barometer_Struct
+  {
+    uint32_t LastUpdateTime = 0;
+    float ActualAltitude = 0.0f;
+    float EstimatedPositionVertical = 0.0f;
+  } Barometer;
+
+  struct GPS_Struct
+  {
+    uint32_t LastUpdateTime = 0;
+    Vector3x3_Struct Position;
+    Vector3x3_Struct Velocity;
+    float EstimatedPositionHorizontal = 0.0f;
+    float EstimatedPositionVertical = 0.0f;
+    float AltitudeOffSet = 0.0f;
+  } GPS;
+
+  struct Estimate_Struct
+  {
+    uint32_t LastUpdateTime = 0;
+    Vector3x3_Struct Position;
+    Vector3x3_Struct Velocity;
+    float EstimatedPositionHorizontal = 0.0f;
+    float EstimatedPositionVertical = 0.0f;
+  } Estimate;
 
   struct Math_Struct
   {
@@ -114,14 +161,6 @@ typedef struct
 
   Vector3x3_Struct NewAccelerationEarthFrame;
 
-  struct History_Struct
-  {
-    uint8_t XYCount = 0;
-    uint8_t ZCount = 0;
-    int32_t XYPosition[2][10] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
-    int32_t ZPosition[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  } History;
-
   struct EarthFrame_Struct
   {
     float AccelerationNEU[3] = {0.0f, 0.0f, 0.0f};
@@ -129,18 +168,12 @@ typedef struct
     float Position[3] = {0.0f, 0.0f, 0.0f};
   } EarthFrame;
 
-  struct Bias_Struct
-  {
-    float Adjust[3] = {0.0f, 0.0f, 0.0f};
-    float Difference[3] = {0.0f, 0.0f, 0.0f};
-  } Bias;
-
   struct Position_Struct
   {
     int32_t Hold[2] = {0, 0};
   } Position;
 
-} INS_Struct;
+} INS_Resources_Struct;
 
 typedef struct
 {

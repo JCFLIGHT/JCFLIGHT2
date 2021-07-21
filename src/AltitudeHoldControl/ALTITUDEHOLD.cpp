@@ -177,7 +177,7 @@ bool ApplyAltitudeHoldControl(void)
       AltitudeHoldController.Target.Velocity.Z = Constrain_32Bits(AltitudeHoldController.Target.Position.Z - Barometer.INS.Velocity.Vertical, -600, 600);
       AltitudeHoldController.PID.IntegratorSum += Constrain_32Bits(((AltitudeHoldController.Target.Velocity.Z * GET_SET[PID_VELOCITY_Z].kI * AltitudeHoldControlTimer.ActualTime) / 128) / ((AltitudeHoldController.Flags.Hovering && ABS(AltitudeHoldController.Target.Position.Z) < 100) ? 2 : 1), -16384000, 16384000);
       AltitudeHoldController.PID.IntegratorError = Constrain_16Bits((AltitudeHoldController.PID.IntegratorSum / 65536), -250, 250);
-      AltitudeHoldController.PID.Control = ((AltitudeHoldController.Target.Velocity.Z * GET_SET[PID_VELOCITY_Z].kP) / 32) + AltitudeHoldController.PID.IntegratorError - (((int32_t)INS.AccelerationEarthFrame_Filtered[INS_VERTICAL_Z] * GET_SET[PID_VELOCITY_Z].kD) / 64);
+      AltitudeHoldController.PID.Control = ((AltitudeHoldController.Target.Velocity.Z * GET_SET[PID_VELOCITY_Z].kP) / 32) + AltitudeHoldController.PID.IntegratorError - (((int32_t)INS_Resources.IMU.AccelerationNEU.Yaw * GET_SET[PID_VELOCITY_Z].kD) / 64);
 
       RC_Resources.Attitude.Controller[THROTTLE] = Constrain_16Bits(AltitudeHoldController.Throttle.Hovering + AltitudeHoldController.PID.Control, RC_Resources.Attitude.ThrottleMin + ALT_HOLD_DEADBAND, RC_Resources.Attitude.ThrottleMax - ALT_HOLD_DEADBAND);
 

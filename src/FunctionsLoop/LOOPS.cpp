@@ -42,8 +42,6 @@ void Medium_Loop()
         GPS_Process_FlightModes(ThisDeltaTime);
         AUXFLIGHT.Update();
         FlightModesUpdate();
-        INERTIALNAVIGATION.Calculate_AccelerationXY(ThisDeltaTime);
-        INERTIALNAVIGATION.Calculate_AccelerationZ(ThisDeltaTime);
         WINDESTIMATOR.Update();
         BATTERY.Update_Voltage();
         BATTERY.Update_Current();
@@ -72,7 +70,7 @@ void Super_Fast_Loop()
         SAFETYBUTTON.UpdateRoutine();
         SBUSRC.Update();
         IBUSRC.Update();
-        INERTIALNAVIGATION.Calculate_AccelerationXYZ_To_EarthFrame();
+        INERTIALNAVIGATION.Update();
         AIRSPEED.Update();
         Switch_Flag();
         BATTERY.Calculate_Total_Current_In_Mah();

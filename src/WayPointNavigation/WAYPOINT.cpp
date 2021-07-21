@@ -461,8 +461,8 @@ void WayPointClass::Update(void)
       //RESETA OS MODOS PARA OBTER OS NOVOS PARAMETROS DE NAVEGAÇÃO
       RESET_THIS_FLIGHT_MODE_ONCE(CRUISE_MODE);
       RESET_THIS_FLIGHT_MODE_ONCE(CLIMBOUT_MODE);
-      TECS_Resources.Position.DestinationNEU.X = INS.Position.Hold[INS_LATITUDE];
-      TECS_Resources.Position.DestinationNEU.Y = INS.Position.Hold[INS_LONGITUDE];
+      TECS_Resources.Position.DestinationNEU.X = INS_Resources.Position.Hold[INS_LATITUDE];
+      TECS_Resources.Position.DestinationNEU.Y = INS_Resources.Position.Hold[INS_LONGITUDE];
       TECS_Resources.Position.DestinationNEU.Altitude = ConverMetersToCM(WayPoint_Resources.Mission.OthersParams.Altitude[WayPoint_Resources.Mission.OthersParams.Number]);
     }
     WayPoint_Resources.Mission.OthersParams.Mode = WAYPOINT_MISSION_ENROUTE;

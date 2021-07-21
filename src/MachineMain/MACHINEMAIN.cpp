@@ -44,6 +44,8 @@ void MachineInit(void)
     I2C.All_Initialization();
     //INICIALIZA AS CONFIGURAÇÕES DOS PINOS IO
     ConfigureRegisters(false);
+    //INICIALIZA O SISTEMA DE NAVEGAÇÃO INERCIAL
+    INERTIALNAVIGATION.Initialization();
     //INCIALIZA O PID
     PIDXYZ.Initialization();
     //INICIALIZA O AHRS
