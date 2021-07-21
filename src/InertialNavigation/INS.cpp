@@ -41,7 +41,6 @@ INS_Resources_Struct INS_Resources;
 #define GPS_TIMEOUT_MS 1500                              //TEMPO MAXIMO DE ESPERA DE RESPOSTA DO GPS (MS)
 #define BARO_TIMEOUT_MS 200                              //TEMPO MAXIMO DE ESPERA DE RESPOSTA DO BARÔMETRO (MS)
 #define ACC_BIAS_ACCEPTANCE_VALUE (GRAVITY_CMSS * 0.25f) //0.25G
-#define POSITION_RATE 50                                 //HZ
 #define ACC_CLIPPING_RC_CONSTANT (0.010f)                //10MS DE DELAY
 #define ACC_CLIPPING_THRESHOLD_G 7.9f                    //7.9G
 
@@ -59,7 +58,8 @@ INS_Resources_Struct INS_Resources;
 #define Max_INS_Baro_Error 100.0f     //VALOR MAXIMO DE ERRO DO BARÔMETRO SUPORTADO PELO INS [CM]
 
 //DEBUG
-//#define PRINTLN_INS_COS_SIN
+//#define PRINTLN_ALL_INS
+//#define PRINTLN_INS_YAW_COS_SIN
 //#define PRINTLN_INS_ACC_NEU
 //#define PRINTLN_INS_POS_VEL_XY
 //#define PRINTLN_INS_POS_VEL_Z
@@ -85,7 +85,6 @@ void InertialNavigationClass::Initialization(void)
 void InertialNavigationClass::Update(void)
 {
   const uint32_t ActualTimeInUs = SCHEDULERTIME.GetMicros();
-  static uint32_t LastTriggeredTime;
 
   INERTIALNAVIGATION.UpdateIMU(ActualTimeInUs);
   INERTIALNAVIGATION.UpdateBarometer(ActualTimeInUs);
@@ -95,64 +94,61 @@ void InertialNavigationClass::Update(void)
   INS_Resources.Math.Cosine.Yaw = AHRS.GetCosineYaw();
   INS_Resources.Math.Sine.Yaw = AHRS.GetSineYaw();
 
-  if ((ActualTimeInUs - LastTriggeredTime) >= SCHEDULER_SET_FREQUENCY(POSITION_RATE, "Hz"))
-  {
-    LastTriggeredTime = ActualTimeInUs;
+#ifdef PRINTLN_ALL_INS
 
-    /*
-    DEBUG("%.f %.f %.f %.f %ld %.f %.f",
-          INS_Resources.Estimated.Position.Roll,  //POSIÇÃO FINAL X ESTIMADA PELO INS
-          INS_Resources.Estimated.Position.Pitch, //POSIÇÃO FINAL Y ESTIMADA PELO INS
-          INS_Resources.Estimated.Velocity.Roll,  //VELOCIDADE FINAL X ESTIMADA PELO INS
-          INS_Resources.Estimated.Velocity.Pitch, //VELOCIDADE FINAL Y ESTIMADA PELO INS
-          Barometer.Altitude.Actual,              //REAL BARO ALT
-          INS_Resources.Estimated.Position.Yaw,   //ALTITUDE FINAL ESTIMADA PELO INS
-          INS_Resources.Estimated.Velocity.Yaw);  //VELOCIDADE VERTICAL(Z) FINAL ESTIMADA PELO INS
-*/
+  DEBUG("%.f %.f %.f %.f %ld %.f %.f",
+        INS_Resources.Estimated.Position.X,  //POSIÇÃO FINAL X ESTIMADA PELO INS
+        INS_Resources.Estimated.Position.Y,  //POSIÇÃO FINAL Y ESTIMADA PELO INS
+        INS_Resources.Estimated.Velocity.X,  //VELOCIDADE FINAL X ESTIMADA PELO INS
+        INS_Resources.Estimated.Velocity.Y,  //VELOCIDADE FINAL Y ESTIMADA PELO INS
+        Barometer.Altitude.Actual,           //REAL BARO ALT
+        INS_Resources.Estimated.Position.Z,  //ALTITUDE FINAL ESTIMADA PELO INS
+        INS_Resources.Estimated.Velocity.Z); //VELOCIDADE VERTICAL(Z) FINAL ESTIMADA PELO INS
 
-#ifdef PRINTLN_INS_COS_SIN
+#endif
 
-    DEBUG("%d %.2f %.2f",
-          Attitude.EulerAngles.YawDecidegrees,
-          INS_Resources.Math.Cosine.Yaw,
-          INS_Resources.Math.Sine.Yaw);
+#ifdef PRINTLN_INS_YAW_COS_SIN
+
+  DEBUG("%d %.2f %.2f",
+        Attitude.EulerAngles.YawDecidegrees,
+        INS_Resources.Math.Cosine.Yaw,
+        INS_Resources.Math.Sine.Yaw);
 
 #endif
 
 #ifdef PRINTLN_INS_ACC_NEU
 
-    //INS_Resources.IMU.AccelerationNEU.Roll  -> POSITIVO MOVENDO PARA O NORTE
-    //INS_Resources.IMU.AccelerationNEU.Pitch -> POSITIVO MOVENDO PARA O OESTE
-    //INS_Resources.IMU.AccelerationNEU.Yaw   -> POSITIVO MOVENDO PARA CIMA
+  //INS_Resources.IMU.AccelerationNEU.X -> POSITIVO MOVENDO PARA O NORTE
+  //INS_Resources.IMU.AccelerationNEU.Y -> POSITIVO MOVENDO PARA O OESTE
+  //INS_Resources.IMU.AccelerationNEU.Z -> POSITIVO MOVENDO PARA CIMA
 
-    DEBUG("NORTH:%.4f EAST:%.4f UP:%.4f",
-          INS_Resources.IMU.AccelerationNEU.Roll,
-          INS_Resources.IMU.AccelerationNEU.Pitch,
-          INS_Resources.IMU.AccelerationNEU.Yaw);
+  DEBUG("NORTH:%.4f EAST:%.4f UP:%.4f",
+        INS_Resources.IMU.AccelerationNEU.X,
+        INS_Resources.IMU.AccelerationNEU.Y,
+        INS_Resources.IMU.AccelerationNEU.Z);
 
 #endif
 
 #ifdef PRINTLN_INS_POS_VEL_XY
 
-    DEBUG("%.f %.f %.f %.f",
-          INS_Resources.Estimated.Position.Roll,
-          INS_Resources.Estimated.Position.Pitch,
-          INS_Resources.Estimated.Velocity.Roll,
-          INS_Resources.Estimated.Velocity.Pitch);
+  DEBUG("%.f %.f %.f %.f",
+        INS_Resources.Estimated.Position.X,
+        INS_Resources.Estimated.Position.Y,
+        INS_Resources.Estimated.Velocity.X,
+        INS_Resources.Estimated.Velocity.Y);
 
 #endif
 
 #ifdef PRINTLN_INS_POS_VEL_Z
 
-    //Barometer.INS_Resources.Altitude.Estimated -> POSITIVO SUBINDO E NEGATIVO DESCENDO
-    //Barometer.INS_Resources.Velocity.Vertical  -> POSITIVO SUBINDO E NEGATIVO DESCENDO
+  //Barometer.INS_Resources.Altitude.Estimated -> POSITIVO SUBINDO E NEGATIVO DESCENDO
+  //Barometer.INS_Resources.Velocity.Vertical  -> POSITIVO SUBINDO E NEGATIVO DESCENDO
 
-    DEBUG("%ld %d",
-          Barometer.INS_Resources.Altitude.Estimated,
-          Barometer.INS_Resources.Velocity.Vertical);
+  DEBUG("%ld %d",
+        Barometer.INS_Resources.Altitude.Estimated,
+        Barometer.INS_Resources.Velocity.Vertical);
 
 #endif
-  }
 
   INERTIALNAVIGATION.UpdateGPS();
 }
@@ -205,9 +201,9 @@ void InertialNavigationClass::UpdateIMU(uint32_t ActualTimeInUs)
   VectorZero(&INS_Resources.NewAccelerationEarthFrame);
 
   //PASSA A ACELERAÇÃO DO EARTH-FRAME PARA UM NOVO VETOR
-  INS_Resources.NewAccelerationEarthFrame.Roll = BodyFrameAcceleration.Roll;
-  INS_Resources.NewAccelerationEarthFrame.Pitch = BodyFrameAcceleration.Pitch;
-  INS_Resources.NewAccelerationEarthFrame.Yaw = BodyFrameAcceleration.Yaw;
+  INS_Resources.NewAccelerationEarthFrame.X = BodyFrameAcceleration.X;
+  INS_Resources.NewAccelerationEarthFrame.Y = BodyFrameAcceleration.Y;
+  INS_Resources.NewAccelerationEarthFrame.Z = BodyFrameAcceleration.Z;
 
   //TRANSFORMA O VETOR DA ACELERAÇÃO PARA EARTH-FRAME
   AHRS.TransformVectorBodyFrameToEarthFrame(&INS_Resources.NewAccelerationEarthFrame);
@@ -216,9 +212,9 @@ void InertialNavigationClass::UpdateIMU(uint32_t ActualTimeInUs)
   GRAVITYCALIBRATION.Update(&INS_Resources.NewAccelerationEarthFrame);
 
   //CORRIGE A BIAS DO ACELEROMETRO E PASSA A ACELERAÇÃO EM NEU PARA NOVAS VARIAVEIS PARA SEREM APLICADAS NO INS
-  INS_Resources.IMU.AccelerationNEU.Roll = INS_Resources.NewAccelerationEarthFrame.Roll - INS_Resources.IMU.AccelerationBias.Roll;
-  INS_Resources.IMU.AccelerationNEU.Pitch = INS_Resources.NewAccelerationEarthFrame.Pitch - INS_Resources.IMU.AccelerationBias.Pitch;
-  INS_Resources.IMU.AccelerationNEU.Yaw = INS_Resources.NewAccelerationEarthFrame.Yaw - INS_Resources.IMU.AccelerationBias.Yaw;
+  INS_Resources.IMU.AccelerationNEU.X = INS_Resources.NewAccelerationEarthFrame.X - INS_Resources.IMU.AccelerationBias.X;
+  INS_Resources.IMU.AccelerationNEU.Y = INS_Resources.NewAccelerationEarthFrame.Y - INS_Resources.IMU.AccelerationBias.Y;
+  INS_Resources.IMU.AccelerationNEU.Z = INS_Resources.NewAccelerationEarthFrame.Z - INS_Resources.IMU.AccelerationBias.Z;
 }
 
 void InertialNavigationClass::UpdateBarometer(uint32_t ActualTimeInUs)
@@ -252,13 +248,13 @@ void InertialNavigationClass::UpdateGPS(void)
     INS_Resources.GPS.AltitudeOffSet = GPS_Resources.Navigation.Misc.Get.Altitude;
   }
 
-  INS_Resources.GPS.Position.Roll = GPS_Resources.Home.INS.Distance[COORD_LATITUDE];
-  INS_Resources.GPS.Position.Pitch = GPS_Resources.Home.INS.Distance[COORD_LONGITUDE];
-  INS_Resources.GPS.Position.Yaw = GPS_Resources.Navigation.Misc.Get.Altitude - INS_Resources.GPS.AltitudeOffSet; //ALTITUDE DO GPS PARA AERONAVES DE ASA-FIXA APENAS
+  INS_Resources.GPS.Position.X = GPS_Resources.Home.INS.Distance[COORD_LATITUDE];
+  INS_Resources.GPS.Position.Y = GPS_Resources.Home.INS.Distance[COORD_LONGITUDE];
+  INS_Resources.GPS.Position.Z = GPS_Resources.Navigation.Misc.Get.Altitude - INS_Resources.GPS.AltitudeOffSet; //ALTITUDE DO GPS PARA AERONAVES DE ASA-FIXA APENAS
 
-  INS_Resources.GPS.Velocity.Roll = GPS_Resources.Navigation.Misc.Velocity.Get[NORTH];
-  INS_Resources.GPS.Velocity.Pitch = GPS_Resources.Navigation.Misc.Velocity.Get[EAST];
-  INS_Resources.GPS.Velocity.Yaw = -GPS_Resources.Navigation.Misc.Velocity.Get[DOWN];
+  INS_Resources.GPS.Velocity.X = GPS_Resources.Navigation.Misc.Velocity.Get[NORTH];
+  INS_Resources.GPS.Velocity.Y = GPS_Resources.Navigation.Misc.Velocity.Get[EAST];
+  INS_Resources.GPS.Velocity.Z = -GPS_Resources.Navigation.Misc.Velocity.Get[DOWN];
 
   INS_Resources.GPS.EstimatedPositionHorizontal = GPS_Resources.Navigation.Misc.Get.EstimatedPositionHorizontal;
   INS_Resources.GPS.EstimatedPositionVertical = GPS_Resources.Navigation.Misc.Get.EstimatedPositionVertical;
@@ -273,25 +269,25 @@ void InertialNavigationClass::UpdatePredictXYZ(INS_Context_Struct *Context)
   //PREDIÇÃO Z
   if ((Context->NewFlags & EST_Z_VALID))
   {
-    INS_Resources.Estimated.Position.Yaw += INS_Resources.Estimated.Velocity.Yaw * Context->DeltaTime;
-    INS_Resources.Estimated.Position.Yaw += INS_Resources.IMU.AccelerationNEU.Yaw * SquareFloat(Context->DeltaTime) / 2.0f * AccWeight;
-    INS_Resources.Estimated.Velocity.Yaw += INS_Resources.IMU.AccelerationNEU.Yaw * Context->DeltaTime * SquareFloat(AccWeight);
+    INS_Resources.Estimated.Position.Z += INS_Resources.Estimated.Velocity.Z * Context->DeltaTime;
+    INS_Resources.Estimated.Position.Z += INS_Resources.IMU.AccelerationNEU.Z * SquareFloat(Context->DeltaTime) / 2.0f * AccWeight;
+    INS_Resources.Estimated.Velocity.Z += INS_Resources.IMU.AccelerationNEU.Z * Context->DeltaTime * SquareFloat(AccWeight);
   }
 
   //PREDIÇÃO X E Y
   if ((Context->NewFlags & EST_XY_VALID))
   {
     //PREDIÇÃO DA POSIÇÃO BASEADO NA VELOCIDADE
-    INS_Resources.Estimated.Position.Roll += INS_Resources.Estimated.Velocity.Roll * Context->DeltaTime;
-    INS_Resources.Estimated.Position.Pitch += INS_Resources.Estimated.Velocity.Pitch * Context->DeltaTime;
+    INS_Resources.Estimated.Position.X += INS_Resources.Estimated.Velocity.X * Context->DeltaTime;
+    INS_Resources.Estimated.Position.Y += INS_Resources.Estimated.Velocity.Y * Context->DeltaTime;
 
     //VERIFICA SE ESTÁ OK PARA A INTEGRAÇÃO NEU
     if (I2CResources.Found.Compass || (GetAirPlaneEnabled() && GPS_Resources.Navigation.Misc.Get.HeadingInitialized))
     {
-      INS_Resources.Estimated.Position.Roll += INS_Resources.IMU.AccelerationNEU.Roll * SquareFloat(Context->DeltaTime) / 2.0f * AccWeight;
-      INS_Resources.Estimated.Position.Pitch += INS_Resources.IMU.AccelerationNEU.Pitch * SquareFloat(Context->DeltaTime) / 2.0f * AccWeight;
-      INS_Resources.Estimated.Velocity.Roll += INS_Resources.IMU.AccelerationNEU.Roll * Context->DeltaTime * SquareFloat(AccWeight);
-      INS_Resources.Estimated.Velocity.Pitch += INS_Resources.IMU.AccelerationNEU.Pitch * Context->DeltaTime * SquareFloat(AccWeight);
+      INS_Resources.Estimated.Position.X += INS_Resources.IMU.AccelerationNEU.X * SquareFloat(Context->DeltaTime) / 2.0f * AccWeight;
+      INS_Resources.Estimated.Position.Y += INS_Resources.IMU.AccelerationNEU.Y * SquareFloat(Context->DeltaTime) / 2.0f * AccWeight;
+      INS_Resources.Estimated.Velocity.X += INS_Resources.IMU.AccelerationNEU.X * Context->DeltaTime * SquareFloat(AccWeight);
+      INS_Resources.Estimated.Velocity.Y += INS_Resources.IMU.AccelerationNEU.Y * Context->DeltaTime * SquareFloat(AccWeight);
     }
   }
 }
@@ -303,38 +299,38 @@ bool InertialNavigationClass::CorrectXYStateWithGPS(INS_Context_Struct *Context)
     //RESETA AS COORDENAS E VELOCIDADES
     if (!(Context->NewFlags & EST_XY_VALID))
     {
-      Context->EstimatedPosistionCorrected.Roll += INS_Resources.GPS.Position.Roll - INS_Resources.Estimated.Position.Roll;
-      Context->EstimatedPosistionCorrected.Pitch += INS_Resources.GPS.Position.Pitch - INS_Resources.Estimated.Position.Pitch;
-      Context->EstimatedVelocityCorrected.Roll += INS_Resources.GPS.Velocity.Roll - INS_Resources.Estimated.Velocity.Roll;
-      Context->EstimatedVelocityCorrected.Pitch += INS_Resources.GPS.Velocity.Pitch - INS_Resources.Estimated.Velocity.Pitch;
+      Context->EstimatedPosistionCorrected.X += INS_Resources.GPS.Position.X - INS_Resources.Estimated.Position.X;
+      Context->EstimatedPosistionCorrected.Y += INS_Resources.GPS.Position.Y - INS_Resources.Estimated.Position.Y;
+      Context->EstimatedVelocityCorrected.X += INS_Resources.GPS.Velocity.X - INS_Resources.Estimated.Velocity.X;
+      Context->EstimatedVelocityCorrected.Y += INS_Resources.GPS.Velocity.Y - INS_Resources.Estimated.Velocity.Y;
       Context->NewEstimatedPositionHorizontal = INS_Resources.GPS.EstimatedPositionHorizontal;
     }
     else
     {
-      const float GPSPositionXResidual = INS_Resources.GPS.Position.Roll - INS_Resources.Estimated.Position.Roll;
-      const float GPSPositionYResidual = INS_Resources.GPS.Position.Pitch - INS_Resources.Estimated.Position.Pitch;
-      const float GPSVelocityXResidual = INS_Resources.GPS.Velocity.Roll - INS_Resources.Estimated.Velocity.Roll;
-      const float GPSVelocityYResidual = INS_Resources.GPS.Velocity.Pitch - INS_Resources.Estimated.Velocity.Pitch;
+      const float GPSPositionXResidual = INS_Resources.GPS.Position.X - INS_Resources.Estimated.Position.X;
+      const float GPSPositionYResidual = INS_Resources.GPS.Position.Y - INS_Resources.Estimated.Position.Y;
+      const float GPSVelocityXResidual = INS_Resources.GPS.Velocity.X - INS_Resources.Estimated.Velocity.X;
+      const float GPSVelocityYResidual = INS_Resources.GPS.Velocity.Y - INS_Resources.Estimated.Velocity.Y;
       const float GPSPositionResidualMag = sqrtf(SquareFloat(GPSPositionXResidual) + SquareFloat(GPSPositionYResidual));
 
       const float New_Weight_XY_GPS_Position = Weight_XY_GPS_Position;
       const float New_Weight_XY_GPS_Velocity = Weight_XY_GPS_Velocity;
 
       //NOVAS COORDENADAS
-      Context->EstimatedPosistionCorrected.Roll += GPSPositionXResidual * New_Weight_XY_GPS_Position * Context->DeltaTime;
-      Context->EstimatedPosistionCorrected.Pitch += GPSPositionYResidual * New_Weight_XY_GPS_Position * Context->DeltaTime;
+      Context->EstimatedPosistionCorrected.X += GPSPositionXResidual * New_Weight_XY_GPS_Position * Context->DeltaTime;
+      Context->EstimatedPosistionCorrected.Y += GPSPositionYResidual * New_Weight_XY_GPS_Position * Context->DeltaTime;
 
       //AJUSTA AS VELOCIDADES PARA APLICAR NA COORDENADAS
-      Context->EstimatedVelocityCorrected.Roll += GPSPositionXResidual * SquareFloat(New_Weight_XY_GPS_Position) * Context->DeltaTime;
-      Context->EstimatedVelocityCorrected.Pitch += GPSPositionYResidual * SquareFloat(New_Weight_XY_GPS_Position) * Context->DeltaTime;
+      Context->EstimatedVelocityCorrected.X += GPSPositionXResidual * SquareFloat(New_Weight_XY_GPS_Position) * Context->DeltaTime;
+      Context->EstimatedVelocityCorrected.Y += GPSPositionYResidual * SquareFloat(New_Weight_XY_GPS_Position) * Context->DeltaTime;
 
       //AJUSTA AS VELOCIDADES DE ACORDO COM A MEDIÇÃO DO RESIDUAL X E Y
-      Context->EstimatedVelocityCorrected.Roll += GPSVelocityXResidual * New_Weight_XY_GPS_Velocity * Context->DeltaTime;
-      Context->EstimatedVelocityCorrected.Pitch += GPSVelocityYResidual * New_Weight_XY_GPS_Velocity * Context->DeltaTime;
+      Context->EstimatedVelocityCorrected.X += GPSVelocityXResidual * New_Weight_XY_GPS_Velocity * Context->DeltaTime;
+      Context->EstimatedVelocityCorrected.Y += GPSVelocityYResidual * New_Weight_XY_GPS_Velocity * Context->DeltaTime;
 
       //AJUSTA A BIAS DO ACELEROMETRO
-      Context->AccBiasCorrected.Roll -= GPSPositionXResidual * SquareFloat(New_Weight_XY_GPS_Position);
-      Context->AccBiasCorrected.Pitch -= GPSPositionYResidual * SquareFloat(New_Weight_XY_GPS_Position);
+      Context->AccBiasCorrected.X -= GPSPositionXResidual * SquareFloat(New_Weight_XY_GPS_Position);
+      Context->AccBiasCorrected.Y -= GPSPositionYResidual * SquareFloat(New_Weight_XY_GPS_Position);
 
       //AJUSTA A ESTIMATIVA DE POSIÇÃO HORIZONTAL
       Context->NewEstimatedPositionHorizontal = INS_Resources.Estimated.EstimatedPositionHorizontal + (MAX(INS_Resources.GPS.EstimatedPositionHorizontal, GPSPositionResidualMag) - INS_Resources.Estimated.EstimatedPositionHorizontal) * New_Weight_XY_GPS_Position * Context->DeltaTime;
@@ -354,13 +350,13 @@ bool InertialNavigationClass::CorrectZStateWithBaroOrGPS(INS_Context_Struct *Con
 
     if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
     {
-      INS_Resources.State.BaroGroundAlt = INS_Resources.Estimated.Position.Yaw;
+      INS_Resources.State.BaroGroundAlt = INS_Resources.Estimated.Position.Z;
       INS_Resources.State.BaroGroundValid = true;
       INS_Resources.State.BaroGroundTimeout = ActualTimeInUs + 250000;
     }
     else
     {
-      if (INS_Resources.Estimated.Velocity.Yaw > 15)
+      if (INS_Resources.Estimated.Velocity.Z > 15)
       {
         if (ActualTimeInUs > INS_Resources.State.BaroGroundTimeout)
         {
@@ -377,15 +373,16 @@ bool InertialNavigationClass::CorrectZStateWithBaroOrGPS(INS_Context_Struct *Con
     bool AirCushionEffectDetected = IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) && ((Context->NewFlags & EST_BARO_VALID) && INS_Resources.State.BaroGroundValid && INS_Resources.Barometer.ActualAltitude < INS_Resources.State.BaroGroundAlt);
 
     //CALCULA A ALTITUDE COM BASE NO BARO
-    const float BaroAltResidual = (AirCushionEffectDetected ? INS_Resources.State.BaroGroundAlt : INS_Resources.Barometer.ActualAltitude) - INS_Resources.Estimated.Position.Yaw;
-    Context->EstimatedPosistionCorrected.Yaw += BaroAltResidual * Weight_Z_Baro_Position * Context->DeltaTime;
-    Context->EstimatedVelocityCorrected.Yaw += BaroAltResidual * SquareFloat(Weight_Z_Baro_Position) * Context->DeltaTime;
+    const float BaroAltResidual = (AirCushionEffectDetected ? INS_Resources.State.BaroGroundAlt : INS_Resources.Barometer.ActualAltitude) - INS_Resources.Estimated.Position.Z;
+    Context->EstimatedPosistionCorrected.Z += BaroAltResidual * Weight_Z_Baro_Position * Context->DeltaTime;
+    Context->EstimatedVelocityCorrected.Z += BaroAltResidual * SquareFloat(Weight_Z_Baro_Position) * Context->DeltaTime;
 
+    //VERIFICIA SE A ESTIMATIVA DE ALTITUDE DO GPS É VALIDA
     if (Context->NewFlags & EST_GPS_Z_VALID)
     {
-      const float GPSRocResidual = INS_Resources.GPS.Velocity.Yaw - INS_Resources.Estimated.Velocity.Yaw;
+      const float GPSRocResidual = INS_Resources.GPS.Velocity.Z - INS_Resources.Estimated.Velocity.Z;
       const float GPSRocScaler = Sine_Curve(GPSRocResidual, 250.0f);
-      Context->EstimatedVelocityCorrected.Yaw += GPSRocResidual * Weight_Z_GPS_Velocity * GPSRocScaler * Context->DeltaTime;
+      Context->EstimatedVelocityCorrected.Z += GPSRocResidual * Weight_Z_GPS_Velocity * GPSRocScaler * Context->DeltaTime;
     }
 
     //AJUSTA A ESTIMATIVA DE POSIÇÃO VERTICAL
@@ -394,7 +391,7 @@ bool InertialNavigationClass::CorrectZStateWithBaroOrGPS(INS_Context_Struct *Con
     //AJUSTA A BIAS DO Z
     if (!AirCushionEffectDetected)
     {
-      Context->AccBiasCorrected.Yaw -= BaroAltResidual * SquareFloat(Weight_Z_Baro_Position);
+      Context->AccBiasCorrected.Z -= BaroAltResidual * SquareFloat(Weight_Z_Baro_Position);
     }
 
     return true;
@@ -404,24 +401,24 @@ bool InertialNavigationClass::CorrectZStateWithBaroOrGPS(INS_Context_Struct *Con
     //RESETA A POSIÇÃO E VELOCIDADE Z
     if (!(Context->NewFlags & EST_Z_VALID))
     {
-      Context->EstimatedPosistionCorrected.Yaw += INS_Resources.GPS.Position.Yaw - INS_Resources.Estimated.Position.Yaw;
-      Context->EstimatedVelocityCorrected.Yaw += INS_Resources.GPS.Velocity.Yaw - INS_Resources.Estimated.Velocity.Yaw;
+      Context->EstimatedPosistionCorrected.Z += INS_Resources.GPS.Position.Z - INS_Resources.Estimated.Position.Z;
+      Context->EstimatedVelocityCorrected.Z += INS_Resources.GPS.Velocity.Z - INS_Resources.Estimated.Velocity.Z;
       Context->NewEstimatedPositionVertical = INS_Resources.GPS.EstimatedPositionVertical;
     }
     else
     {
       //CALCULA A ALTITUDE BASEADO NO GPS
-      const float GPSAltResudual = INS_Resources.GPS.Position.Yaw - INS_Resources.Estimated.Position.Yaw;
+      const float GPSAltResudual = INS_Resources.GPS.Position.Z - INS_Resources.Estimated.Position.Z;
 
-      Context->EstimatedPosistionCorrected.Yaw += GPSAltResudual * Weight_Z_GPS_Position * Context->DeltaTime;
-      Context->EstimatedVelocityCorrected.Yaw += GPSAltResudual * SquareFloat(Weight_Z_GPS_Position) * Context->DeltaTime;
-      Context->EstimatedVelocityCorrected.Yaw += (INS_Resources.GPS.Velocity.Yaw - INS_Resources.Estimated.Velocity.Yaw) * Weight_Z_GPS_Velocity * Context->DeltaTime;
+      Context->EstimatedPosistionCorrected.Z += GPSAltResudual * Weight_Z_GPS_Position * Context->DeltaTime;
+      Context->EstimatedVelocityCorrected.Z += GPSAltResudual * SquareFloat(Weight_Z_GPS_Position) * Context->DeltaTime;
+      Context->EstimatedVelocityCorrected.Z += (INS_Resources.GPS.Velocity.Z - INS_Resources.Estimated.Velocity.Z) * Weight_Z_GPS_Velocity * Context->DeltaTime;
 
       //AJUSTA A ESTIMATIVA DE POSIÇÃO VERTICAL
       Context->NewEstimatedPositionVertical = INS_Resources.Estimated.EstimatedPositionVertical + (MAX(INS_Resources.GPS.EstimatedPositionVertical, GPSAltResudual) - INS_Resources.Estimated.EstimatedPositionVertical) * Weight_Z_GPS_Position * Context->DeltaTime;
 
       //AJUSTA A BIAS DO Z
-      Context->AccBiasCorrected.Yaw -= GPSAltResudual * SquareFloat(Weight_Z_GPS_Position);
+      Context->AccBiasCorrected.Z -= GPSAltResudual * SquareFloat(Weight_Z_GPS_Position);
     }
 
     return true;
@@ -494,13 +491,13 @@ void InertialNavigationClass::UpdateEstimationPredictXYZ(uint32_t ActualTimeInUs
 
   if (!EstimatorXYCorrectState || Context.NewEstimatedPositionHorizontal > Max_INS_H_V_Error)
   {
-    Context.EstimatedVelocityCorrected.Roll = (0.0f - INS_Resources.Estimated.Velocity.Roll) * Weight_XY_Coeff_Velocity * Context.DeltaTime;
-    Context.EstimatedVelocityCorrected.Pitch = (0.0f - INS_Resources.Estimated.Velocity.Pitch) * Weight_XY_Coeff_Velocity * Context.DeltaTime;
+    Context.EstimatedVelocityCorrected.X = (0.0f - INS_Resources.Estimated.Velocity.X) * Weight_XY_Coeff_Velocity * Context.DeltaTime;
+    Context.EstimatedVelocityCorrected.Y = (0.0f - INS_Resources.Estimated.Velocity.Y) * Weight_XY_Coeff_Velocity * Context.DeltaTime;
   }
 
   if (!EstimatorZCorrectState || Context.NewEstimatedPositionVertical > Max_INS_H_V_Error)
   {
-    Context.EstimatedVelocityCorrected.Yaw = (0.0f - INS_Resources.Estimated.Velocity.Yaw) * Weight_Z_Coeff_Velocity * Context.DeltaTime;
+    Context.EstimatedVelocityCorrected.Z = (0.0f - INS_Resources.Estimated.Velocity.Z) * Weight_Z_Coeff_Velocity * Context.DeltaTime;
   }
 
   //APLICA AS CORREÇÕES
@@ -509,16 +506,16 @@ void InertialNavigationClass::UpdateEstimationPredictXYZ(uint32_t ActualTimeInUs
 
   if (Weight_Acc_Bias > 0.0f)
   {
-    const float AccelerationBiasMagnitude = SquareFloat(Context.AccBiasCorrected.Roll) + SquareFloat(Context.AccBiasCorrected.Pitch) + SquareFloat(Context.AccBiasCorrected.Yaw);
+    const float AccelerationBiasMagnitude = SquareFloat(Context.AccBiasCorrected.X) + SquareFloat(Context.AccBiasCorrected.Y) + SquareFloat(Context.AccBiasCorrected.Z);
     if (AccelerationBiasMagnitude < SquareFloat(ACC_BIAS_ACCEPTANCE_VALUE))
     {
-      //TRANFORMA DE EARTH PARA BODY
+      //TRANSFORMA DE EARTH PARA BODY
       AHRS.TransformVectorEarthFrameToBodyFrame(&Context.AccBiasCorrected);
 
       //AJUSTA A BIAS DA ACELERAÇÃO
-      INS_Resources.IMU.AccelerationBias.Roll += Context.AccBiasCorrected.Roll * Weight_Acc_Bias * Context.DeltaTime;
-      INS_Resources.IMU.AccelerationBias.Pitch += Context.AccBiasCorrected.Pitch * Weight_Acc_Bias * Context.DeltaTime;
-      INS_Resources.IMU.AccelerationBias.Yaw += Context.AccBiasCorrected.Yaw * Weight_Acc_Bias * Context.DeltaTime;
+      INS_Resources.IMU.AccelerationBias.X += Context.AccBiasCorrected.X * Weight_Acc_Bias * Context.DeltaTime;
+      INS_Resources.IMU.AccelerationBias.Y += Context.AccBiasCorrected.Y * Weight_Acc_Bias * Context.DeltaTime;
+      INS_Resources.IMU.AccelerationBias.Z += Context.AccBiasCorrected.Z * Weight_Acc_Bias * Context.DeltaTime;
     }
   }
 

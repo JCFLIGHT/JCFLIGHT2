@@ -80,17 +80,17 @@ uint32_t AutoLaunchAbortTime = 0;
 
 const float GetPitchAccelerationInMSS(void)
 {
-  return BodyFrameAcceleration.Pitch;
+  return BodyFrameAcceleration.Y;
 }
 
 const float GetRollAccelerationInMSS(void)
 {
-  return BodyFrameAcceleration.Roll;
+  return BodyFrameAcceleration.X;
 }
 
 const float GetYawRotationInRadians(void)
 {
-  return BodyFrameRotation.Yaw;
+  return BodyFrameRotation.Z;
 }
 
 bool AutoLaunchClass::GetSwingVelocityState(void)
@@ -229,7 +229,7 @@ bool AutoLaunchClass::GetMaxAltitudeReached(void)
     return false;
   }
 
-  return ((AUTO_LAUCH_MAX_ALTITUDE * 100) > 0) && (INS_Resources.Estimated.Position.Yaw >= (AUTO_LAUCH_MAX_ALTITUDE * 100));
+  return ((AUTO_LAUCH_MAX_ALTITUDE * 100) > 0) && (INS_Resources.Estimated.Position.Z >= (AUTO_LAUCH_MAX_ALTITUDE * 100));
 }
 
 bool AutoLaunchClass::GetStatusCompleted(void)

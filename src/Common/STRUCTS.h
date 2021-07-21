@@ -44,9 +44,9 @@ typedef union
 
   struct
   {
-    float Roll;
-    float Pitch;
-    float Yaw;
+    float X;
+    float Y;
+    float Z;
   };
 
 } Vector3x3_Struct;

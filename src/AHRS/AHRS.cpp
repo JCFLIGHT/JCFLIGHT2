@@ -96,9 +96,9 @@ void AHRSClass::Initialization(void)
   const int16_t Degrees = ((int16_t)(STORAGEMANAGER.Read_Float(MAG_DECLINATION_ADDR) * 100)) / 100;
   const int16_t Remainder = ((int16_t)(STORAGEMANAGER.Read_Float(MAG_DECLINATION_ADDR) * 100)) % 100;
   const float CalcedValueInRadians = -ConvertToRadians(Degrees + Remainder / 60.0f);
-  CorrectedMagneticFieldNorth.Roll = Fast_Cosine(CalcedValueInRadians);
-  CorrectedMagneticFieldNorth.Pitch = Fast_Sine(CalcedValueInRadians);
-  CorrectedMagneticFieldNorth.Yaw = 0;
+  CorrectedMagneticFieldNorth.X = Fast_Cosine(CalcedValueInRadians);
+  CorrectedMagneticFieldNorth.Y = Fast_Sine(CalcedValueInRadians);
+  CorrectedMagneticFieldNorth.Z = 0;
 
   //RESETA O QUATERNION E A MATRIX
   QuaternionInit(&Orientation);
@@ -130,9 +130,9 @@ static bool ValidateQuaternion(const Quaternion_Struct *Quaternion)
 static void ResetOrientationQuaternion(const Vector3x3_Struct *AccelerationBodyFrame)
 {
   const float AccVectorSquared = Fast_SquareRoot(VectorNormSquared(AccelerationBodyFrame));
-  Orientation.q0 = AccelerationBodyFrame->Yaw + AccVectorSquared;
-  Orientation.q1 = AccelerationBodyFrame->Pitch;
-  Orientation.q2 = -AccelerationBodyFrame->Roll;
+  Orientation.q0 = AccelerationBodyFrame->Z + AccVectorSquared;
+  Orientation.q1 = AccelerationBodyFrame->Y;
+  Orientation.q2 = -AccelerationBodyFrame->X;
   Orientation.q3 = 0.0f;
   QuaternionNormalize(&Orientation, &Orientation);
 }
@@ -223,7 +223,7 @@ static void MahonyAHRSUpdate(float DeltaTime,
       QuaternionRotateVectorInverse(&MagnetormeterVector, MagnetometerBodyFrame, &Orientation);
 
       //IGNORA A INCLINAÇÃO Z DO MAGNETOMETRO
-      MagnetormeterVector.Yaw = 0.0f;
+      MagnetormeterVector.Z = 0.0f;
 
       //VERIFICA SE O MAGNETOMETRO^2 ESTÁ OK
       if (VectorNormSquared(&MagnetormeterVector) > 0.01f)
@@ -258,7 +258,7 @@ static void MahonyAHRSUpdate(float DeltaTime,
 
       //ROTACIONA O VETOR DO BODY FRAME PARA EARTH FRAME
       QuaternionRotateVectorInverse(&HeadingEarthFrame, &Forward, &Orientation);
-      HeadingEarthFrame.Yaw = 0.0f;
+      HeadingEarthFrame.Z = 0.0f;
 
       //CORRIJA APENAS SE O SQUARE FOR POSITIVO E MAIOR QUE ZERO
       if (VectorNormSquared(&HeadingEarthFrame) > 0.01f)
@@ -489,14 +489,14 @@ bool AHRSClass::Get_Cosine_Z_Overflowed(void)
 
 void AHRSClass::TransformVectorEarthFrameToBodyFrame(Vector3x3_Struct *VectorPointer)
 {
-  VectorPointer->Pitch = -VectorPointer->Pitch;
+  VectorPointer->Y = -VectorPointer->Y;
   QuaternionRotateVector(VectorPointer, VectorPointer, &Orientation);
 }
 
 void AHRSClass::TransformVectorBodyFrameToEarthFrame(Vector3x3_Struct *VectorPointer)
 {
   QuaternionRotateVectorInverse(VectorPointer, VectorPointer, &Orientation);
-  VectorPointer->Pitch = -VectorPointer->Pitch;
+  VectorPointer->Y = -VectorPointer->Y;
 }
 
 float AHRSClass::GetSineRoll(void)

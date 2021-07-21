@@ -66,6 +66,7 @@ void SticksClass::Update()
       ResetDisarmDelayed();
     }
   }
+  
   if (GetActualThrottleStatus(THROTTLE_LOW))
   {
     if (!FastSystemFailSafe())
@@ -98,6 +99,7 @@ void SticksClass::Pre_Arm(void)
   {
     return; //FAÇA UMA RAPIDA SAÍDA SE O ARM-DISARM ESTIVER CONFIGURADO PELA CHAVE AUX
   }
+
   //ROTINA PRE-ARM
   if (STICKS.PreArm_Run)
   {
@@ -127,6 +129,7 @@ void SticksClass::Pre_Arm_Leds(void)
     RGB.Function(CALL_LED_PRE_ARM_INIT);
     BEEPER.Play(BEEPER_ARM);
   }
+
   if (!PREARM.CheckSafeState()) //SE TIVER ALGUMA CONDIÇÃO INCORRETA,NÃO ARMA
   {
     if ((STICKS.PreArm_Run_Count > 20 && STICKS.PreArm_Run_Count <= 30))

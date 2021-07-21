@@ -114,18 +114,18 @@ bool ApplyAltitudeHoldControl(void)
         if (Get_GPS_Used_To_Land())
         {
           AltitudeHoldController.Flags.Hovering = false;
-          SetNewAltitudeToHold(INS_Resources.Estimated.Position.Yaw);
-          if (INS_Resources.Estimated.Position.Yaw > ConverMetersToCM(SAFE_ALTITUDE))
+          SetNewAltitudeToHold(INS_Resources.Estimated.Position.Z);
+          if (INS_Resources.Estimated.Position.Z > ConverMetersToCM(SAFE_ALTITUDE))
           {
-            AltitudeHoldController.Target.Position.Z = MIN_TARGET_POS_Z + ((int32_t)(250 - MIN_TARGET_POS_Z) * (INS_Resources.Estimated.Position.Yaw - ConverMetersToCM(SAFE_ALTITUDE)) / (ConverMetersToCM(GPS_Resources.Home.Altitude) - ConverMetersToCM(SAFE_ALTITUDE)));
+            AltitudeHoldController.Target.Position.Z = MIN_TARGET_POS_Z + ((int32_t)(250 - MIN_TARGET_POS_Z) * (INS_Resources.Estimated.Position.Z - ConverMetersToCM(SAFE_ALTITUDE)) / (ConverMetersToCM(GPS_Resources.Home.Altitude) - ConverMetersToCM(SAFE_ALTITUDE)));
           }
           AltitudeHoldController.Target.Position.Z = -AltitudeHoldController.Target.Position.Z;
         }
         else
         {
           AltitudeHoldController.Flags.Hovering = true;
-          AltitudeHoldController.Target.Position.Z = ((AltitudeHoldController.Target.Altitude - INS_Resources.Estimated.Position.Yaw) * GET_SET[PID_POSITION_Z].kP) / 2;
-          if (INS_Resources.Estimated.Position.Yaw > ConverMetersToCM(SAFE_ALTITUDE))
+          AltitudeHoldController.Target.Position.Z = ((AltitudeHoldController.Target.Altitude - INS_Resources.Estimated.Position.Z) * GET_SET[PID_POSITION_Z].kP) / 2;
+          if (INS_Resources.Estimated.Position.Z > ConverMetersToCM(SAFE_ALTITUDE))
           {
             AltitudeHoldController.Target.Position.Z = Constrain_32Bits(AltitudeHoldController.Target.Position.Z, -250, 250);
           }
@@ -145,7 +145,7 @@ bool ApplyAltitudeHoldControl(void)
         else
         {
           if ((AltitudeHoldController.Throttle.Difference > THR_DIFF_COMPLETE_TAKEOFF) &&
-              (INS_Resources.Estimated.Velocity.Yaw >= MIN_VEL_Z_TO_VALID_GROUND))
+              (INS_Resources.Estimated.Velocity.Z >= MIN_VEL_Z_TO_VALID_GROUND))
           {
             AltitudeHoldController.Flags.TakeOffInProgress = false;
           }
@@ -168,16 +168,16 @@ bool ApplyAltitudeHoldControl(void)
           if (!AltitudeHoldController.Flags.Hovering)
           {
             AltitudeHoldController.Flags.Hovering = true;
-            AltitudeHoldController.Target.Altitude = INS_Resources.Estimated.Position.Yaw;
+            AltitudeHoldController.Target.Altitude = INS_Resources.Estimated.Position.Z;
           }
-          AltitudeHoldController.Target.Position.Z = ((AltitudeHoldController.Target.Altitude - INS_Resources.Estimated.Position.Yaw) * GET_SET[PID_POSITION_Z].kP) / 2;
+          AltitudeHoldController.Target.Position.Z = ((AltitudeHoldController.Target.Altitude - INS_Resources.Estimated.Position.Z) * GET_SET[PID_POSITION_Z].kP) / 2;
         }
       }
       AltitudeHoldController.Target.Position.Z = Constrain_32Bits(AltitudeHoldController.Target.Position.Z, -350, 350);
-      AltitudeHoldController.Target.Velocity.Z = Constrain_32Bits(AltitudeHoldController.Target.Position.Z - INS_Resources.Estimated.Velocity.Yaw, -600, 600);
+      AltitudeHoldController.Target.Velocity.Z = Constrain_32Bits(AltitudeHoldController.Target.Position.Z - INS_Resources.Estimated.Velocity.Z, -600, 600);
       AltitudeHoldController.PID.IntegratorSum += Constrain_32Bits(((AltitudeHoldController.Target.Velocity.Z * GET_SET[PID_VELOCITY_Z].kI * AltitudeHoldControlTimer.ActualTime) / 128) / ((AltitudeHoldController.Flags.Hovering && ABS(AltitudeHoldController.Target.Position.Z) < 100) ? 2 : 1), -16384000, 16384000);
       AltitudeHoldController.PID.IntegratorError = Constrain_16Bits((AltitudeHoldController.PID.IntegratorSum / 65536), -250, 250);
-      AltitudeHoldController.PID.Control = ((AltitudeHoldController.Target.Velocity.Z * GET_SET[PID_VELOCITY_Z].kP) / 32) + AltitudeHoldController.PID.IntegratorError - (((int32_t)INS_Resources.IMU.AccelerationNEU.Yaw * GET_SET[PID_VELOCITY_Z].kD) / 64);
+      AltitudeHoldController.PID.Control = ((AltitudeHoldController.Target.Velocity.Z * GET_SET[PID_VELOCITY_Z].kP) / 32) + AltitudeHoldController.PID.IntegratorError - (((int32_t)INS_Resources.IMU.AccelerationNEU.Z * GET_SET[PID_VELOCITY_Z].kD) / 64);
 
       RC_Resources.Attitude.Controller[THROTTLE] = Constrain_16Bits(AltitudeHoldController.Throttle.Hovering + AltitudeHoldController.PID.Control, RC_Resources.Attitude.ThrottleMin + ALT_HOLD_DEADBAND, RC_Resources.Attitude.ThrottleMax - ALT_HOLD_DEADBAND);
 
@@ -226,14 +226,14 @@ bool GetTakeOffInProgress(void)
 
 bool GetAltitudeReached(void)
 {
-  return ABS(AltitudeHoldController.Target.Altitude - INS_Resources.Estimated.Position.Yaw) < VALID_ALT_REACHED;
+  return ABS(AltitudeHoldController.Target.Altitude - INS_Resources.Estimated.Position.Z) < VALID_ALT_REACHED;
 }
 
 bool GetGroundDetected(void)
 {
-  return (ABS(INS_Resources.Estimated.Velocity.Yaw) < MIN_VEL_Z_TO_VALID_GROUND) &&
+  return (ABS(INS_Resources.Estimated.Velocity.Z) < MIN_VEL_Z_TO_VALID_GROUND) &&
          (AltitudeHoldController.PID.IntegratorError <= -185) &&
-         (INS_Resources.Estimated.Position.Yaw < ConverMetersToCM(SAFE_ALTITUDE));
+         (INS_Resources.Estimated.Position.Z < ConverMetersToCM(SAFE_ALTITUDE));
 }
 
 bool GetGroundDetectedFor100ms(void)

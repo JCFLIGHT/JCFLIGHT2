@@ -18,7 +18,7 @@
 #include "LOOPS.h"
 #include "Common/COMMON.h"
 
-void Slow_Loop()
+void Slow_Loop(void)
 {
         STICKS.Pre_Arm();
         COMPASS.Constant_Read();
@@ -26,7 +26,7 @@ void Slow_Loop()
         UpdateValuesOfPID();
 }
 
-void Medium_Loop()
+void Medium_Loop(void)
 {
         uint32_t ThisTaskTimeUs = GetTaskDeltaTime(TASK_MEDIUM_LOOP);
         const float ThisDeltaTime = (float)ThisTaskTimeUs * 1e-6f;
@@ -47,7 +47,7 @@ void Medium_Loop()
         BATTERY.Update_Current();
 }
 
-void Fast_Medium_Loop()
+void Fast_Medium_Loop(void)
 {
         BEEPER.Run();
         STICKS.Pre_Arm_Leds();
@@ -59,12 +59,12 @@ void Fast_Medium_Loop()
         PARAM.Update();
 }
 
-void Fast_Loop()
+void Fast_Loop(void)
 {
         Update_PrecisionLand();
 }
 
-void Super_Fast_Loop()
+void Super_Fast_Loop(void)
 {
         RGB.Update();
         SAFETYBUTTON.UpdateRoutine();
@@ -76,7 +76,7 @@ void Super_Fast_Loop()
         BATTERY.Calculate_Total_Current_In_Mah();
 }
 
-void Integral_Loop()
+void Integral_Loop(void)
 {
         uint32_t ThisTaskTimeUs = GetTaskDeltaTime(TASK_INTEGRAL_LOOP);
         const float ThisDeltaTime = (float)ThisTaskTimeUs * 1e-6f;

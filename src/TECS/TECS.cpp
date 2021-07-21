@@ -312,8 +312,8 @@ void TecsClass::UpdateAutoPilotControl(float DeltaTime)
 
 void TecsClass::UpdateEnergyPositionController(float DeltaTime)
 {
-    TECS_Resources.Position.Error.X = TECS_Resources.Position.DestinationNEU.X - INS_Resources.Estimated.Position.Roll;
-    TECS_Resources.Position.Error.Y = TECS_Resources.Position.DestinationNEU.Y - INS_Resources.Estimated.Position.Pitch;
+    TECS_Resources.Position.Error.X = TECS_Resources.Position.DestinationNEU.X - INS_Resources.Estimated.Position.X;
+    TECS_Resources.Position.Error.Y = TECS_Resources.Position.DestinationNEU.Y - INS_Resources.Estimated.Position.Y;
     TECS_Resources.Position.Target.Distance = sqrtf(SquareFloat(TECS_Resources.Position.Error.X) + SquareFloat(TECS_Resources.Position.Error.Y));
     TECS_Resources.Position.Tracking.Actual = TECS_Resources.Position.Tracking.Period * MAX(TECS_Resources.Position.VelocityXY, 100.0f);
 
@@ -325,13 +325,13 @@ void TecsClass::UpdateEnergyPositionController(float DeltaTime)
         TECS_Resources.Position.Circle.Angle = Fast_Atan2(-TECS_Resources.Position.Error.Y, -TECS_Resources.Position.Error.X) + ConvertToRadians(TECS_Resources.Params.CircleDirectionToRight ? 1 : -1 * 45.0f);
         TECS_Resources.Position.Circle.Target.X = TECS_Resources.Position.DestinationNEU.X + TECS_Resources.Params.Circle_Radius * Fast_Cosine(TECS_Resources.Position.Circle.Angle);
         TECS_Resources.Position.Circle.Target.Y = TECS_Resources.Position.DestinationNEU.Y + TECS_Resources.Params.Circle_Radius * Fast_Sine(TECS_Resources.Position.Circle.Angle);
-        TECS_Resources.Position.Error.X = TECS_Resources.Position.Circle.Target.X - INS_Resources.Estimated.Position.Roll;
-        TECS_Resources.Position.Error.Y = TECS_Resources.Position.Circle.Target.Y - INS_Resources.Estimated.Position.Pitch;
+        TECS_Resources.Position.Error.X = TECS_Resources.Position.Circle.Target.X - INS_Resources.Estimated.Position.X;
+        TECS_Resources.Position.Error.Y = TECS_Resources.Position.Circle.Target.Y - INS_Resources.Estimated.Position.Y;
         TECS_Resources.Position.Target.Distance = sqrtf(SquareFloat(TECS_Resources.Position.Error.X) + SquareFloat(TECS_Resources.Position.Error.Y));
     }
 
-    TECS_Resources.Position.Virtual.X = INS_Resources.Estimated.Position.Roll + TECS_Resources.Position.Error.X * (TECS_Resources.Position.Tracking.Actual / TECS_Resources.Position.Target.Distance);
-    TECS_Resources.Position.Virtual.Y = INS_Resources.Estimated.Position.Pitch + TECS_Resources.Position.Error.Y * (TECS_Resources.Position.Tracking.Actual / TECS_Resources.Position.Target.Distance);
+    TECS_Resources.Position.Virtual.X = INS_Resources.Estimated.Position.X + TECS_Resources.Position.Error.X * (TECS_Resources.Position.Tracking.Actual / TECS_Resources.Position.Target.Distance);
+    TECS_Resources.Position.Virtual.Y = INS_Resources.Estimated.Position.Y + TECS_Resources.Position.Error.Y * (TECS_Resources.Position.Tracking.Actual / TECS_Resources.Position.Target.Distance);
 
     if (ABS(RC_Resources.Attitude.Controller[ROLL]) > POS_HOLD_DEADBAND)
     {
@@ -343,7 +343,7 @@ void TecsClass::UpdateEnergyPositionController(float DeltaTime)
 
     TECS_Resources.Heading.AHRSYawInCentiDegress = ConvertDecidegreesToCentiDegrees(Attitude.EulerAngles.YawDecidegrees);
 
-    TECS_Resources.Heading.TargetBearing = WRap_36000(ConvertRadiansToCentiDegrees(Fast_Atan2(TECS_Resources.Position.Virtual.Y - INS_Resources.Estimated.Position.Pitch, TECS_Resources.Position.Virtual.X - INS_Resources.Estimated.Position.Roll)));
+    TECS_Resources.Heading.TargetBearing = WRap_36000(ConvertRadiansToCentiDegrees(Fast_Atan2(TECS_Resources.Position.Virtual.Y - INS_Resources.Estimated.Position.Y, TECS_Resources.Position.Virtual.X - INS_Resources.Estimated.Position.X)));
 
     TECS_Resources.Heading.Error = WRap_18000(TECS_Resources.Heading.TargetBearing - TECS_Resources.Heading.AHRSYawInCentiDegress);
 
@@ -404,7 +404,7 @@ void TecsClass::UpdateEnergyPositionController(float DeltaTime)
 
 float TecsClass::GetFuselageVelocity(void)
 {
-    return sqrtf(SquareFloat(INS_Resources.Estimated.Velocity.Roll) + SquareFloat(INS_Resources.Estimated.Velocity.Pitch));
+    return sqrtf(SquareFloat(INS_Resources.Estimated.Velocity.X) + SquareFloat(INS_Resources.Estimated.Velocity.Y));
 }
 
 void TecsClass::Reset_All(void)
@@ -465,8 +465,8 @@ void TecsClass::Update(float DeltaTime)
 
     if (INERTIALNAVIGATION.WaitForSample() && !TECS_Resources.Position.HomePointOnce)
     {
-        TECS_Resources.Position.HomePoint.X = INS_Resources.Estimated.Position.Roll + INS_Resources.Estimated.Velocity.Roll;
-        TECS_Resources.Position.HomePoint.Y = INS_Resources.Estimated.Position.Pitch + INS_Resources.Estimated.Velocity.Pitch;
+        TECS_Resources.Position.HomePoint.X = INS_Resources.Estimated.Position.X + INS_Resources.Estimated.Velocity.X;
+        TECS_Resources.Position.HomePoint.Y = INS_Resources.Estimated.Position.Y + INS_Resources.Estimated.Velocity.Y;
         TECS_Resources.Position.HomePointOnce = true;
     }
     else if (!INERTIALNAVIGATION.WaitForSample()) //SISTEMA DESARMADO
@@ -480,7 +480,7 @@ void TecsClass::Update(float DeltaTime)
     {
         const float DeltaTime = TECS_Resources.Scheduler.ActualTime * 1e-6f;
 
-        TECS_Resources.Position.Altitude = INS_Resources.Estimated.Position.Yaw;
+        TECS_Resources.Position.Altitude = INS_Resources.Estimated.Position.Z;
 
         if (TECS.GetStateToEnableTurnCoordinator())
         {
@@ -566,8 +566,8 @@ void TecsClass::Update(float DeltaTime)
           TECS_Resources.Position.DestinationNEU.Y,
           TECS_Resources.Position.HomePoint.X,
           TECS_Resources.Position.HomePoint.Y,
-          INS_Resources.Estimated.Position.Roll,
-          INS_Resources.Estimated.Position.Pitch);
+          INS_Resources.Estimated.Position.X,
+          INS_Resources.Estimated.Position.Y);
 
     /*
     DEBUG("%ld %.2f %.2f ",

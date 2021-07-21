@@ -18,10 +18,10 @@
 #ifndef LOOPS_H_
 #define LOOPS_H_
 #include "Build/LIBDEPENDENCIES.h"
-void Slow_Loop();
-void Medium_Loop();
-void Fast_Medium_Loop();
-void Fast_Loop();
-void Super_Fast_Loop();
-void Integral_Loop();
+void Slow_Loop(void);
+void Medium_Loop(void);
+void Fast_Medium_Loop(void);
+void Fast_Loop(void);
+void Super_Fast_Loop(void);
+void Integral_Loop(void);
 #endif

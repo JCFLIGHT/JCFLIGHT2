@@ -24,7 +24,7 @@
 
 static inline float VectorNormSquared(const Vector3x3_Struct *Vector)
 {
-    return SquareFloat(Vector->Roll) + SquareFloat(Vector->Pitch) + SquareFloat(Vector->Yaw);
+    return SquareFloat(Vector->X) + SquareFloat(Vector->Y) + SquareFloat(Vector->Z);
 }
 
 static inline Vector3x3_Struct *VectorNormalize(Vector3x3_Struct *Result, const Vector3x3_Struct *Vector)
@@ -32,15 +32,15 @@ static inline Vector3x3_Struct *VectorNormalize(Vector3x3_Struct *Result, const 
     float Length = Fast_SquareRoot(VectorNormSquared(Vector));
     if (Length != 0)
     {
-        Result->Roll = Vector->Roll / Length;
-        Result->Pitch = Vector->Pitch / Length;
-        Result->Yaw = Vector->Yaw / Length;
+        Result->X = Vector->X / Length;
+        Result->Y = Vector->Y / Length;
+        Result->Z = Vector->Z / Length;
     }
     else
     {
-        Result->Roll = 0;
-        Result->Pitch = 0;
-        Result->Yaw = 0;
+        Result->X = 0;
+        Result->Y = 0;
+        Result->Z = 0;
     }
     return Result;
 }
@@ -48,9 +48,9 @@ static inline Vector3x3_Struct *VectorNormalize(Vector3x3_Struct *Result, const 
 static inline Vector3x3_Struct *VectorCrossProduct(Vector3x3_Struct *Result, const Vector3x3_Struct *VectorA, const Vector3x3_Struct *VectorB)
 {
     Vector3x3_Struct CalcedVector;
-    CalcedVector.Roll = VectorA->Pitch * VectorB->Yaw - VectorA->Yaw * VectorB->Pitch;
-    CalcedVector.Pitch = VectorA->Yaw * VectorB->Roll - VectorA->Roll * VectorB->Yaw;
-    CalcedVector.Yaw = VectorA->Roll * VectorB->Pitch - VectorA->Pitch * VectorB->Roll;
+    CalcedVector.X = VectorA->Y * VectorB->Z - VectorA->Z * VectorB->Y;
+    CalcedVector.Y = VectorA->Z * VectorB->X - VectorA->X * VectorB->Z;
+    CalcedVector.Z = VectorA->X * VectorB->Y - VectorA->Y * VectorB->X;
     *Result = CalcedVector;
     return Result;
 }
@@ -58,9 +58,9 @@ static inline Vector3x3_Struct *VectorCrossProduct(Vector3x3_Struct *Result, con
 static inline Vector3x3_Struct *VectorAdd(Vector3x3_Struct *Result, const Vector3x3_Struct *VectorA, const Vector3x3_Struct *VectorB)
 {
     Vector3x3_Struct CalcedVector;
-    CalcedVector.Roll = VectorA->Roll + VectorB->Roll;
-    CalcedVector.Pitch = VectorA->Pitch + VectorB->Pitch;
-    CalcedVector.Yaw = VectorA->Yaw + VectorB->Yaw;
+    CalcedVector.X = VectorA->X + VectorB->X;
+    CalcedVector.Y = VectorA->Y + VectorB->Y;
+    CalcedVector.Z = VectorA->Z + VectorB->Z;
     *Result = CalcedVector;
     return Result;
 }
@@ -68,18 +68,18 @@ static inline Vector3x3_Struct *VectorAdd(Vector3x3_Struct *Result, const Vector
 static inline Vector3x3_Struct *VectorScale(Vector3x3_Struct *Result, const Vector3x3_Struct *VectorA, const float VectorB)
 {
     Vector3x3_Struct CalcedVector;
-    CalcedVector.Roll = VectorA->Roll * VectorB;
-    CalcedVector.Pitch = VectorA->Pitch * VectorB;
-    CalcedVector.Yaw = VectorA->Yaw * VectorB;
+    CalcedVector.X = VectorA->X * VectorB;
+    CalcedVector.Y = VectorA->Y * VectorB;
+    CalcedVector.Z = VectorA->Z * VectorB;
     *Result = CalcedVector;
     return Result;
 }
 
 static inline void VectorZero(Vector3x3_Struct *VectorPointer)
 {
-    VectorPointer->Roll = 0.0f;
-    VectorPointer->Pitch = 0.0f;
-    VectorPointer->Yaw = 0.0f;
+    VectorPointer->X = 0.0f;
+    VectorPointer->Y = 0.0f;
+    VectorPointer->Z = 0.0f;
 }
 
 #endif

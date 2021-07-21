@@ -648,8 +648,8 @@ bool PIDXYZClass::FixedWingIntegralTermLimitActive(uint8_t Axis)
 void PIDXYZClass::GetNewControllerForPlaneWithTurn(void)
 {
   Vector3x3_Struct TurnControllerRates;
-  TurnControllerRates.Roll = 0;
-  TurnControllerRates.Pitch = 0;
+  TurnControllerRates.X = 0;
+  TurnControllerRates.Y = 0;
 
   if (!IS_FLIGHT_MODE_ACTIVE(TURN_MODE) || !IS_FLIGHT_MODE_ACTIVE(STABILIZE_MODE))
   {
@@ -668,7 +668,7 @@ void PIDXYZClass::GetNewControllerForPlaneWithTurn(void)
       float PitchAngleTarget = ConvertDeciDegreesToRadians(RcControllerToAngle(RC_Resources.Attitude.Controller[PITCH], ConvertDegreesToDecidegrees(GET_SET[NAV_PITCH_BANK_MAX].MaxValue)));
       float TurnRatePitchAdjustmentFactor = Fast_Cosine(ABS(PitchAngleTarget));
       CoordinatedTurnRateEarthFrame = ConvertToDegrees(GRAVITY_CMSS * Fast_Tangent(-FinalBankAngleTarget) / AirSpeedForCoordinatedTurn * TurnRatePitchAdjustmentFactor);
-      TurnControllerRates.Yaw = CoordinatedTurnRateEarthFrame;
+      TurnControllerRates.Z = CoordinatedTurnRateEarthFrame;
     }
     else
     {
@@ -680,9 +680,9 @@ void PIDXYZClass::GetNewControllerForPlaneWithTurn(void)
   AHRS.TransformVectorEarthFrameToBodyFrame(&TurnControllerRates);
 
   //LIMITA O VALOR MINIMO E MAXIMO DE SAÍDA A PARTIR DOS VALOR DE RATE DEFINIDO PELO USUARIO NO GCS
-  PID_Resources.RcRateTarget.Roll = Constrain_16Bits(PID_Resources.RcRateTarget.Roll + TurnControllerRates.Roll, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
-  PID_Resources.RcRateTarget.Pitch = Constrain_16Bits(PID_Resources.RcRateTarget.Pitch + TurnControllerRates.Pitch * CoordinatedPitchGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
-  PID_Resources.RcRateTarget.Yaw = Constrain_16Bits(PID_Resources.RcRateTarget.Yaw + TurnControllerRates.Yaw * CoordinatedYawGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw), ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw));
+  PID_Resources.RcRateTarget.Roll = Constrain_16Bits(PID_Resources.RcRateTarget.Roll + TurnControllerRates.X, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
+  PID_Resources.RcRateTarget.Pitch = Constrain_16Bits(PID_Resources.RcRateTarget.Pitch + TurnControllerRates.Y * CoordinatedPitchGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
+  PID_Resources.RcRateTarget.Yaw = Constrain_16Bits(PID_Resources.RcRateTarget.Yaw + TurnControllerRates.Z * CoordinatedYawGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw), ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw));
 }
 
 void PIDXYZClass::Reset_Integral_Accumulators(void)

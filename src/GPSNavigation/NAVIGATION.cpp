@@ -66,8 +66,8 @@ void Load_GPS_Navigation_Params(void)
 void GPS_Reset_Navigation(void)
 {
   GPS_Resources.Mode.Navigation = DO_NONE;
-  GPS_Resources.Navigation.AutoPilot.INS.Angle[COORD_LATITUDE] = 0;
-  GPS_Resources.Navigation.AutoPilot.INS.Angle[COORD_LONGITUDE] = 0;
+  GPS_Resources.Navigation.AutoPilot.INS.Angle[ROLL] = 0;
+  GPS_Resources.Navigation.AutoPilot.INS.Angle[PITCH] = 0;
   ResetAllPIDOfGPS();
 }
 
@@ -168,7 +168,7 @@ void GPS_Process_FlightModes(float DeltaTime)
           }
           else
           {
-            SetNewAltitudeToHold(INS_Resources.Estimated.Position.Yaw);
+            SetNewAltitudeToHold(INS_Resources.Estimated.Position.Z);
             GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
           }
           GPS_Resources.Navigation.HeadingHoldTarget = GPS_Resources.Navigation.Bearing.InitialTarget;
@@ -200,7 +200,7 @@ void GPS_Process_FlightModes(float DeltaTime)
 
       case DO_LAND_INIT:
         Do_RTH_Or_Land_Call_Alt_Hold = true;
-        SetNewAltitudeToHold(INS_Resources.Estimated.Position.Yaw);
+        SetNewAltitudeToHold(INS_Resources.Estimated.Position.Z);
         GPS_Resources.DeltaTime.InitLand = SCHEDULERTIME.GetMillis() + TIME_TO_INIT_LAND;
         GPS_Resources.Mode.Navigation = DO_LAND_SETTLE;
         break;
@@ -243,13 +243,13 @@ void GPS_Process_FlightModes(float DeltaTime)
 
 void Multirotor_Do_Mode_RTH_Now(void)
 {
-  if (INS_Resources.Estimated.Position.Yaw < ConverMetersToCM(GPS_Resources.Home.Altitude))
+  if (INS_Resources.Estimated.Position.Z < ConverMetersToCM(GPS_Resources.Home.Altitude))
   {
     SetNewAltitudeToHold(ConverMetersToCM(GPS_Resources.Home.Altitude));
   }
   else
   {
-    SetNewAltitudeToHold(INS_Resources.Estimated.Position.Yaw);
+    SetNewAltitudeToHold(INS_Resources.Estimated.Position.Z);
   }
   SetThisPointToPositionHold();
 }

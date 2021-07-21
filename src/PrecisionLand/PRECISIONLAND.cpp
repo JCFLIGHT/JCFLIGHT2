@@ -44,9 +44,9 @@ PT1_Filter_Struct AccelerationEarthFrame_Smooth[3];
 
 void Update_PrecisionLand(void)
 {
-  PT1FilterApply(&AccelerationEarthFrame_Smooth[NORTH], INS_Resources.NewAccelerationEarthFrame.Roll, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
-  PT1FilterApply(&AccelerationEarthFrame_Smooth[EAST], INS_Resources.NewAccelerationEarthFrame.Pitch, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
-  PT1FilterApply(&AccelerationEarthFrame_Smooth[UP], INS_Resources.NewAccelerationEarthFrame.Yaw, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
+  PT1FilterApply(&AccelerationEarthFrame_Smooth[NORTH], INS_Resources.NewAccelerationEarthFrame.X, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
+  PT1FilterApply(&AccelerationEarthFrame_Smooth[EAST], INS_Resources.NewAccelerationEarthFrame.Y, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
+  PT1FilterApply(&AccelerationEarthFrame_Smooth[UP], INS_Resources.NewAccelerationEarthFrame.Z, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
 
 #ifdef PRINTLN_PRECISION_LAND
 

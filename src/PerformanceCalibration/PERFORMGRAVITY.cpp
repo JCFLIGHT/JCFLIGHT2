@@ -63,18 +63,18 @@ void GravityClass::Update(Vector3x3_Struct *VectorPointer)
         }
         else
         {
-            Calibration.Accelerometer.Gravity.Samples.Sum = Calibration.Accelerometer.Gravity.Samples.Sum + VectorPointer->Yaw;
-            DevicePushValues(&GravityDevice, VectorPointer->Yaw);
+            Calibration.Accelerometer.Gravity.Samples.Sum = Calibration.Accelerometer.Gravity.Samples.Sum + VectorPointer->Z;
+            DevicePushValues(&GravityDevice, VectorPointer->Z);
             Calibration.Accelerometer.Gravity.Samples.Count++;
         }
 
         //RESETA TODOS OS EIXOS DO NEU SE A CALIBRAÇÃO AINDA ESTIVER CORRENDO
-        VectorPointer->Roll = 0.0f;
-        VectorPointer->Pitch = 0.0f;
-        VectorPointer->Yaw = 0.0f;
+        VectorPointer->X = 0.0f;
+        VectorPointer->Y = 0.0f;
+        VectorPointer->Z = 0.0f;
     }
     else //SUBTRAI O 1G QUE FOI CALCULADO DURANTE A CALIBRAÇÃO DO EIXO Z DO NEU
     {
-        VectorPointer->Yaw = VectorPointer->Yaw - Calibration.Accelerometer.Gravity.Samples.Sum;
+        VectorPointer->Z = VectorPointer->Z - Calibration.Accelerometer.Gravity.Samples.Sum;
     }
 }

@@ -78,15 +78,15 @@ static inline Vector3x3_Struct *QuaternionRotateVector(Vector3x3_Struct *Result,
 {
     Quaternion_Struct QuaternionVector, ReferenceConjugate;
     QuaternionVector.q0 = 0;
-    QuaternionVector.q1 = Vector->Roll;
-    QuaternionVector.q2 = Vector->Pitch;
-    QuaternionVector.q3 = Vector->Yaw;
+    QuaternionVector.q1 = Vector->X;
+    QuaternionVector.q2 = Vector->Y;
+    QuaternionVector.q3 = Vector->Z;
     QuaternionConjugate(&ReferenceConjugate, Reference);
     QuaternionMultiply(&QuaternionVector, &ReferenceConjugate, &QuaternionVector);
     QuaternionMultiply(&QuaternionVector, &QuaternionVector, Reference);
-    Result->Roll = QuaternionVector.q1;
-    Result->Pitch = QuaternionVector.q2;
-    Result->Yaw = QuaternionVector.q3;
+    Result->X = QuaternionVector.q1;
+    Result->Y = QuaternionVector.q2;
+    Result->Z = QuaternionVector.q3;
     return Result;
 }
 
@@ -94,24 +94,24 @@ static inline Vector3x3_Struct *QuaternionRotateVectorInverse(Vector3x3_Struct *
 {
     Quaternion_Struct QuaternionVector, ReferenceConjugate;
     QuaternionVector.q0 = 0;
-    QuaternionVector.q1 = Vector->Roll;
-    QuaternionVector.q2 = Vector->Pitch;
-    QuaternionVector.q3 = Vector->Yaw;
+    QuaternionVector.q1 = Vector->X;
+    QuaternionVector.q2 = Vector->Y;
+    QuaternionVector.q3 = Vector->Z;
     QuaternionConjugate(&ReferenceConjugate, Reference);
     QuaternionMultiply(&QuaternionVector, Reference, &QuaternionVector);
     QuaternionMultiply(&QuaternionVector, &QuaternionVector, &ReferenceConjugate);
-    Result->Roll = QuaternionVector.q1;
-    Result->Pitch = QuaternionVector.q2;
-    Result->Yaw = QuaternionVector.q3;
+    Result->X = QuaternionVector.q1;
+    Result->Y = QuaternionVector.q2;
+    Result->Z = QuaternionVector.q3;
     return Result;
 }
 
 static inline Quaternion_Struct *QuaternionInitFromVector(Quaternion_Struct *Result, const Vector3x3_Struct *Vector)
 {
     Result->q0 = 0.0f;
-    Result->q1 = Vector->Roll;
-    Result->q2 = Vector->Pitch;
-    Result->q3 = Vector->Yaw;
+    Result->q1 = Vector->X;
+    Result->q2 = Vector->Y;
+    Result->q3 = Vector->Z;
     return Result;
 }
 
