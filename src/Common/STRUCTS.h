@@ -23,6 +23,41 @@
 
 typedef struct
 {
+  float kP_Accelerometer = 0.25f;
+  float kI_Accelerometer = 0.0050f;
+  float kP_Magnetometer = 1.0f;
+  float kI_Magnetometer = 0.0f;
+  float Cosine_Z = 25.0f;
+} AHRS_Configuration_Struct;
+
+typedef struct
+{
+  float q0 = 0.0f;
+  float q1 = 0.0f;
+  float q2 = 0.0f;
+  float q3 = 0.0f;
+} Quaternion_Struct;
+
+typedef union
+{
+  float Vector[3];
+
+  struct
+  {
+    float Roll;
+    float Pitch;
+    float Yaw;
+  };
+
+} Vector3x3_Struct;
+
+typedef struct
+{
+  float Matrix3x3[3][3] = {{0, 0, 0}, {0, 0, 0}};
+} Matrix3x3_Struct;
+
+typedef struct
+{
   struct Accelerometer_Struct
   {
     uint8_t Temperature = 0;
@@ -56,12 +91,12 @@ typedef struct
 typedef struct
 {
   //LPF
-  float AccelerationEarthFrame_LPF[3] = {0, 0, 0};
+  float AccelerationEarthFrame_LPF[3] = {0.0f, 0.0f, 0.0f};
 
   //AVERAGE
   uint8_t AccelerationEarthFrame_Sum_Count[3] = {0, 0, 0};
-  float AccelerationEarthFrame_Filtered[3] = {0, 0, 0};
-  float AccelerationEarthFrame_Sum[3] = {0, 0, 0};
+  float AccelerationEarthFrame_Filtered[3] = {0.0f, 0.0f, 0.0f};
+  float AccelerationEarthFrame_Sum[3] = {0.0f, 0.0f, 0.0f};
 
   struct Math_Struct
   {
@@ -77,6 +112,8 @@ typedef struct
 
   } Math;
 
+  Vector3x3_Struct NewAccelerationEarthFrame;
+
   struct History_Struct
   {
     uint8_t XYCount = 0;
@@ -87,15 +124,15 @@ typedef struct
 
   struct EarthFrame_Struct
   {
-    float AccelerationNEU[3] = {0, 0, 0};
-    float Velocity[3] = {0, 0, 0};
-    float Position[3] = {0, 0, 0};
+    float AccelerationNEU[3] = {0.0f, 0.0f, 0.0f};
+    float Velocity[3] = {0.0f, 0.0f, 0.0f};
+    float Position[3] = {0.0f, 0.0f, 0.0f};
   } EarthFrame;
 
   struct Bias_Struct
   {
-    float Adjust[3] = {0, 0, 0};
-    float Difference[3] = {0, 0, 0};
+    float Adjust[3] = {0.0f, 0.0f, 0.0f};
+    float Difference[3] = {0.0f, 0.0f, 0.0f};
   } Bias;
 
   struct Position_Struct
@@ -109,8 +146,8 @@ typedef struct
 {
   struct Calibration_Struct
   {
-    float GroundPressure = 0;
-    float GroundTemperature = 0;
+    float GroundPressure = 0.0f;
+    float GroundTemperature = 0.0f;
   } Calibration;
 
   struct Raw_Struct
@@ -386,41 +423,6 @@ typedef struct
   uint8_t Priority;
   const uint8_t *Sequence;
 } BeeperEntry_Struct;
-
-typedef struct
-{
-  float kP_Accelerometer = 0.25f;
-  float kI_Accelerometer = 0.0050f;
-  float kP_Magnetometer = 1.0f;
-  float kI_Magnetometer = 0.0f;
-  float Cosine_Z = 25.0f;
-} AHRS_Configuration_Struct;
-
-typedef struct
-{
-  float q0 = 0.0f;
-  float q1 = 0.0f;
-  float q2 = 0.0f;
-  float q3 = 0.0f;
-} Quaternion_Struct;
-
-typedef union
-{
-  float Vector[3];
-
-  struct
-  {
-    float Roll;
-    float Pitch;
-    float Yaw;
-  };
-
-} Vector3x3_Struct;
-
-typedef struct
-{
-  float Matrix3x3[3][3] = {{0, 0, 0}, {0, 0, 0}};
-} Matrix3x3_Struct;
 
 typedef struct
 {

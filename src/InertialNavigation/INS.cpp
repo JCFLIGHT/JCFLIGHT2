@@ -45,7 +45,7 @@ INS_Struct INS;
 
 void InertialNavigationClass::Calculate_AccelerationXYZ_To_EarthFrame(void)
 {
-  Vector3x3_Struct EarthFrameAcceleration;
+  VectorZero(&INS.NewAccelerationEarthFrame);
 
   //OBTÉM O SENO E COSSENO DO YAW DADO PELO AHRS
   INS.Math.Cosine.Yaw = AHRS.GetCosineYaw();
@@ -62,17 +62,17 @@ void InertialNavigationClass::Calculate_AccelerationXYZ_To_EarthFrame(void)
 
 #endif
 
-  EarthFrameAcceleration.Roll = BodyFrameAcceleration.Roll;
-  EarthFrameAcceleration.Pitch = BodyFrameAcceleration.Pitch;
-  EarthFrameAcceleration.Yaw = BodyFrameAcceleration.Yaw;
+  INS.NewAccelerationEarthFrame.Roll = BodyFrameAcceleration.Roll;
+  INS.NewAccelerationEarthFrame.Pitch = BodyFrameAcceleration.Pitch;
+  INS.NewAccelerationEarthFrame.Yaw = BodyFrameAcceleration.Yaw;
 
-  AHRS.TransformVectorBodyFrameToEarthFrame(&EarthFrameAcceleration);
+  AHRS.TransformVectorBodyFrameToEarthFrame(&INS.NewAccelerationEarthFrame);
 
-  GRAVITYCALIBRATION.Update(&EarthFrameAcceleration);
+  GRAVITYCALIBRATION.Update(&INS.NewAccelerationEarthFrame);
 
-  INS.EarthFrame.AccelerationNEU[NORTH] = EarthFrameAcceleration.Roll;
-  INS.EarthFrame.AccelerationNEU[EAST] = EarthFrameAcceleration.Pitch;
-  INS.EarthFrame.AccelerationNEU[UP] = EarthFrameAcceleration.Yaw;
+  INS.EarthFrame.AccelerationNEU[NORTH] = INS.NewAccelerationEarthFrame.Roll;
+  INS.EarthFrame.AccelerationNEU[EAST] = INS.NewAccelerationEarthFrame.Pitch;
+  INS.EarthFrame.AccelerationNEU[UP] = INS.NewAccelerationEarthFrame.Yaw;
 
   //NORTH
   INS.Bias.Difference[NORTH] = INS.EarthFrame.AccelerationNEU[NORTH] - INS.Bias.Adjust[NORTH];
@@ -433,9 +433,9 @@ typedef struct
 typedef struct
 {
   uint32_t Flags;
-  PositionEstimatorGPS_Struct GPS;
-  PositionEstimatorBarometer_Struct Barometer;
   PositionEstimatorIMU_Struct IMU;
+  PositionEstimatorBarometer_Struct Barometer;
+  PositionEstimatorGPS_Struct GPS;
   PositionEstimatorEstimate_Struct Estimate;
   PositionEstimatorState_Struct State;
 } PositionEstimator_Struct;
@@ -500,9 +500,9 @@ static void UpdatePositionEstimatorBaroTopic(uint32_t ActualTimeInUs)
 
 static void UpdateIMUEstimationWeight(const float DeltaTime)
 {
-  const bool AccClipped = fabsf(IMU.Accelerometer.ReadFloat[ROLL]) > ACC_CLIPPING_THRESHOLD_G ||
-                          fabsf(IMU.Accelerometer.ReadFloat[PITCH]) > ACC_CLIPPING_THRESHOLD_G ||
-                          fabsf(IMU.Accelerometer.ReadFloat[YAW]) > ACC_CLIPPING_THRESHOLD_G;
+  const bool AccClipped = ABS(IMU.Accelerometer.ReadFloat[ROLL]) > ACC_CLIPPING_THRESHOLD_G ||
+                          ABS(IMU.Accelerometer.ReadFloat[PITCH]) > ACC_CLIPPING_THRESHOLD_G ||
+                          ABS(IMU.Accelerometer.ReadFloat[YAW]) > ACC_CLIPPING_THRESHOLD_G;
 
   //SE O ACELEROMETRO FOR CLIPADO,O WEIGHT SERÁ REDUZIDO A ZERO.CASO CONTRARIO SERÁ RESTAURADO PARA 1 GRADUALMENTE.
   if (AccClipped)
@@ -524,28 +524,24 @@ static void UpdateIMUTopic(uint32_t ActualTimeInUs)
   //ATUALIZA O WEIGHT BASEADO NAS VIBRAÇÕES DO ACC
   UpdateIMUEstimationWeight(DeltaTime);
 
-  Vector3x3_Struct NewAccelerationBodyFrame;
+  //RESETA O VETOR DA ACELERAÇÃO DO BODY-FRAME
+  VectorZero(&INS.NewAccelerationEarthFrame);
 
-  //PASSA A ACELERAÇÃO DO BODY FRAME PARA UM NOVO VETOR
-  NewAccelerationBodyFrame.Roll = BodyFrameAcceleration.Roll;
-  NewAccelerationBodyFrame.Pitch = BodyFrameAcceleration.Pitch;
-  NewAccelerationBodyFrame.Yaw = BodyFrameAcceleration.Yaw;
-
-  //CORRIGE A BIAS DO ACELEROMETRO
-  NewAccelerationBodyFrame.Roll -= PositionEstimator.IMU.AccelerationBias.Roll;
-  NewAccelerationBodyFrame.Pitch -= PositionEstimator.IMU.AccelerationBias.Pitch;
-  NewAccelerationBodyFrame.Yaw -= PositionEstimator.IMU.AccelerationBias.Yaw;
+  //PASSA A ACELERAÇÃO DO EARTH-FRAME PARA UM NOVO VETOR
+  INS.NewAccelerationEarthFrame.Roll = BodyFrameAcceleration.Roll;
+  INS.NewAccelerationEarthFrame.Pitch = BodyFrameAcceleration.Pitch;
+  INS.NewAccelerationEarthFrame.Yaw = BodyFrameAcceleration.Yaw;
 
   //TRANSFORMA O VETOR DA ACELERAÇÃO PARA EARTH-FRAME
-  AHRS.TransformVectorBodyFrameToEarthFrame(&NewAccelerationBodyFrame);
+  AHRS.TransformVectorBodyFrameToEarthFrame(&INS.NewAccelerationEarthFrame);
 
   //CALIBRA O 1G DA ACELERAÇÃO
-  GRAVITYCALIBRATION.Update(&NewAccelerationBodyFrame);
+  GRAVITYCALIBRATION.Update(&INS.NewAccelerationEarthFrame);
 
-  //PASSA A ACELERAÇÃO EM NEU PARA NOVAS VARIAVEIS PARA SEREM APLICADAS NO INS
-  PositionEstimator.IMU.AccelerationNEU.Roll = NewAccelerationBodyFrame.Roll;
-  PositionEstimator.IMU.AccelerationNEU.Pitch = NewAccelerationBodyFrame.Pitch;
-  PositionEstimator.IMU.AccelerationNEU.Yaw = NewAccelerationBodyFrame.Yaw;
+  //CORRIGE A BIAS DO ACELEROMETRO E PASSA A ACELERAÇÃO EM NEU PARA NOVAS VARIAVEIS PARA SEREM APLICADAS NO INS
+  PositionEstimator.IMU.AccelerationNEU.Roll = INS.NewAccelerationEarthFrame.Roll - PositionEstimator.IMU.AccelerationBias.Roll;
+  PositionEstimator.IMU.AccelerationNEU.Pitch = INS.NewAccelerationEarthFrame.Pitch - PositionEstimator.IMU.AccelerationBias.Pitch;
+  PositionEstimator.IMU.AccelerationNEU.Yaw = INS.NewAccelerationEarthFrame.Yaw - PositionEstimator.IMU.AccelerationBias.Yaw;
 }
 
 static float UpdateEstimatedPosition(const float OldEPE, const float DeltaTime, const float NewEPE, const float Weight)
@@ -891,9 +887,9 @@ void InertialNavigationClass::Calculate_AccelerationXYZ_To_EarthFrame(void)
 
 #ifdef PRINTLN_INS_ACC_NEU
 
-    //INS.EarthFrame.AccelerationNEU[NORTH] -> POSITIVO MOVENDO PARA O NORTE
-    //INS.EarthFrame.AccelerationNEU[EAST]  -> POSITIVO MOVENDO PARA O OESTE
-    //INS.EarthFrame.AccelerationNEU[UP]    -> POSITIVO MOVENDO PARA CIMA
+    //PositionEstimator.IMU.AccelerationNEU.Roll  -> POSITIVO MOVENDO PARA O NORTE
+    //PositionEstimator.IMU.AccelerationNEU.Pitch -> POSITIVO MOVENDO PARA O OESTE
+    //PositionEstimator.IMU.AccelerationNEU.Yaw   -> POSITIVO MOVENDO PARA CIMA
 
     DEBUG("NORTH:%.4f EAST:%.4f UP:%.4f",
           PositionEstimator.IMU.AccelerationNEU.Roll,

@@ -200,7 +200,7 @@ void ProcessContinuousServoAutoTrim(float DeltaTime)
                 for (uint8_t IndexCount = 0; IndexCount < 3; IndexCount++)
                 {
                     const float NewIntegralTerm = GetNewIntegralTerm(IndexCount);
-                    if (fabsf(NewIntegralTerm) > SERVO_AUTOTRIM_UPDATE_SIZE)
+                    if (ABS(NewIntegralTerm) > SERVO_AUTOTRIM_UPDATE_SIZE)
                     {
                         const int8_t IntegralTermUpdate = NewIntegralTerm > 0.0f ? SERVO_AUTOTRIM_UPDATE_SIZE : -SERVO_AUTOTRIM_UPDATE_SIZE;
                         for (uint8_t ServoIndex = SERVO1; ServoIndex < MAX_SUPPORTED_SERVOS; ServoIndex++)

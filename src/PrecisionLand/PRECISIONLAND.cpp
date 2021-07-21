@@ -20,6 +20,7 @@
 #include "Math/MATHSUPPORT.h"
 #include "Common/STRUCTS.h"
 #include "InertialNavigation/INS.h"
+#include "Build/BOARDDEFS.h"
 #include "FastSerial/PRINTF.h"
 
 #ifndef __AVR_ATmega2560__
@@ -29,8 +30,8 @@
 
 #else
 
-#define LOOP_RATE_IN_HZ 1000         //HZ - O FILTRO SÓ FUNCIONA CORRETAMENTE COM ESSE VALOR EM 1KHZ NA VERSÃO CLASSIC
-#define LAND_CHECK_ACCEL_MOVING 3.0f //M/S^2
+#define LOOP_RATE_IN_HZ THIS_LOOP_RATE_IN_US //HZ - O FILTRO SÓ FUNCIONA CORRETAMENTE COM ESSE VALOR EM 1KHZ NA VERSÃO CLASSIC
+#define LAND_CHECK_ACCEL_MOVING 3.0f         //M/S^2
 
 #endif
 
@@ -43,9 +44,9 @@ PT1_Filter_Struct AccelerationEarthFrame_Smooth[3];
 
 void Update_PrecisionLand(void)
 {
-  PT1FilterApply(&AccelerationEarthFrame_Smooth[NORTH], INS.EarthFrame.AccelerationNEU[NORTH], LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
-  PT1FilterApply(&AccelerationEarthFrame_Smooth[EAST], INS.EarthFrame.AccelerationNEU[EAST], LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
-  PT1FilterApply(&AccelerationEarthFrame_Smooth[UP], INS.EarthFrame.AccelerationNEU[UP], LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
+  PT1FilterApply(&AccelerationEarthFrame_Smooth[NORTH], INS.NewAccelerationEarthFrame.Roll, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
+  PT1FilterApply(&AccelerationEarthFrame_Smooth[EAST], INS.NewAccelerationEarthFrame.Pitch, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
+  PT1FilterApply(&AccelerationEarthFrame_Smooth[UP], INS.NewAccelerationEarthFrame.Yaw, LPF_CUTOFF_IN_HZ, 1.0f / LOOP_RATE_IN_HZ);
 
 #ifdef PRINTLN_PRECISION_LAND
 
@@ -54,7 +55,7 @@ void Update_PrecisionLand(void)
 #endif
 }
 
-//CALCULA A RAIZ QUADRADA DE TODAS AS ACELERAÇÕES PRESENTES NO EARTH FRAME COM 1G SUBTRAIDO NO EIXO Z
+//CALCULA A RAIZ QUADRADA DE TODAS AS ACELERAÇÕES PRESENTES NO EARTH-FRAME COM 1G SUBTRAIDO NO EIXO Z
 float GetAccelerationTotal(void)
 {
   return Fast_SquareRoot(SquareFloat(AccelerationEarthFrame_Smooth[NORTH].State) +

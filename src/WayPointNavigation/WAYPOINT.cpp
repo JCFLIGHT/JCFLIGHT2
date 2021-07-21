@@ -503,7 +503,7 @@ void WayPointClass::Update(void)
       static uint8_t NextMachineCycleCounter = 0;
       static bool BlockTheOthersNavigation = false;
 
-      //OK...ENCONTRAMOS UMA MISSÃO QUE NÃO TEM COORDENADAS PARA A NAVEGAÇÃO.
+      //OK...ENCONTRAMOS UMA MISSÃO QUE NÃO TEM COORDENADAS PARA A NAVEGAÇÃO,OU SEJA,A MISSÃO TERMINOU.
       if (WayPoint_Resources.Mission.Coordinates.Latitude[WayPoint_Resources.Mission.OthersParams.Number + 1] == NONE &&
           WayPoint_Resources.Mission.Coordinates.Longitude[WayPoint_Resources.Mission.OthersParams.Number + 1] == NONE)
       {

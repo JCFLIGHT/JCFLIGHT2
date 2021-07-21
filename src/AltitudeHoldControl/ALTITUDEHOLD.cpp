@@ -183,9 +183,11 @@ bool ApplyAltitudeHoldControl(void)
 
 #ifdef THR_SMOOTH_TEST
 
+      int16_t PrevThrottle = RC_Resources.Attitude.Controller[THROTTLE];
+
       RC_Resources.Attitude.Controller[THROTTLE] = (int16_t)PT1FilterApply(&Smooth_ThrottleHover, RC_Resources.Attitude.Controller[THROTTLE], ALT_HOLD_LPF_CUTOFF, AltitudeHoldControlTimer.ActualTime * 1e-6f);
 
-      DEBUG("RC_Resources.Attitude.Controller[THROTTLE]:%d", RC_Resources.Attitude.Controller[THROTTLE]);
+      DEBUG("ThrottleUnFilt:%d ThrottleFilt:%d", PrevThrottle, RC_Resources.Attitude.Controller[THROTTLE]);
 
 #endif
 
