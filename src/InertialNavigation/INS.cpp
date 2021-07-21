@@ -67,6 +67,106 @@ INS_Resources_Struct INS_Resources;
 //#define PRINTLN_INS_POS_VEL_XY
 //#define PRINTLN_INS_POS_VEL_Z
 
+void InertialNavigationClass::Initialization(void)
+{
+  INS_Resources.Estimated.EstimatedPositionHorizontal = Max_INS_H_V_Error + 0.001f;
+  INS_Resources.Estimated.EstimatedPositionVertical = Max_INS_H_V_Error + 0.001f;
+
+  INS_Resources.IMU.LastUpdateTime = 0;
+  INS_Resources.GPS.LastUpdateTime = 0;
+  INS_Resources.Barometer.LastUpdateTime = 0;
+  INS_Resources.IMU.AccWeightFactor = 0.0f;
+
+  for (uint8_t IndexCount = 0; IndexCount < 3; IndexCount++)
+  {
+    INS_Resources.IMU.AccelerationBias.Vector[IndexCount] = 0.0f;
+    INS_Resources.Estimated.Position.Vector[IndexCount] = 0.0f;
+    INS_Resources.Estimated.Velocity.Vector[IndexCount] = 0.0f;
+  }
+}
+
+void InertialNavigationClass::Update(void)
+{
+  const uint32_t ActualTimeInUs = SCHEDULERTIME.GetMicros();
+  static uint32_t LastTriggeredTime;
+
+  INERTIALNAVIGATION.UpdateIMU(ActualTimeInUs);
+  INERTIALNAVIGATION.UpdateBarometer(ActualTimeInUs);
+  INERTIALNAVIGATION.UpdateEstimationPredictXYZ(ActualTimeInUs);
+
+  //OBTÉM O SENO E COSSENO DO YAW DADO PELO AHRS
+  INS_Resources.Math.Cosine.Yaw = AHRS.GetCosineYaw();
+  INS_Resources.Math.Sine.Yaw = AHRS.GetSineYaw();
+
+  if ((ActualTimeInUs - LastTriggeredTime) >= SCHEDULER_SET_FREQUENCY(POSITION_RATE, "Hz"))
+  {
+    LastTriggeredTime = ActualTimeInUs;
+
+    /*
+    DEBUG("%.f %.f %.f %.f %ld %.f %.f",
+          INS_Resources.Estimated.Position.Roll,  //X POS
+          INS_Resources.Estimated.Position.Pitch, //Y POS
+          INS_Resources.Estimated.Velocity.Roll,  //X VEL
+          INS_Resources.Estimated.Velocity.Pitch, //Y VEL
+          Barometer.Altitude.Actual,             //BARO ALT
+          INS_Resources.Estimated.Position.Yaw,   //Z POS
+          INS_Resources.Estimated.Velocity.Yaw);  //Z VEL
+*/
+
+    INS_Resources.EarthFrame.Position[INS_LATITUDE] = INS_Resources.Estimated.Position.Roll;   //POSIÇÃO FINAL X ESTIMADA PELO INS
+    INS_Resources.EarthFrame.Position[INS_LONGITUDE] = INS_Resources.Estimated.Position.Pitch; //POSIÇÃO FINAL Y ESTIMADA PELO INS
+    INS_Resources.EarthFrame.Velocity[INS_LATITUDE] = INS_Resources.Estimated.Velocity.Roll;   //VELOCIDADE FINAL X ESTIMADA PELO INS
+    INS_Resources.EarthFrame.Velocity[INS_LONGITUDE] = INS_Resources.Estimated.Velocity.Pitch; //VELOCIDADE FINAL Y ESTIMADA PELO INS
+    Barometer.INS.Altitude.Estimated = INS_Resources.Estimated.Position.Yaw;                   //ALTITUDE FINAL ESTIMADA PELO INS
+    Barometer.INS.Velocity.Vertical = INS_Resources.Estimated.Velocity.Yaw;                    //VELOCIDADE VERTICAL(Z) FINAL ESTIMADA PELO INS
+
+#ifdef PRINTLN_INS_COS_SIN
+
+    DEBUG("%d %.2f %.2f",
+          Attitude.EulerAngles.YawDecidegrees,
+          INS_Resources.Math.Cosine.Yaw,
+          INS_Resources.Math.Sine.Yaw);
+
+#endif
+
+#ifdef PRINTLN_INS_ACC_NEU
+
+    //INS_Resources.IMU.AccelerationNEU.Roll  -> POSITIVO MOVENDO PARA O NORTE
+    //INS_Resources.IMU.AccelerationNEU.Pitch -> POSITIVO MOVENDO PARA O OESTE
+    //INS_Resources.IMU.AccelerationNEU.Yaw   -> POSITIVO MOVENDO PARA CIMA
+
+    DEBUG("NORTH:%.4f EAST:%.4f UP:%.4f",
+          INS_Resources.IMU.AccelerationNEU.Roll,
+          INS_Resources.IMU.AccelerationNEU.Pitch,
+          INS_Resources.IMU.AccelerationNEU.Yaw);
+
+#endif
+
+#ifdef PRINTLN_INS_POS_VEL_XY
+
+    DEBUG("%.f %.f %.f %.f",
+          INS_Resources.EarthFrame.Position[INS_LATITUDE],
+          INS_Resources.EarthFrame.Position[INS_LONGITUDE],
+          INS_Resources.EarthFrame.Velocity[INS_LATITUDE],
+          INS_Resources.EarthFrame.Velocity[INS_LONGITUDE]);
+
+#endif
+
+#ifdef PRINTLN_INS_POS_VEL_Z
+
+    //Barometer.INS_Resources.Altitude.Estimated -> POSITIVO SUBINDO E NEGATIVO DESCENDO
+    //Barometer.INS_Resources.Velocity.Vertical  -> POSITIVO SUBINDO E NEGATIVO DESCENDO
+
+    DEBUG("%ld %d",
+          Barometer.INS_Resources.Altitude.Estimated,
+          Barometer.INS_Resources.Velocity.Vertical);
+
+#endif
+  }
+
+  INERTIALNAVIGATION.UpdateGPS();
+}
+
 bool InertialNavigationClass::WaitForSample(void)
 {
 #define SAMPLE_DELAY 2.0f //SEGUNDOS
@@ -439,104 +539,4 @@ void InertialNavigationClass::UpdateEstimationPredictXYZ(uint32_t ActualTimeInUs
   INS_Resources.Estimated.EstimatedPositionVertical = Context.NewEstimatedPositionVertical;
 
   INS_Resources.Flags = Context.NewFlags;
-}
-
-void InertialNavigationClass::Initialization(void)
-{
-  INS_Resources.Estimated.EstimatedPositionHorizontal = Max_INS_H_V_Error + 0.001f;
-  INS_Resources.Estimated.EstimatedPositionVertical = Max_INS_H_V_Error + 0.001f;
-
-  INS_Resources.IMU.LastUpdateTime = 0;
-  INS_Resources.GPS.LastUpdateTime = 0;
-  INS_Resources.Barometer.LastUpdateTime = 0;
-  INS_Resources.IMU.AccWeightFactor = 0.0f;
-
-  for (uint8_t IndexCount = 0; IndexCount < 3; IndexCount++)
-  {
-    INS_Resources.IMU.AccelerationBias.Vector[IndexCount] = 0.0f;
-    INS_Resources.Estimated.Position.Vector[IndexCount] = 0.0f;
-    INS_Resources.Estimated.Velocity.Vector[IndexCount] = 0.0f;
-  }
-}
-
-void InertialNavigationClass::Update(void)
-{
-  const uint32_t ActualTimeInUs = SCHEDULERTIME.GetMicros();
-  static uint32_t LastTriggeredTime;
-
-  INERTIALNAVIGATION.UpdateIMU(ActualTimeInUs);
-  INERTIALNAVIGATION.UpdateBarometer(ActualTimeInUs);
-  INERTIALNAVIGATION.UpdateEstimationPredictXYZ(ActualTimeInUs);
-
-  //OBTÉM O SENO E COSSENO DO YAW DADO PELO AHRS
-  INS_Resources.Math.Cosine.Yaw = AHRS.GetCosineYaw();
-  INS_Resources.Math.Sine.Yaw = AHRS.GetSineYaw();
-
-  if ((ActualTimeInUs - LastTriggeredTime) >= SCHEDULER_SET_FREQUENCY(POSITION_RATE, "Hz"))
-  {
-    LastTriggeredTime = ActualTimeInUs;
-
-    /*
-    DEBUG("%.f %.f %.f %.f %ld %.f %.f",
-          INS_Resources.Estimated.Position.Roll,  //X POS
-          INS_Resources.Estimated.Position.Pitch, //Y POS
-          INS_Resources.Estimated.Velocity.Roll,  //X VEL
-          INS_Resources.Estimated.Velocity.Pitch, //Y VEL
-          Barometer.Altitude.Actual,             //BARO ALT
-          INS_Resources.Estimated.Position.Yaw,   //Z POS
-          INS_Resources.Estimated.Velocity.Yaw);  //Z VEL
-*/
-
-    INS_Resources.EarthFrame.Position[INS_LATITUDE] = INS_Resources.Estimated.Position.Roll;   //POSIÇÃO FINAL X ESTIMADA PELO INS
-    INS_Resources.EarthFrame.Position[INS_LONGITUDE] = INS_Resources.Estimated.Position.Pitch; //POSIÇÃO FINAL Y ESTIMADA PELO INS
-    INS_Resources.EarthFrame.Velocity[INS_LATITUDE] = INS_Resources.Estimated.Velocity.Roll;   //VELOCIDADE FINAL X ESTIMADA PELO INS
-    INS_Resources.EarthFrame.Velocity[INS_LONGITUDE] = INS_Resources.Estimated.Velocity.Pitch; //VELOCIDADE FINAL Y ESTIMADA PELO INS
-    Barometer.INS.Altitude.Estimated = INS_Resources.Estimated.Position.Yaw;                   //ALTITUDE FINAL ESTIMADA PELO INS
-    Barometer.INS.Velocity.Vertical = INS_Resources.Estimated.Velocity.Yaw;                    //VELOCIDADE VERTICAL(Z) FINAL ESTIMADA PELO INS
-
-#ifdef PRINTLN_INS_COS_SIN
-
-    DEBUG("%d %.2f %.2f",
-          Attitude.EulerAngles.YawDecidegrees,
-          INS_Resources.Math.Cosine.Yaw,
-          INS_Resources.Math.Sine.Yaw);
-
-#endif
-
-#ifdef PRINTLN_INS_ACC_NEU
-
-    //INS_Resources.IMU.AccelerationNEU.Roll  -> POSITIVO MOVENDO PARA O NORTE
-    //INS_Resources.IMU.AccelerationNEU.Pitch -> POSITIVO MOVENDO PARA O OESTE
-    //INS_Resources.IMU.AccelerationNEU.Yaw   -> POSITIVO MOVENDO PARA CIMA
-
-    DEBUG("NORTH:%.4f EAST:%.4f UP:%.4f",
-          INS_Resources.IMU.AccelerationNEU.Roll,
-          INS_Resources.IMU.AccelerationNEU.Pitch,
-          INS_Resources.IMU.AccelerationNEU.Yaw);
-
-#endif
-
-#ifdef PRINTLN_INS_POS_VEL_XY
-
-    DEBUG("%.f %.f %.f %.f",
-          INS_Resources.EarthFrame.Position[INS_LATITUDE],
-          INS_Resources.EarthFrame.Position[INS_LONGITUDE],
-          INS_Resources.EarthFrame.Velocity[INS_LATITUDE],
-          INS_Resources.EarthFrame.Velocity[INS_LONGITUDE]);
-
-#endif
-
-#ifdef PRINTLN_INS_POS_VEL_Z
-
-    //Barometer.INS_Resources.Altitude.Estimated -> POSITIVO SUBINDO E NEGATIVO DESCENDO
-    //Barometer.INS_Resources.Velocity.Vertical  -> POSITIVO SUBINDO E NEGATIVO DESCENDO
-
-    DEBUG("%ld %d",
-          Barometer.INS_Resources.Altitude.Estimated,
-          Barometer.INS_Resources.Velocity.Vertical);
-
-#endif
-  }
-
-  INERTIALNAVIGATION.UpdateGPS();
 }
