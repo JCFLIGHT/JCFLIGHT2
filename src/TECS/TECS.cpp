@@ -217,7 +217,7 @@ void TecsClass::UpdateEnergyAltitudeController(float DeltaTime)
     TECS_Resources.Energies.Specific.Demanded.KineticEnergy = 0.0f;
     TECS_Resources.Energies.Specific.Estimated.KineticEnergy = 0.0f;
 
-    TECS_Resources.Energies.Specific.Demanded.PotentialEnergy = ConvertCMToMeters(TECS_Resources.Position.DestinationNEU.Altitude) * GRAVITY_MSS;
+    TECS_Resources.Energies.Specific.Demanded.PotentialEnergy = ConvertCMToMeters(TECS_Resources.Position.DestinationNEU.Z) * GRAVITY_MSS;
     TECS_Resources.Energies.Specific.Estimated.PotentialEnergy = ConvertCMToMeters(TECS_Resources.Position.Altitude) * GRAVITY_MSS;
 
     //SPE - CONTROLE DE BALANÇO PARA AS ENERGIAS
@@ -412,8 +412,12 @@ void TecsClass::Reset_All(void)
     TECS.Reset_PID_Navigation(&TECS_PID_Altitude_Navigation, ALTITUDE_DERIVATIVE_CUTOFF);
     TECS.Reset_PID_Navigation(&TECS_PID_Position_Navigation, POSITION_DERIVATIVE_CUTOFF);
     TECS.Reset_PID_Navigation(&TECS_PID_Heading_Navigation, HEADING_DERIVATIVE_CUTOFF);
-    TECS_Resources.Position.DestinationNEU.Clear();
-    TECS_Resources.Position.Virtual.Clear();
+    TECS_Resources.Position.DestinationNEU.X = 0.0f;
+    TECS_Resources.Position.DestinationNEU.Y = 0.0f;
+    TECS_Resources.Position.DestinationNEU.Z = 0.0f;
+    TECS_Resources.Position.Virtual.X = 0.0f;
+    TECS_Resources.Position.Virtual.Y = 0.0f;
+    TECS_Resources.Position.Virtual.Z = 0.0f;
     TECS_Resources.PositionController_Smooth.State = 0.0f;
     TECS_Resources.Throttle.SpeedAdjustment = 0.0f;
     TECS_PID_Altitude_Navigation.AutoPilotControl[PITCH] = 0;
@@ -495,7 +499,7 @@ void TecsClass::Update(float DeltaTime)
             IS_FLIGHT_MODE_ACTIVE_ONCE(RTH_MODE))
         {
             //EM MODO RTH,SE A ALTITUDE DO RTH FOR MENOR DO QUE ALTITUDE ESTIMADA,ESSA VARIAVEL IRÁ GANHAR UM NOVO VALOR NA FUNÇÃO SEGUINTE
-            TECS_Resources.Position.DestinationNEU.Altitude = TECS_Resources.Position.Altitude;
+            TECS_Resources.Position.DestinationNEU.Z = TECS_Resources.Position.Altitude;
 
             if (GPS_Resources.Mode.Navigation == DO_POSITION_HOLD)
             {
@@ -509,7 +513,7 @@ void TecsClass::Update(float DeltaTime)
                 //ADICIONA UM NOVO VALOR DE ALTITUDE
                 if (TECS_Resources.Position.Altitude != ConverMetersToCM(GPS_Resources.Home.Altitude))
                 {
-                    TECS_Resources.Position.DestinationNEU.Altitude = ConverMetersToCM(GPS_Resources.Home.Altitude);
+                    TECS_Resources.Position.DestinationNEU.Z = ConverMetersToCM(GPS_Resources.Home.Altitude);
                 }
             }
         }
@@ -521,10 +525,10 @@ void TecsClass::Update(float DeltaTime)
             {
                 if (!GetActualThrottleStatus(THROTTLE_LOW))
                 {
-                    TECS_Resources.Position.DestinationNEU.Altitude += TECS_Resources.Velocity.ClimbRate * DeltaTime;
-                    TECS_Resources.Position.DestinationNEU.Altitude = Constrain_32Bits(TECS_Resources.Position.DestinationNEU.Altitude,
-                                                                                       TECS_Resources.Position.Altitude - 500,
-                                                                                       TECS_Resources.Position.Altitude + 500);
+                    TECS_Resources.Position.DestinationNEU.Z += TECS_Resources.Velocity.ClimbRate * DeltaTime;
+                    TECS_Resources.Position.DestinationNEU.Z = Constrain_32Bits(TECS_Resources.Position.DestinationNEU.Z,
+                                                                                TECS_Resources.Position.Altitude - 500,
+                                                                                TECS_Resources.Position.Altitude + 500);
                     TECS.UpdateEnergyAltitudeController(DeltaTime);
                 }
                 else
@@ -537,7 +541,7 @@ void TecsClass::Update(float DeltaTime)
                     //ESSE IF SERVE PARA NÃO DEIXAR A ALTITUDE MUDAR EM RTH COM O THROTTLE A BAIXO NIVEL.
                     if (GPS_Resources.Mode.Navigation == DO_POSITION_HOLD)
                     {
-                        TECS_Resources.Position.DestinationNEU.Altitude = TECS_Resources.Position.Altitude;
+                        TECS_Resources.Position.DestinationNEU.Z = TECS_Resources.Position.Altitude;
                     }
                 }
             }

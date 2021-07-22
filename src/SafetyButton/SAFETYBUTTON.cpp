@@ -38,6 +38,7 @@ SAFETYBUTTONCLASS SAFETYBUTTON;
 void SAFETYBUTTONCLASS::Initialization(void)
 {
     SAFETY_BUTTON_LED_PINOUT;
+    SAFETYBUTTON.DispositivesPassives = STORAGEMANAGER.Read_8Bits(DISP_PASSIVES_ADDR);
 #ifdef ESP32
     AnalogWriteSetSettings(GPIO_NUM_5, 490, 12);
 #endif
@@ -192,8 +193,8 @@ bool SAFETYBUTTONCLASS::GetSafeStateToOutput(void)
 
 bool SAFETYBUTTONCLASS::SafeButtonEnabled(void)
 {
-    if (STORAGEMANAGER.Read_8Bits(DISP_PASSIVES_ADDR) == OFF_ALL_DISP ||
-        STORAGEMANAGER.Read_8Bits(DISP_PASSIVES_ADDR) == ONLY_BUZZER)
+    if (SAFETYBUTTON.DispositivesPassives == OFF_ALL_DISP ||
+        SAFETYBUTTON.DispositivesPassives == ONLY_BUZZER)
     {
         return false;
     }

@@ -22,6 +22,7 @@
 class SAFETYBUTTONCLASS
 {
 public:
+  uint8_t DispositivesPassives = OFF_ALL_DISP;
   void Initialization(void);
   void UpdateRoutine(void);
   bool SafeButtonEnabled(void);

@@ -18,16 +18,16 @@
 #ifndef RCDEFINES_H_
 #define RCDEFINES_H_
 #define MAX_AUX_CHANNELS 8
-#define RANGE_MIN 900         //uS
-#define MIN_PULSE 1100        //uS
-#define MAX_PULSE 1900        //uS
-#define MIN_STICKS_PULSE 1000 //uS
-#define MAX_STICKS_PULSE 2000 //uS
-#define MIDDLE_STICKS_PULSE (MIN_STICKS_PULSE + MAX_STICKS_PULSE) / 2
-#define DISABLE_IO_PIN 0
-#define FLIGHT_MODE_PULSE_OFF_SET 200 //uS
-#define MIDDLE_PULSE_OFF_SET 100      //uS
-#define ALT_HOLD_DEADBAND 50          //uS
-#define POS_HOLD_DEADBAND 20          //uS
-#define MAX_MANUAL_SPEED 500          //CM/S
+#define RANGE_MIN 900                                                 //uS
+#define MIN_PULSE 1100                                                //uS
+#define MAX_PULSE 1900                                                //uS
+#define MIN_STICKS_PULSE 1000                                         //uS
+#define MAX_STICKS_PULSE 2000                                         //uS
+#define MIDDLE_STICKS_PULSE (MIN_STICKS_PULSE + MAX_STICKS_PULSE) / 2 //1500uS
+#define DISABLE_IO_PIN 0                                              //OFF
+#define FLIGHT_MODE_PULSE_OFF_SET 200                                 //uS
+#define MIDDLE_PULSE_OFF_SET 100                                      //uS
+#define ALT_HOLD_DEADBAND 50                                          //uS
+#define POS_HOLD_DEADBAND 20                                          //uS
+#define MAX_MANUAL_SPEED 500                                          //CM/S
 #endif

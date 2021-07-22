@@ -841,19 +841,6 @@ typedef struct
 
 typedef struct
 {
-  float X = 0.0f;
-  float Y = 0.0f;
-  int32_t Altitude = 0;
-  void Clear(void)
-  {
-    X = 0.0f;
-    Y = 0.0f;
-    Altitude = 0;
-  }
-} Frame3D_Struct;
-
-typedef struct
-{
   Scheduler_Struct Scheduler;
   Scheduler_Struct YawScheduler;
 
@@ -863,9 +850,9 @@ typedef struct
 
   struct Position_Struct
   {
-    Frame3D_Struct DestinationNEU;
-    Frame3D_Struct Virtual;
-    Frame3D_Struct HomePoint;
+    Vector3x3_Struct DestinationNEU;
+    Vector3x3_Struct Virtual;
+    Vector3x3_Struct HomePoint;
 
     struct AutoPilot_Struct
     {
