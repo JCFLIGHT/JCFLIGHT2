@@ -59,23 +59,29 @@ static BiquadFilter_Struct Derivative_Yaw_Smooth;
 static BiquadFilter_Struct ControlDerivative_Roll_Smooth;
 static BiquadFilter_Struct ControlDerivative_Pitch_Smooth;
 static BiquadFilter_Struct ControlDerivative_Yaw_Smooth;
+
 #ifdef USE_DERIVATIVE_BOOST_PID
+
 static BiquadFilter_Struct DerivativeBoost_Roll_Smooth;
 static BiquadFilter_Struct DerivativeBoost_Pitch_Smooth;
 static BiquadFilter_Struct DerivativeBoost_Yaw_Smooth;
+
 #endif
 
 PT1_Filter_Struct Angle_Roll_Smooth;
 PT1_Filter_Struct Angle_Pitch_Smooth;
 PT1_Filter_Struct WindUpRoll_Smooth;
 PT1_Filter_Struct WindUpPitch_Smooth;
+
 #ifdef USE_DERIVATIVE_BOOST_PID
+
 PT1_Filter_Struct DerivativeBoost_PT1_Roll_Smooth;
 PT1_Filter_Struct DerivativeBoost_PT1_Pitch_Smooth;
 PT1_Filter_Struct DerivativeBoost_PT1_Yaw_Smooth;
+
 #endif
 
-//MIGRAR ESSES PARAMETROS PARA A LISTA COMPLETA DE PARAMETROS
+//MIGRAR ESSES PARAMETROS PARA O CLI
 /////////////////////////////////////////////////////////////////
 
 //SAÍDA MAXIMA DE PITCH E ROLL
@@ -84,24 +90,31 @@ PT1_Filter_Struct DerivativeBoost_PT1_Yaw_Smooth;
 //SAÍDA MAXIMA DO YAW
 #define MAX_YAW_PID_SUM_LIMIT 350
 
-//FREQUENCIA DE CORTE DO GYRO APLICADO AO DERIVATIVE BOOST
-#define DERIVATIVE_BOOST_GYRO_CUTOFF 80 //Hz
-
 //FREQUENCIA DE CORTE DA ACELERAÇÃO CALCULADA PELO DERIVATIVE BOOST
-#define DERIVATIVE_BOOST_CUTOFF 10 //Hz
+#define DERIVATIVE_BOOST_CUTOFF 7 //Hz
 
+//THROW LIMITE - LIMITE MINIMO E MAXIMA NO TERMO INTEGRAL DO CONTROLADOR PID DE AERONAVES DE ASA-FIXA
 int16_t FixedWingIntegralTermThrowLimit = 165; //AJUSTAVEL PELO USUARIO -> (0 a 500)
-int16_t MinThrottleDownPitchAngle = 0;         //AJUSTAVEL PELO USUARIO -> (0 a 450)
-float CoordinatedPitchGain = 1.0f;             //AJUSTAVEL PELO USUARIO -> (0.0 a 2.0 (float))
-float CoordinatedYawGain = 1.0f;               //AJUSTAVEL PELO USUARIO -> (0.0 a 2.0 (float))
-float DerivativeBoostFactor = 1.25f;           //AJUSTAVEL PELO USUARIO -> (-1.0 a 3.0 (float))
-float DerivativeBoostMaxAceleration = 7500.0f; //AJUSTAVEL PELO USUARIO -> (1000 a 16000)
+
+//GANHO DO TURN-COORDINATOR
+float TurnCoordinatorPitchGain = 1.0f; //AJUSTAVEL PELO USUARIO -> (0.0 a 2.0 (float))
+float TurnCoordinatorYawGain = 1.0f;   //AJUSTAVEL PELO USUARIO -> (0.0 a 2.0 (float))
+
+#ifdef USE_DERIVATIVE_BOOST_PID
+
+//DERIVATIVE BOOST
+uint8_t DerivativeBoostCutOff = 80;           //AJUSTAVEL PELO USUARIO -> (0 a 255)
+int16_t DerivativeBoostMaxAceleration = 7500; //AJUSTAVEL PELO USUARIO -> (1000 a 16000)
+float DerivativeBoostMin = 0.5f;              //AJUSTAVEL PELO USUARIO -> (0 a 1 (float))
+float DerivativeBoostMax = 1.25f;             //AJUSTAVEL PELO USUARIO -> (1 a 3 (float))
+
+#endif
 
 ///////////////////////////////////////////////////////////////
 
-float MotorIntegralTermWindUpPoint;
-float AntiWindUpScaler;
-float CoordinatedTurnRateEarthFrame;
+float MotorIntegralTermWindUpPoint = 0.0f;
+float AntiWindUpScaler = 0.0f;
+float CoordinatedTurnRateEarthFrame = 0.0f;
 
 void PIDXYZClass::Initialization(void)
 {
@@ -119,8 +132,9 @@ void PIDXYZClass::Initialization(void)
   BIQUADFILTER.Settings(&ControlDerivative_Pitch_Smooth, PID_Resources.Filter.ControlDerivativeCutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
   BIQUADFILTER.Settings(&ControlDerivative_Yaw_Smooth, PID_Resources.Filter.ControlDerivativeCutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
 #ifdef USE_DERIVATIVE_BOOST_PID
-  BIQUADFILTER.Settings(&DerivativeBoost_Roll_Smooth, DERIVATIVE_BOOST_GYRO_CUTOFF, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
-  BIQUADFILTER.Settings(&DerivativeBoost_Pitch_Smooth, DERIVATIVE_BOOST_GYRO_CUTOFF, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
+  BIQUADFILTER.Settings(&DerivativeBoost_Roll_Smooth, DerivativeBoostCutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
+  BIQUADFILTER.Settings(&DerivativeBoost_Pitch_Smooth, DerivativeBoostCutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
+  BIQUADFILTER.Settings(&DerivativeBoost_Yaw_Smooth, DerivativeBoostCutOff, 0, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US), LPF);
 #endif
   PT1FilterInit(&WindUpRoll_Smooth, PID_Resources.Filter.IntegralRelaxCutOff, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);
   PT1FilterInit(&WindUpPitch_Smooth, PID_Resources.Filter.IntegralRelaxCutOff, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);
@@ -282,16 +296,23 @@ float PIDXYZClass::ApplyDerivativeBoostRoll(float ActualGyro, float PrevGyro, fl
 
 #ifdef USE_DERIVATIVE_BOOST_PID
 
-  if (DerivativeBoostFactor > 1)
+  const float DerivativeBoostGyroDelta = (ActualGyro - PrevGyro) / DeltaTime;
+  const float DerivativeBoostGyroAcceleration = ABS(BIQUADFILTER.ApplyAndGet(&DerivativeBoost_Roll_Smooth, DerivativeBoostGyroDelta));
+  const float DerivativeBoostRateAcceleration = ABS((ActualRateTagert - PrevRateTagert) / DeltaTime);
+
+  if (DerivativeBoostGyroAcceleration >= DerivativeBoostRateAcceleration)
   {
-    const float DerivativeBoostGyroDelta = (ActualGyro - PrevGyro) / DeltaTime;
-    const float DerivativeBoostGyroAcceleration = ABS(BIQUADFILTER.ApplyAndGet(&DerivativeBoost_Roll_Smooth, DerivativeBoostGyroDelta));
-    const float DerivativeBoostRateAcceleration = ABS((ActualRateTagert - PrevRateTagert) / DeltaTime);
-    const float Acceleration = MAX(DerivativeBoostGyroAcceleration, DerivativeBoostRateAcceleration);
-    DerivativeBoost = ScaleRangeFloat(Acceleration, 0.0f, DerivativeBoostMaxAceleration, 1.0f, DerivativeBoostFactor);
-    DerivativeBoost = PT1FilterApply(&DerivativeBoost_PT1_Roll_Smooth, DerivativeBoost, DERIVATIVE_BOOST_CUTOFF, DeltaTime);
-    DerivativeBoost = Constrain_Float(DerivativeBoost, 1.0f, DerivativeBoostFactor);
+    //O GYRO ESTÁ ACELERANDO MAIS RAPIDO DO QUE O PONTO DE AJUSTE,VAMOS SUAVIZAR ISSO
+    DerivativeBoost = ScaleRangeFloat(DerivativeBoostGyroAcceleration, 0.0f, DerivativeBoostMaxAceleration, 1.0f, DerivativeBoostMax);
   }
+  else
+  {
+    //O PONTO DE AJUSTE ESTÁ ACELERANDO,VAMOS AUMENTAR A RESPOSTA
+    DerivativeBoost = ScaleRangeFloat(DerivativeBoostRateAcceleration, 0.0f, ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll) * 10.0f, 1.0f, DerivativeBoostMin);
+  }
+
+  DerivativeBoost = PT1FilterApply(&DerivativeBoost_PT1_Roll_Smooth, DerivativeBoost, DERIVATIVE_BOOST_CUTOFF, DeltaTime);
+  DerivativeBoost = Constrain_Float(DerivativeBoost, DerivativeBoostMin, DerivativeBoostMax);
 
 #endif
 
@@ -304,16 +325,23 @@ float PIDXYZClass::ApplyDerivativeBoostPitch(float ActualGyro, float PrevGyro, f
 
 #ifdef USE_DERIVATIVE_BOOST_PID
 
-  if (DerivativeBoostFactor > 1)
+  const float DerivativeBoostGyroDelta = (ActualGyro - PrevGyro) / DeltaTime;
+  const float DerivativeBoostGyroAcceleration = ABS(BIQUADFILTER.ApplyAndGet(&DerivativeBoost_Pitch_Smooth, DerivativeBoostGyroDelta));
+  const float DerivativeBoostRateAcceleration = ABS((ActualRateTagert - PrevRateTagert) / DeltaTime);
+
+  if (DerivativeBoostGyroAcceleration >= DerivativeBoostRateAcceleration)
   {
-    const float DerivativeBoostGyroDelta = (ActualGyro - PrevGyro) / DeltaTime;
-    const float DerivativeBoostGyroAcceleration = ABS(BIQUADFILTER.ApplyAndGet(&DerivativeBoost_Pitch_Smooth, DerivativeBoostGyroDelta));
-    const float DerivativeBoostRateAcceleration = ABS((ActualRateTagert - PrevRateTagert) / DeltaTime);
-    const float Acceleration = MAX(DerivativeBoostGyroAcceleration, DerivativeBoostRateAcceleration);
-    DerivativeBoost = ScaleRangeFloat(Acceleration, 0.0f, DerivativeBoostMaxAceleration, 1.0f, DerivativeBoostFactor);
-    DerivativeBoost = PT1FilterApply(&DerivativeBoost_PT1_Pitch_Smooth, DerivativeBoost, DERIVATIVE_BOOST_CUTOFF, DeltaTime);
-    DerivativeBoost = Constrain_Float(DerivativeBoost, 1.0f, DerivativeBoostFactor);
+    //O GYRO ESTÁ ACELERANDO MAIS RAPIDO DO QUE O PONTO DE AJUSTE,VAMOS SUAVIZAR ISSO
+    DerivativeBoost = ScaleRangeFloat(DerivativeBoostGyroAcceleration, 0.0f, DerivativeBoostMaxAceleration, 1.0f, DerivativeBoostMax);
   }
+  else
+  {
+    //O PONTO DE AJUSTE ESTÁ ACELERANDO,VAMOS AUMENTAR A RESPOSTA
+    DerivativeBoost = ScaleRangeFloat(DerivativeBoostRateAcceleration, 0.0f, ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll) * 10.0f, 1.0f, DerivativeBoostMin);
+  }
+
+  DerivativeBoost = PT1FilterApply(&DerivativeBoost_PT1_Pitch_Smooth, DerivativeBoost, DERIVATIVE_BOOST_CUTOFF, DeltaTime);
+  DerivativeBoost = Constrain_Float(DerivativeBoost, DerivativeBoostMin, DerivativeBoostMax);
 
 #endif
 
@@ -326,16 +354,23 @@ float PIDXYZClass::ApplyDerivativeBoostYaw(float ActualGyro, float PrevGyro, flo
 
 #ifdef USE_DERIVATIVE_BOOST_PID
 
-  if (DerivativeBoostFactor > 1)
+  const float DerivativeBoostGyroDelta = (ActualGyro - PrevGyro) / DeltaTime;
+  const float DerivativeBoostGyroAcceleration = ABS(BIQUADFILTER.ApplyAndGet(&DerivativeBoost_Yaw_Smooth, DerivativeBoostGyroDelta));
+  const float DerivativeBoostRateAcceleration = ABS((ActualRateTagert - PrevRateTagert) / DeltaTime);
+
+  if (DerivativeBoostGyroAcceleration >= DerivativeBoostRateAcceleration)
   {
-    const float DerivativeBoostGyroDelta = (ActualGyro - PrevGyro) / DeltaTime;
-    const float DerivativeBoostGyroAcceleration = ABS(BIQUADFILTER.ApplyAndGet(&DerivativeBoost_Yaw_Smooth, DerivativeBoostGyroDelta));
-    const float DerivativeBoostRateAcceleration = ABS((ActualRateTagert - PrevRateTagert) / DeltaTime);
-    const float Acceleration = MAX(DerivativeBoostGyroAcceleration, DerivativeBoostRateAcceleration);
-    DerivativeBoost = ScaleRangeFloat(Acceleration, 0.0f, DerivativeBoostMaxAceleration, 1.0f, DerivativeBoostFactor);
-    DerivativeBoost = PT1FilterApply(&DerivativeBoost_PT1_Yaw_Smooth, DerivativeBoost, DERIVATIVE_BOOST_CUTOFF, DeltaTime);
-    DerivativeBoost = Constrain_Float(DerivativeBoost, 1.0f, DerivativeBoostFactor);
+    //O GYRO ESTÁ ACELERANDO MAIS RAPIDO DO QUE O PONTO DE AJUSTE,VAMOS SUAVIZAR ISSO
+    DerivativeBoost = ScaleRangeFloat(DerivativeBoostGyroAcceleration, 0.0f, DerivativeBoostMaxAceleration, 1.0f, DerivativeBoostMax);
   }
+  else
+  {
+    //O PONTO DE AJUSTE ESTÁ ACELERANDO,VAMOS AUMENTAR A RESPOSTA
+    DerivativeBoost = ScaleRangeFloat(DerivativeBoostRateAcceleration, 0.0f, ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll) * 10.0f, 1.0f, DerivativeBoostMin);
+  }
+
+  DerivativeBoost = PT1FilterApply(&DerivativeBoost_PT1_Yaw_Smooth, DerivativeBoost, DERIVATIVE_BOOST_CUTOFF, DeltaTime);
+  DerivativeBoost = Constrain_Float(DerivativeBoost, DerivativeBoostMin, DerivativeBoostMax);
 
 #endif
 
@@ -401,8 +436,6 @@ float PIDXYZClass::LevelPitch(float DeltaTime)
       RcControllerAngle = RcControllerToAngle(RC_Resources.Attitude.Controller[PITCH], ConvertDegreesToDecidegrees(GET_SET[MAX_PITCH_LEVEL].MaxValue));
     }
   }
-
-  RcControllerAngle += TECS.AutoPitchDown(MinThrottleDownPitchAngle);
 
   if (GetAirPlaneEnabled())
   {
@@ -682,8 +715,8 @@ void PIDXYZClass::GetNewControllerForPlaneWithTurn(void)
 
   //LIMITA O VALOR MINIMO E MAXIMO DE SAÍDA A PARTIR DOS VALOR DE RATE DEFINIDO PELO USUARIO NO GCS
   PID_Resources.RcRateTarget.Roll = Constrain_16Bits(PID_Resources.RcRateTarget.Roll + TurnControllerRates.X, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
-  PID_Resources.RcRateTarget.Pitch = Constrain_16Bits(PID_Resources.RcRateTarget.Pitch + TurnControllerRates.Y * CoordinatedPitchGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
-  PID_Resources.RcRateTarget.Yaw = Constrain_16Bits(PID_Resources.RcRateTarget.Yaw + TurnControllerRates.Z * CoordinatedYawGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw), ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw));
+  PID_Resources.RcRateTarget.Pitch = Constrain_16Bits(PID_Resources.RcRateTarget.Pitch + TurnControllerRates.Y * TurnCoordinatorPitchGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
+  PID_Resources.RcRateTarget.Yaw = Constrain_16Bits(PID_Resources.RcRateTarget.Yaw + TurnControllerRates.Z * TurnCoordinatorYawGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw), ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw));
 }
 
 void PIDXYZClass::Reset_Integral_Accumulators(void)

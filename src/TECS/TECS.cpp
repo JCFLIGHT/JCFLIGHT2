@@ -177,24 +177,6 @@ void TecsClass::Reset_PID_Navigation(TECS_PID_Float_Struct *TECS_PID_Pointer, fl
     TECS_PID_Pointer->AutoPilotControl[YAW] = 0;
 }
 
-bool TecsClass::GetNavigationInAutomaticThrottleMode(void)
-{
-    return GetAirPlaneEnabled() & (IS_FLIGHT_MODE_ACTIVE(LAUNCH_MODE) |
-                                   IS_FLIGHT_MODE_ACTIVE(CRUISE_MODE) |
-                                   IS_FLIGHT_MODE_ACTIVE(CIRCLE_MODE) |
-                                   IS_FLIGHT_MODE_ACTIVE(ALTITUDE_HOLD_MODE) |
-                                   IS_FLIGHT_MODE_ACTIVE(RTH_MODE));
-}
-
-float TecsClass::AutoPitchDown(int16_t InMinThrottleDownPitchAngle)
-{
-    if (!TECS.GetNavigationInAutomaticThrottleMode() && IS_FLIGHT_MODE_ACTIVE(STABILIZE_MODE))
-    {
-        return ScaleRange16Bits(MAX(0, TECS_Resources.Params.CruiseThrottle - RC_Resources.Attitude.Controller[THROTTLE]), 0, TECS_Resources.Params.CruiseThrottle - MIN_STICKS_PULSE, 0, InMinThrottleDownPitchAngle);
-    }
-    return 0.0f;
-}
-
 int16_t TecsClass::UpdatePitchToThrottle(int16_t PitchInput, float DeltaTime)
 {
     int16_t PitchCommandFiltered = (int16_t)PT1FilterApply(&TECS_Resources.PitchToThrottle_Smooth,
