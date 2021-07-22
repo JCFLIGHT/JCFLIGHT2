@@ -55,41 +55,56 @@ void WayPointClass::Initialization(void)
   {
     WayPoint_Resources.Mission.Coordinates.Latitude[WayPoint_Resources.Storage.GetArrayCount()] = STORAGEMANAGER.Read_32Bits(AddressCount);
     WayPoint_Resources.Storage.IncrementArrayCount();
+    if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+    {
+      WayPoint_Resources.Storage.ResetArrayCount();
+      break;
+    }
   }
-
-  WayPoint_Resources.Storage.ResetArrayCount();
 
   for (int16_t AddressCount = COORDINATES_ADDR_TO_COMPARE; AddressCount <= FINAL_ADDR_OF_COORDINATES; AddressCount += sizeof(int32_t))
   {
     WayPoint_Resources.Mission.Coordinates.Longitude[WayPoint_Resources.Storage.GetArrayCount()] = STORAGEMANAGER.Read_32Bits(AddressCount);
     WayPoint_Resources.Storage.IncrementArrayCount();
+    if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+    {
+      WayPoint_Resources.Storage.ResetArrayCount();
+      break;
+    }
   }
-
-  WayPoint_Resources.Storage.ResetArrayCount();
 
   for (int16_t AddressCount = INITIAL_ADDR_OF_OTHERS_PARAMS; AddressCount <= GPS_HOLD_TIMED_ADDR_TO_COMPARE; AddressCount += sizeof(uint8_t))
   {
     WayPoint_Resources.Mission.OthersParams.PositionHoldTime[WayPoint_Resources.Storage.GetArrayCount()] = STORAGEMANAGER.Read_8Bits(AddressCount);
     WayPoint_Resources.Storage.IncrementArrayCount();
+    if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+    {
+      WayPoint_Resources.Storage.ResetArrayCount();
+      break;
+    }
   }
-
-  WayPoint_Resources.Storage.ResetArrayCount();
 
   for (int16_t AddressCount = GPS_HOLD_TIMED_ADDR_TO_COMPARE; AddressCount <= FLIGHT_MODE_ADDR_TO_COMPARE; AddressCount += sizeof(uint8_t))
   {
     WayPoint_Resources.Mission.OthersParams.FlightMode[WayPoint_Resources.Storage.GetArrayCount()] = STORAGEMANAGER.Read_8Bits(AddressCount);
     WayPoint_Resources.Storage.IncrementArrayCount();
+    if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+    {
+      WayPoint_Resources.Storage.ResetArrayCount();
+      break;
+    }
   }
-
-  WayPoint_Resources.Storage.ResetArrayCount();
 
   for (int16_t AddressCount = FLIGHT_MODE_ADDR_TO_COMPARE; AddressCount <= FINAL_ADDR_OF_OTHERS_PARAMS; AddressCount += sizeof(uint8_t))
   {
     WayPoint_Resources.Mission.OthersParams.Altitude[WayPoint_Resources.Storage.GetArrayCount()] = STORAGEMANAGER.Read_8Bits(AddressCount);
     WayPoint_Resources.Storage.IncrementArrayCount();
+    if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+    {
+      WayPoint_Resources.Storage.ResetArrayCount();
+      break;
+    }
   }
-
-  WayPoint_Resources.Storage.ResetArrayCount();
 }
 
 static void Push_WayPoint_Parameters(void)
@@ -201,41 +216,56 @@ static void Store_And_Clear_WayPoints(void)
       {
         STORAGEMANAGER.Write_32Bits(AddressCount, WayPoint_Resources.Mission.Coordinates.Latitude[WayPoint_Resources.Storage.GetArrayCount()]);
         WayPoint_Resources.Storage.IncrementArrayCount();
+        if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+        {
+          WayPoint_Resources.Storage.ResetArrayCount();
+          break;
+        }
       }
-
-      WayPoint_Resources.Storage.ResetArrayCount();
 
       for (int16_t AddressCount = COORDINATES_ADDR_TO_COMPARE; AddressCount <= FINAL_ADDR_OF_COORDINATES; AddressCount += sizeof(int32_t))
       {
         STORAGEMANAGER.Write_32Bits(AddressCount, WayPoint_Resources.Mission.Coordinates.Longitude[WayPoint_Resources.Storage.GetArrayCount()]);
         WayPoint_Resources.Storage.IncrementArrayCount();
+        if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+        {
+          WayPoint_Resources.Storage.ResetArrayCount();
+          break;
+        }
       }
-
-      WayPoint_Resources.Storage.ResetArrayCount();
 
       for (int16_t AddressCount = INITIAL_ADDR_OF_OTHERS_PARAMS; AddressCount <= GPS_HOLD_TIMED_ADDR_TO_COMPARE; AddressCount += sizeof(uint8_t))
       {
         STORAGEMANAGER.Write_8Bits(AddressCount, WayPoint_Resources.Mission.OthersParams.PositionHoldTime[WayPoint_Resources.Storage.GetArrayCount()]);
         WayPoint_Resources.Storage.IncrementArrayCount();
+        if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+        {
+          WayPoint_Resources.Storage.ResetArrayCount();
+          break;
+        }
       }
-
-      WayPoint_Resources.Storage.ResetArrayCount();
 
       for (int16_t AddressCount = GPS_HOLD_TIMED_ADDR_TO_COMPARE; AddressCount <= FLIGHT_MODE_ADDR_TO_COMPARE; AddressCount += sizeof(uint8_t))
       {
         STORAGEMANAGER.Write_8Bits(AddressCount, WayPoint_Resources.Mission.OthersParams.FlightMode[WayPoint_Resources.Storage.GetArrayCount()]);
         WayPoint_Resources.Storage.IncrementArrayCount();
+        if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+        {
+          WayPoint_Resources.Storage.ResetArrayCount();
+          break;
+        }
       }
-
-      WayPoint_Resources.Storage.ResetArrayCount();
 
       for (int16_t AddressCount = FLIGHT_MODE_ADDR_TO_COMPARE; AddressCount <= FINAL_ADDR_OF_OTHERS_PARAMS; AddressCount += sizeof(uint8_t))
       {
         STORAGEMANAGER.Write_8Bits(AddressCount, WayPoint_Resources.Mission.OthersParams.Altitude[WayPoint_Resources.Storage.GetArrayCount()]);
         WayPoint_Resources.Storage.IncrementArrayCount();
+        if (WayPoint_Resources.Storage.GetArrayCount() >= WAYPOINTS_MAXIMUM)
+        {
+          WayPoint_Resources.Storage.ResetArrayCount();
+          break;
+        }
       }
-
-      WayPoint_Resources.Storage.ResetArrayCount();
     }
     WayPoint_Resources.Storage.Function = WAYPOINT_STORAGE_NONE;
   }

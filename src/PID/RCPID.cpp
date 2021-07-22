@@ -36,7 +36,9 @@ FILE_COMPILE_FOR_SPEED
 RC_Resources_Struct RC_Resources;
 
 #ifndef __AVR_ATmega2560__
+
 PT1_Filter_Struct FixedWingTPA_Smooth;
+
 #endif
 
 //DEBUG
@@ -122,8 +124,12 @@ void RC_PID_Update(void)
     }
     TPA_Parameters.UpdateRequired = false;
   }
+
 #if defined(PRINTLN_TPA)
+
   DEBUG("TPA:%d", TPA_Parameters.CalcedValue);
+
 #endif
+
   Simple_Mode_Update();
 }

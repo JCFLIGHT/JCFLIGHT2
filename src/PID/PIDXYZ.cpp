@@ -419,6 +419,7 @@ float PIDXYZClass::LevelPitch(float DeltaTime)
 #ifndef __AVR_ATmega2560__
 
     AngleRateTarget = PT1FilterApply(&Angle_Pitch_Smooth, AngleRateTarget, GET_SET[PI_AUTO_LEVEL].kI, DeltaTime);
+
 #else
 
     AngleRateTarget = PT1FilterApply(&Angle_Pitch_Smooth, AngleRateTarget, GET_SET[PI_AUTO_LEVEL].kI, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);

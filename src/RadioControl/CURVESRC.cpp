@@ -30,14 +30,14 @@ uint16_t CalculeLookUpThrottle[THROTTLE_LOOKUP_LENGTH];
 
 void CurvesRC_SetValues()
 {
+  RC_Resources.Attitude.ThrottleMin = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MIN_ADDR);
+  RC_Resources.Attitude.ThrottleMax = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MAX_ADDR);
   RC_Resources.Middle.Throttle = STORAGEMANAGER.Read_8Bits(THROTTLE_MIDDLE_ADDR);
   RC_Resources.Expo.Throttle = STORAGEMANAGER.Read_8Bits(THROTTLE_EXPO_ADDR);
   RC_Resources.Rate.PitchRoll = STORAGEMANAGER.Read_8Bits(PR_RATE_ADDR);
   RC_Resources.Expo.PitchRoll = STORAGEMANAGER.Read_8Bits(PR_EXPO_ADDR);
   RC_Resources.Rate.Yaw = STORAGEMANAGER.Read_8Bits(YAW_RATE_ADDR);
   RC_Resources.Expo.Yaw = STORAGEMANAGER.Read_8Bits(YAW_EXPO_ADDR);
-  RC_Resources.Attitude.ThrottleMin = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MIN_ADDR);
-  RC_Resources.Attitude.ThrottleMax = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MAX_ADDR);
 }
 
 void CurvesRC_CalculeValue()

@@ -36,7 +36,7 @@ void MachineInit(void)
     AUXFLIGHT.Initialization();
     //INICIALIZA O LED RGB
     RGB.Initialization();
-    //CALIBRAÇÃO DOS ESCS
+    //CALIBRAÇÃO DOS ESC'S
     ESC.Calibration();
     //CARREGA OS VALORES DE CALIBRAÇÃO DA IMU
     UpdateIMUCalibration();
@@ -52,8 +52,6 @@ void MachineInit(void)
     AHRS.Initialization();
     //INICIALIZA O TECS
     TECS.Initialization();
-    //INICIALIZA O WAYPOINT
-    WAYPOINT.Initialization();
     //INICIALIZA O SISTEMA DE MONITORAMENTO DA BATERIA
     BATTERY.Initialization();
     //INICIALIZA AS CONFIGURAÇÕES DOS SERVOS
@@ -64,6 +62,8 @@ void MachineInit(void)
     SAFETYBUTTON.Initialization();
     //CARREGA TODAS AS CONFIGURAÇÕES DO SISTEMA PARA ENVIAR PARA O GCS
     GCS.LoadAllParameters();
+    //INICIALIZA O WAYPOINT
+    WAYPOINT.Initialization();
     //INICIA O SISTEMA DE TASKS
     TaskSystemInitialization();
 }

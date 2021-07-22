@@ -29,8 +29,8 @@ TPA_Parameters_Struct TPA_Parameters;
 
 void TPA_Initialization(void)
 {
-  TPA_Parameters.BreakPointer = STORAGEMANAGER.Read_16Bits(BREAKPOINT_ADDR);
   TPA_Parameters.ThrottlePercent = STORAGEMANAGER.Read_8Bits(TPA_PERCENT_ADDR); //ESSE PARAMETRO ACIMA DE 50% FUNCIONA BEM PARA AEROS E ASA-FIXA
+  TPA_Parameters.BreakPointer = STORAGEMANAGER.Read_16Bits(BREAKPOINT_ADDR);
 }
 
 float CalculateFixedWingTPAFactor(int16_t Throttle)

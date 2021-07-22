@@ -134,12 +134,12 @@ void RCConfigClass::Initialization(void)
 {
   //PULSO MINIMO E MAXIMO PARA TODOS OS CANAIS RÁDIO
   Throttle.Min_Pulse = STORAGEMANAGER.Read_16Bits(THROTTLE_MIN_ADDR);
-  Throttle.Max_Pulse = STORAGEMANAGER.Read_16Bits(THROTTLE_MAX_ADDR);
   Yaw.Min_Pulse = STORAGEMANAGER.Read_16Bits(YAW_MIN_ADDR);
-  Yaw.Max_Pulse = STORAGEMANAGER.Read_16Bits(YAW_MAX_ADDR);
   Pitch.Min_Pulse = STORAGEMANAGER.Read_16Bits(PITCH_MIN_ADDR);
-  Pitch.Max_Pulse = STORAGEMANAGER.Read_16Bits(PITCH_MAX_ADDR);
   Roll.Min_Pulse = STORAGEMANAGER.Read_16Bits(ROLL_MIN_ADDR);
+  Throttle.Max_Pulse = STORAGEMANAGER.Read_16Bits(THROTTLE_MAX_ADDR);
+  Yaw.Max_Pulse = STORAGEMANAGER.Read_16Bits(YAW_MAX_ADDR);
+  Pitch.Max_Pulse = STORAGEMANAGER.Read_16Bits(PITCH_MAX_ADDR);
   Roll.Max_Pulse = STORAGEMANAGER.Read_16Bits(ROLL_MAX_ADDR);
   AuxiliarOne.Min_Pulse = MIN_PULSE;
   AuxiliarOne.Max_Pulse = MAX_PULSE;
