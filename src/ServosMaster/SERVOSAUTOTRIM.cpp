@@ -162,9 +162,9 @@ void PIDReduceErrorAccumulators(int8_t Delta, uint8_t Axis)
 
 float GetTotalRateTarget(void)
 {
-    return sqrtf(SquareFloat(PID_Resources.RcRateTarget.Roll) +
-                 SquareFloat(PID_Resources.RcRateTarget.Pitch) +
-                 SquareFloat(PID_Resources.RcRateTarget.Yaw));
+    return sqrtf(SquareFloat(PID_Resources.RCRateTarget.Roll) +
+                 SquareFloat(PID_Resources.RCRateTarget.Pitch) +
+                 SquareFloat(PID_Resources.RCRateTarget.Yaw));
 }
 
 float GetNewIntegralTerm(uint8_t Axis)

@@ -1428,9 +1428,9 @@ void GCSClass::Second_Packet_Request_Parameters(void)
     Essential_Second_Packet_Parameters.SendActualAuxSevenValue = DECODE.DirectRadioControlRead[AUX7];
     Essential_Second_Packet_Parameters.SendActualAuxEightValue = DECODE.DirectRadioControlRead[AUX8];
     Essential_Second_Packet_Parameters.SendAttitudeThrottleValue = RC_Resources.Attitude.Controller[THROTTLE];
-    Essential_Second_Packet_Parameters.SendAttitudeYawValue = PID_Resources.RcRateTarget.GCS.Yaw;
-    Essential_Second_Packet_Parameters.SendAttitudePitchValue = PID_Resources.RcRateTarget.GCS.Pitch;
-    Essential_Second_Packet_Parameters.SendAttitudeRollValue = PID_Resources.RcRateTarget.GCS.Roll;
+    Essential_Second_Packet_Parameters.SendAttitudeYawValue = -PID_Resources.RCRateTarget.GCS.Yaw;
+    Essential_Second_Packet_Parameters.SendAttitudePitchValue = PID_Resources.RCRateTarget.GCS.Pitch;
+    Essential_Second_Packet_Parameters.SendAttitudeRollValue = PID_Resources.RCRateTarget.GCS.Roll;
     Essential_Second_Packet_Parameters.SendMemoryRamUsed = MEMORY.Check();
     Essential_Second_Packet_Parameters.SendMemoryRamUsedPercent = MEMORY.GetPercentageRAMUsed();
     Essential_Second_Packet_Parameters.SendAccX = IMU.Accelerometer.ReadFloat[ROLL] * 100;

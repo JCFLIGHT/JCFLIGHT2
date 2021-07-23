@@ -736,7 +736,7 @@ typedef struct
     int16_t ControlDerivativeCutOff = 0;
   } Filter;
 
-  struct RcRateTarget_Struct
+  struct RCRateTarget_Struct
   {
     float Roll = 0.0f;
     float Pitch = 0.0f;
@@ -749,7 +749,7 @@ typedef struct
       int16_t Yaw = 0;
     } GCS;
 
-  } RcRateTarget;
+  } RCRateTarget;
 
   struct Controller_Struct
   {

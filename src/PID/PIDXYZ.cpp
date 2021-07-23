@@ -147,25 +147,25 @@ void PIDXYZClass::Initialization(void)
 
 void PIDXYZClass::Update(float DeltaTime)
 {
-  PID_Resources.RcRateTarget.Roll = RCControllerToRate(RC_Resources.Attitude.Controller[ROLL], RC_Resources.Rate.PitchRoll);
-  PID_Resources.RcRateTarget.Pitch = RCControllerToRate(RC_Resources.Attitude.Controller[PITCH], RC_Resources.Rate.PitchRoll);
-  PID_Resources.RcRateTarget.Yaw = RCControllerToRate(RC_Resources.Attitude.Controller[YAW], RC_Resources.Rate.Yaw);
+  PID_Resources.RCRateTarget.Roll = RCControllerToRate(RC_Resources.Attitude.Controller[ROLL], RC_Resources.Rate.PitchRoll);
+  PID_Resources.RCRateTarget.Pitch = RCControllerToRate(RC_Resources.Attitude.Controller[PITCH], RC_Resources.Rate.PitchRoll);
+  PID_Resources.RCRateTarget.Yaw = RCControllerToRate(RC_Resources.Attitude.Controller[YAW], RC_Resources.Rate.Yaw);
 
-  PID_Resources.RcRateTarget.GCS.Roll = PID_Resources.RcRateTarget.Roll;
-  PID_Resources.RcRateTarget.GCS.Pitch = PID_Resources.RcRateTarget.Pitch;
-  PID_Resources.RcRateTarget.GCS.Yaw = PID_Resources.RcRateTarget.Yaw;
+  PID_Resources.RCRateTarget.GCS.Roll = PID_Resources.RCRateTarget.Roll;
+  PID_Resources.RCRateTarget.GCS.Pitch = PID_Resources.RCRateTarget.Pitch;
+  PID_Resources.RCRateTarget.GCS.Yaw = PID_Resources.RCRateTarget.Yaw;
 
   UpdateHeadingHold();
 
   if (GetSafeStateOfHeadingHold())
   {
-    PID_Resources.RcRateTarget.Yaw = GetHeadingHoldValue(DeltaTime);
+    PID_Resources.RCRateTarget.Yaw = GetHeadingHoldValue(DeltaTime);
   }
 
   if (IS_FLIGHT_MODE_ACTIVE(STABILIZE_MODE))
   {
-    PID_Resources.RcRateTarget.Roll = PIDXYZ.LevelRoll(DeltaTime);
-    PID_Resources.RcRateTarget.Pitch = PIDXYZ.LevelPitch(DeltaTime);
+    PID_Resources.RCRateTarget.Roll = PIDXYZ.LevelRoll(DeltaTime);
+    PID_Resources.RCRateTarget.Pitch = PIDXYZ.LevelPitch(DeltaTime);
   }
 
   if (GetMultirotorEnabled())
@@ -212,7 +212,7 @@ float PIDXYZClass::DerivativeTermProcessRoll(float ActualGyro, float PreviousRat
       GyroDifference = BIQUADFILTER.ApplyAndGet(&Derivative_Roll_Smooth, GyroDifference);
     }
 
-    NewDTermCalced = GyroDifference * (((float)GET_SET[PID_ROLL].kD / 1905.0f * TPA_Parameters.CalcedValue) / DeltaTime) * PIDXYZ.ApplyDerivativeBoostRoll(IMU.Gyroscope.ReadFloat[ROLL], PreviousRateGyro, PID_Resources.RcRateTarget.Roll, PreviousRateTarget, DeltaTime);
+    NewDTermCalced = GyroDifference * (((float)GET_SET[PID_ROLL].kD / 1905.0f * TPA_Parameters.CalcedValue) / DeltaTime) * PIDXYZ.ApplyDerivativeBoostRoll(IMU.Gyroscope.ReadFloat[ROLL], PreviousRateGyro, PID_Resources.RCRateTarget.Roll, PreviousRateTarget, DeltaTime);
   }
 
   return NewDTermCalced;
@@ -235,7 +235,7 @@ float PIDXYZClass::DerivativeTermProcessPitch(float ActualGyro, float PreviousRa
       NewDTermCalced = BIQUADFILTER.ApplyAndGet(&Derivative_Pitch_Smooth, GyroDifference);
     }
 
-    NewDTermCalced = GyroDifference * (((float)GET_SET[PID_PITCH].kD / 1905.0f * TPA_Parameters.CalcedValue) / DeltaTime) * PIDXYZ.ApplyDerivativeBoostPitch(IMU.Gyroscope.ReadFloat[PITCH], PreviousRateGyro, PID_Resources.RcRateTarget.Pitch, PreviousRateTarget, DeltaTime);
+    NewDTermCalced = GyroDifference * (((float)GET_SET[PID_PITCH].kD / 1905.0f * TPA_Parameters.CalcedValue) / DeltaTime) * PIDXYZ.ApplyDerivativeBoostPitch(IMU.Gyroscope.ReadFloat[PITCH], PreviousRateGyro, PID_Resources.RCRateTarget.Pitch, PreviousRateTarget, DeltaTime);
   }
 
   return NewDTermCalced;
@@ -258,7 +258,7 @@ float PIDXYZClass::DerivativeTermProcessYaw(float ActualGyro, float PreviousRate
       NewDTermCalced = BIQUADFILTER.ApplyAndGet(&Derivative_Yaw_Smooth, GyroDifference);
     }
 
-    NewDTermCalced = GyroDifference * (((float)GET_SET[PID_YAW].kD / 1905.0f * TPA_Value) / DeltaTime) * PIDXYZ.ApplyDerivativeBoostYaw(IMU.Gyroscope.ReadFloat[YAW], PreviousRateGyro, PID_Resources.RcRateTarget.Yaw, PreviousRateTarget, DeltaTime);
+    NewDTermCalced = GyroDifference * (((float)GET_SET[PID_YAW].kD / 1905.0f * TPA_Value) / DeltaTime) * PIDXYZ.ApplyDerivativeBoostYaw(IMU.Gyroscope.ReadFloat[YAW], PreviousRateGyro, PID_Resources.RCRateTarget.Yaw, PreviousRateTarget, DeltaTime);
   }
 
   return NewDTermCalced;
@@ -472,11 +472,11 @@ void PIDXYZClass::ApplyMulticopterRateControllerRoll(float DeltaTime)
   static float PreviousRateTarget;
   static float PreviousRateGyro;
 
-  const float RateError = PID_Resources.RcRateTarget.Roll - IMU.Gyroscope.ReadFloat[ROLL];
+  const float RateError = PID_Resources.RCRateTarget.Roll - IMU.Gyroscope.ReadFloat[ROLL];
   const float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[PID_ROLL].kP, RateError, TPA_Parameters.CalcedValue);
   const float NewDerivativeTerm = PIDXYZ.DerivativeTermProcessRoll(IMU.Gyroscope.ReadFloat[ROLL], PreviousRateGyro, PreviousRateTarget, DeltaTime);
 
-  const float RateTargetDelta = PID_Resources.RcRateTarget.Roll - PreviousRateTarget;
+  const float RateTargetDelta = PID_Resources.RCRateTarget.Roll - PreviousRateTarget;
   const float RateTargetDeltaFiltered = BIQUADFILTER.ApplyAndGet(&ControlDerivative_Roll_Smooth, RateTargetDelta);
 
   const float NewControlDerivativeTerm = RateTargetDeltaFiltered * (((float)GET_SET[PID_ROLL].kFF / 7270.0f * TPA_Parameters.CalcedValue) / DeltaTime);
@@ -484,7 +484,7 @@ void PIDXYZClass::ApplyMulticopterRateControllerRoll(float DeltaTime)
   const float NewOutput = NewProportionalTerm + NewDerivativeTerm + PID_Resources.Controller.Integral.ErrorGyro[ROLL] + NewControlDerivativeTerm;
   const float NewOutputLimited = Constrain_Float(NewOutput, -MAX_PID_SUM_LIMIT, +MAX_PID_SUM_LIMIT);
 
-  float IntegralTermErrorRate = PIDXYZ.ApplyIntegralTermRelaxRoll(PID_Resources.RcRateTarget.Roll, RateError);
+  float IntegralTermErrorRate = PIDXYZ.ApplyIntegralTermRelaxRoll(PID_Resources.RCRateTarget.Roll, RateError);
 
   float NewControlTracking;
 
@@ -506,7 +506,7 @@ void PIDXYZClass::ApplyMulticopterRateControllerRoll(float DeltaTime)
 
   PID_Resources.Controller.Output.Calced[ROLL] = NewOutputLimited;
 
-  PreviousRateTarget = PID_Resources.RcRateTarget.Roll;
+  PreviousRateTarget = PID_Resources.RCRateTarget.Roll;
   PreviousRateGyro = IMU.Gyroscope.ReadFloat[ROLL];
 }
 
@@ -515,11 +515,11 @@ void PIDXYZClass::ApplyMulticopterRateControllerPitch(float DeltaTime)
   static float PreviousRateTarget;
   static float PreviousRateGyro;
 
-  const float RateError = PID_Resources.RcRateTarget.Pitch - IMU.Gyroscope.ReadFloat[PITCH];
+  const float RateError = PID_Resources.RCRateTarget.Pitch - IMU.Gyroscope.ReadFloat[PITCH];
   const float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[PID_PITCH].kP, RateError, TPA_Parameters.CalcedValue);
   const float NewDerivativeTerm = PIDXYZ.DerivativeTermProcessPitch(IMU.Gyroscope.ReadFloat[PITCH], PreviousRateGyro, PreviousRateTarget, DeltaTime);
 
-  const float RateTargetDelta = PID_Resources.RcRateTarget.Pitch - PreviousRateTarget;
+  const float RateTargetDelta = PID_Resources.RCRateTarget.Pitch - PreviousRateTarget;
   const float RateTargetDeltaFiltered = BIQUADFILTER.ApplyAndGet(&ControlDerivative_Pitch_Smooth, RateTargetDelta);
 
   const float NewControlDerivativeTerm = RateTargetDeltaFiltered * (((float)GET_SET[PID_PITCH].kFF / 7270.0f * TPA_Parameters.CalcedValue) / DeltaTime);
@@ -527,7 +527,7 @@ void PIDXYZClass::ApplyMulticopterRateControllerPitch(float DeltaTime)
   const float NewOutput = NewProportionalTerm + NewDerivativeTerm + PID_Resources.Controller.Integral.ErrorGyro[PITCH] + NewControlDerivativeTerm;
   const float NewOutputLimited = Constrain_Float(NewOutput, -MAX_PID_SUM_LIMIT, +MAX_PID_SUM_LIMIT);
 
-  float IntegralTermErrorRate = PIDXYZ.ApplyIntegralTermRelaxPitch(PID_Resources.RcRateTarget.Pitch, RateError);
+  float IntegralTermErrorRate = PIDXYZ.ApplyIntegralTermRelaxPitch(PID_Resources.RCRateTarget.Pitch, RateError);
 
   float NewControlTracking;
 
@@ -549,7 +549,7 @@ void PIDXYZClass::ApplyMulticopterRateControllerPitch(float DeltaTime)
 
   PID_Resources.Controller.Output.Calced[PITCH] = NewOutputLimited;
 
-  PreviousRateTarget = PID_Resources.RcRateTarget.Pitch;
+  PreviousRateTarget = PID_Resources.RCRateTarget.Pitch;
   PreviousRateGyro = IMU.Gyroscope.ReadFloat[PITCH];
 }
 
@@ -558,10 +558,10 @@ void PIDXYZClass::ApplyMulticopterRateControllerYaw(float DeltaTime)
   static float PreviousRateTarget;
   static float PreviousRateGyro;
 
-  const float RateError = PID_Resources.RcRateTarget.Yaw - IMU.Gyroscope.ReadFloat[YAW];
+  const float RateError = PID_Resources.RCRateTarget.Yaw - IMU.Gyroscope.ReadFloat[YAW];
   const float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[YAW].kP, RateError, 1.0f);
 
-  const float RateTargetDelta = PID_Resources.RcRateTarget.Yaw - PreviousRateTarget;
+  const float RateTargetDelta = PID_Resources.RCRateTarget.Yaw - PreviousRateTarget;
   const float RateTargetDeltaFiltered = BIQUADFILTER.ApplyAndGet(&ControlDerivative_Yaw_Smooth, RateTargetDelta);
 
   const float NewControlDerivativeTerm = RateTargetDeltaFiltered * (((float)GET_SET[PID_YAW].kFF / 7270.0f) / DeltaTime);
@@ -571,7 +571,7 @@ void PIDXYZClass::ApplyMulticopterRateControllerYaw(float DeltaTime)
   const float NewOutput = NewProportionalTerm + NewDerivativeTerm + PID_Resources.Controller.Integral.ErrorGyro[YAW] + NewControlDerivativeTerm;
   const float NewOutputLimited = Constrain_Float(NewOutput, -MAX_YAW_PID_SUM_LIMIT, +MAX_YAW_PID_SUM_LIMIT);
 
-  //float IntegralTermErrorRate = PIDXYZ.ApplyIntegralTermRelaxYaw(PID_Resources.RcRateTarget.Yaw, RateError);
+  //float IntegralTermErrorRate = PIDXYZ.ApplyIntegralTermRelaxYaw(PID_Resources.RCRateTarget.Yaw, RateError);
 
   float IntegralTermErrorRate = RateError;
 
@@ -595,7 +595,7 @@ void PIDXYZClass::ApplyMulticopterRateControllerYaw(float DeltaTime)
 
   PID_Resources.Controller.Output.Calced[YAW] = NewOutputLimited;
 
-  PreviousRateTarget = PID_Resources.RcRateTarget.Yaw;
+  PreviousRateTarget = PID_Resources.RCRateTarget.Yaw;
   PreviousRateGyro = IMU.Gyroscope.ReadFloat[YAW];
 }
 
@@ -604,10 +604,10 @@ void PIDXYZClass::ApplyFixedWingRateControllerRoll(float DeltaTime)
   static float PreviousRateTarget;
   static float PreviousRateGyro;
 
-  const float RateError = PID_Resources.RcRateTarget.Roll - IMU.Gyroscope.ReadFloat[ROLL];
+  const float RateError = PID_Resources.RCRateTarget.Roll - IMU.Gyroscope.ReadFloat[ROLL];
   const float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[PID_ROLL].kP, RateError, TPA_Parameters.CalcedValue);
   const float NewDerivativeTerm = PIDXYZ.DerivativeTermProcessRoll(IMU.Gyroscope.ReadFloat[ROLL], PreviousRateGyro, PreviousRateTarget, DeltaTime);
-  const float NewFeedForwardTerm = PID_Resources.RcRateTarget.Roll * ((float)GET_SET[PID_ROLL].kFF / 31.0f * TPA_Parameters.CalcedValue);
+  const float NewFeedForwardTerm = PID_Resources.RCRateTarget.Roll * ((float)GET_SET[PID_ROLL].kFF / 31.0f * TPA_Parameters.CalcedValue);
 
   PID_Resources.Controller.Integral.ErrorGyro[ROLL] += RateError * ((float)GET_SET[PID_ROLL].kI / 4.0f * TPA_Parameters.CalcedValue) * DeltaTime;
 
@@ -620,7 +620,7 @@ void PIDXYZClass::ApplyFixedWingRateControllerRoll(float DeltaTime)
 
   PID_Resources.Controller.Output.Calced[ROLL] = Constrain_Float(NewProportionalTerm + NewFeedForwardTerm + PID_Resources.Controller.Integral.ErrorGyro[ROLL] + NewDerivativeTerm, -MAX_PID_SUM_LIMIT, +MAX_PID_SUM_LIMIT);
 
-  PreviousRateTarget = PID_Resources.RcRateTarget.Roll;
+  PreviousRateTarget = PID_Resources.RCRateTarget.Roll;
   PreviousRateGyro = IMU.Gyroscope.ReadFloat[ROLL];
 }
 
@@ -629,10 +629,10 @@ void PIDXYZClass::ApplyFixedWingRateControllerPitch(float DeltaTime)
   static float PreviousRateTarget;
   static float PreviousRateGyro;
 
-  const float RateError = PID_Resources.RcRateTarget.Pitch - IMU.Gyroscope.ReadFloat[PITCH];
+  const float RateError = PID_Resources.RCRateTarget.Pitch - IMU.Gyroscope.ReadFloat[PITCH];
   const float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[PID_PITCH].kP, RateError, TPA_Parameters.CalcedValue);
   const float NewDerivativeTerm = PIDXYZ.DerivativeTermProcessPitch(IMU.Gyroscope.ReadFloat[PITCH], PreviousRateGyro, PreviousRateTarget, DeltaTime);
-  const float NewFeedForwardTerm = PID_Resources.RcRateTarget.Pitch * ((float)GET_SET[PID_PITCH].kFF / 31.0f * TPA_Parameters.CalcedValue);
+  const float NewFeedForwardTerm = PID_Resources.RCRateTarget.Pitch * ((float)GET_SET[PID_PITCH].kFF / 31.0f * TPA_Parameters.CalcedValue);
 
   PID_Resources.Controller.Integral.ErrorGyro[PITCH] += RateError * ((float)GET_SET[PID_PITCH].kI / 4.0f * TPA_Parameters.CalcedValue) * DeltaTime;
 
@@ -645,7 +645,7 @@ void PIDXYZClass::ApplyFixedWingRateControllerPitch(float DeltaTime)
 
   PID_Resources.Controller.Output.Calced[PITCH] = Constrain_Float(NewProportionalTerm + NewFeedForwardTerm + PID_Resources.Controller.Integral.ErrorGyro[PITCH] + NewDerivativeTerm, -MAX_PID_SUM_LIMIT, +MAX_PID_SUM_LIMIT);
 
-  PreviousRateTarget = PID_Resources.RcRateTarget.Pitch;
+  PreviousRateTarget = PID_Resources.RCRateTarget.Pitch;
   PreviousRateGyro = IMU.Gyroscope.ReadFloat[PITCH];
 }
 
@@ -654,10 +654,10 @@ void PIDXYZClass::ApplyFixedWingRateControllerYaw(float DeltaTime)
   static float PreviousRateTarget;
   static float PreviousRateGyro;
 
-  const float RateError = PID_Resources.RcRateTarget.Yaw - IMU.Gyroscope.ReadFloat[YAW];
+  const float RateError = PID_Resources.RCRateTarget.Yaw - IMU.Gyroscope.ReadFloat[YAW];
   const float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[PID_YAW].kP, RateError, TPA_Parameters.CalcedValue);
   const float NewDerivativeTerm = PIDXYZ.DerivativeTermProcessYaw(IMU.Gyroscope.ReadFloat[YAW], PreviousRateGyro, PreviousRateTarget, TPA_Parameters.CalcedValue, DeltaTime);
-  const float NewFeedForwardTerm = PID_Resources.RcRateTarget.Yaw * ((float)GET_SET[PID_YAW].kFF / 31.0f * TPA_Parameters.CalcedValue);
+  const float NewFeedForwardTerm = PID_Resources.RCRateTarget.Yaw * ((float)GET_SET[PID_YAW].kFF / 31.0f * TPA_Parameters.CalcedValue);
 
   PID_Resources.Controller.Integral.ErrorGyro[YAW] += RateError * ((float)GET_SET[PID_YAW].kI / 4.0f * TPA_Parameters.CalcedValue) * DeltaTime;
 
@@ -670,7 +670,7 @@ void PIDXYZClass::ApplyFixedWingRateControllerYaw(float DeltaTime)
 
   PID_Resources.Controller.Output.Calced[YAW] = Constrain_Float(NewProportionalTerm + NewFeedForwardTerm + PID_Resources.Controller.Integral.ErrorGyro[YAW] + NewDerivativeTerm, -MAX_PID_SUM_LIMIT, +MAX_PID_SUM_LIMIT);
 
-  PreviousRateTarget = PID_Resources.RcRateTarget.Yaw;
+  PreviousRateTarget = PID_Resources.RCRateTarget.Yaw;
   PreviousRateGyro = IMU.Gyroscope.ReadFloat[YAW];
 }
 
@@ -719,9 +719,9 @@ void PIDXYZClass::GetNewControllerForPlaneWithTurn(void)
   AHRS.TransformVectorEarthFrameToBodyFrame(&TurnControllerRates);
 
   //LIMITA O VALOR MINIMO E MAXIMO DE SAÍDA A PARTIR DOS VALOR DE RATE DEFINIDO PELO USUARIO NO GCS
-  PID_Resources.RcRateTarget.Roll = Constrain_16Bits(PID_Resources.RcRateTarget.Roll + TurnControllerRates.X, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
-  PID_Resources.RcRateTarget.Pitch = Constrain_16Bits(PID_Resources.RcRateTarget.Pitch + TurnControllerRates.Y * TurnCoordinatorPitchGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
-  PID_Resources.RcRateTarget.Yaw = Constrain_16Bits(PID_Resources.RcRateTarget.Yaw + TurnControllerRates.Z * TurnCoordinatorYawGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw), ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw));
+  PID_Resources.RCRateTarget.Roll = Constrain_16Bits(PID_Resources.RCRateTarget.Roll + TurnControllerRates.X, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
+  PID_Resources.RCRateTarget.Pitch = Constrain_16Bits(PID_Resources.RCRateTarget.Pitch + TurnControllerRates.Y * TurnCoordinatorPitchGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll), ConvertDegreesToDecidegrees(RC_Resources.Rate.PitchRoll));
+  PID_Resources.RCRateTarget.Yaw = Constrain_16Bits(PID_Resources.RCRateTarget.Yaw + TurnControllerRates.Z * TurnCoordinatorYawGain, -ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw), ConvertDegreesToDecidegrees(RC_Resources.Rate.Yaw));
 }
 
 void PIDXYZClass::Reset_Integral_Accumulators(void)
