@@ -25,11 +25,13 @@ class TecsClass
 public:
   void Initialization(void);
   void Update(float DeltaTime);
+  float AutoPitchDown(int16_t Input_Stab_Pitch_Down);
   float GetFuselageVelocity(void);
 
 private:
   float Floating_Point_PID(TECS_PID_Float_Struct *TECS_PID_Pointer, const float SetProportional, const float SetIntegrator, const float SetDerivative, const float PIDSetPoint,
                            const float RawMeasurement, const float PIDScaler, const float DerivativeScaler, const float OutputMin, const float OutputMax, const uint8_t Flags, const float DeltaTime);
+  bool GetNavigationInAutomaticThrottleMode(void);
   void Reset_PID_Navigation(TECS_PID_Float_Struct *TECS_PID_Pointer, float DerivativeCutOff);
   int16_t UpdatePitchToThrottle(int16_t PitchInput, float DeltaTime);
   void UpdateEnergyAltitudeController(float DeltaTime);

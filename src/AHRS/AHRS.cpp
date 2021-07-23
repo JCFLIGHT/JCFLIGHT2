@@ -30,6 +30,7 @@
 #include "IMU/ACCGYROREAD.h"
 #include "GPSNavigation/NAVIGATION.h"
 #include "PID/PIDPARAMS.h"
+#include "Param/PARAM.h"
 #include "Build/GCC.h"
 
 FILE_COMPILE_FOR_SPEED

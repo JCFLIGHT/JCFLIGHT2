@@ -21,6 +21,7 @@
 #include "Common/STRUCTS.h"
 #include "InertialNavigation/INS.h"
 #include "Build/BOARDDEFS.h"
+#include "Param/PARAM.h"
 #include "FastSerial/PRINTF.h"
 
 #ifndef __AVR_ATmega2560__

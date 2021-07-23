@@ -6,6 +6,7 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "utility": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "initializer_list": "cpp"
     }
 }

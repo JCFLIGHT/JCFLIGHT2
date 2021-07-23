@@ -96,6 +96,9 @@ PT1_Filter_Struct DerivativeBoost_PT1_Yaw_Smooth;
 //THROW LIMITE - LIMITE MINIMO E MAXIMA NO TERMO INTEGRAL DO CONTROLADOR PID DE AERONAVES DE ASA-FIXA
 int16_t FixedWingIntegralTermThrowLimit = 165; //AJUSTAVEL PELO USUARIO -> (0 a 500)
 
+//SPD - AJUDA A MANTER A VELOCIDADE NO AR MAIS ALTA EM PLANEIOS OU EM POUSOS,E EVITA ESTOLAGENS.20 GRAUS É RECOMENDADO PARA A MAIORIA DAS AERONAVES DE ASA-FIXA
+int16_t Stab_Pitch_Down = 0; //AJUSTAVEL PELO USUARIO -> (0 a 450)
+
 //GANHO DO TURN-COORDINATOR
 float TurnCoordinatorPitchGain = 1.0f; //AJUSTAVEL PELO USUARIO -> (0.0 a 2.0 (float))
 float TurnCoordinatorYawGain = 1.0f;   //AJUSTAVEL PELO USUARIO -> (0.0 a 2.0 (float))
@@ -436,6 +439,8 @@ float PIDXYZClass::LevelPitch(float DeltaTime)
       RcControllerAngle = RcControllerToAngle(RC_Resources.Attitude.Controller[PITCH], ConvertDegreesToDecidegrees(GET_SET[MAX_PITCH_LEVEL].MaxValue));
     }
   }
+
+  RcControllerAngle += TECS.AutoPitchDown(Stab_Pitch_Down);
 
   if (GetAirPlaneEnabled())
   {

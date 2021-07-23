@@ -1271,8 +1271,8 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
                                         (sizeof(int32_t) * 1));  //NÚMERO TOTAL DE VARIAVEIS DE 32 BITS CONTIDO AQUI
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendThrottleMiddle, VAR_8BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendThrottleExpo, VAR_8BITS);
-        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendRCRate, VAR_8BITS);
-        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendRCExpo, VAR_8BITS);
+        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendPRRate, VAR_8BITS);
+        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendPRExpo, VAR_8BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendYawRate, VAR_8BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendRCPulseMin, VAR_16BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendRCPulseMax, VAR_16BITS);
