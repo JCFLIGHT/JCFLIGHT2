@@ -674,13 +674,13 @@ typedef struct
   uint8_t AngleLevelBlockArm;
   uint8_t AutoLaunch_AHRS_BankAngle;
   uint8_t AutoLaunch_Velocity_Thresh;
-  uint16_t AutoLaunch_Trigger_Motor_Delay;
+  uint16_t AutoLaunch_Motor_Delay;
   uint8_t AutoLaunch_Elevator;
-  uint16_t AutoLaunch_SpinUp;
-  uint16_t AutoLaunch_SpinUp_Time;
+  uint16_t AutoLaunch_Motor_SpinUp_Time;
   uint16_t AutoLaunch_MaxThrottle;
   uint16_t AutoLaunch_Exit;
   uint8_t AutoLaunch_Altitude;
+  uint16_t AutoLaunch_Sticks_Exit;
   uint8_t CrashCheck_BankAngle;
   uint8_t CrashCheck_Time;
   uint16_t GimbalMinValue;

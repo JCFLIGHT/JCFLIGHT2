@@ -120,33 +120,33 @@ Valor do Throttle aplicado ao motor durante o Auto-Launch [uS]
 
 ---
 
-### AutoLaunch_SpinUp
+### AutoLaunch_Motor_Delay
 
-Valor de incrimentação no Throttle para Aeros com rodas [uS]
-
-| Valor Padrão | Min | Max |
-| --- | --- | --- |
-| 100 | 0 | 2000 |
-
----
-
-### AutoLaunch_SpinUp_Time
-
-Tempo de incrimentação no Throttle para Aeros com rodas [MillisSegundos]
-
-| Valor Padrão | Min | Max |
-| --- | --- | --- |
-| 300 | 0 | 5000 |
-
----
-
-### AutoLaunch_Trigger_Motor_Delay
-
-Tempo para iniciar o motor após o status de lançado [MillisSegundos]
+Tempo para subir o Throttle em rampa,assim fazendo uma partida suave,isso evita um pico de corrente no ESC [MillisSegundos]
 
 | Valor Padrão | Min | Max |
 | --- | --- | --- |
 | 1500 | 0 | 10000 |
+
+---
+
+### AutoLaunch_Motor_SpinUp_Time
+
+Tempo para iniciar o motor após o lançamento for detectado [MillisSegundos]
+
+| Valor Padrão | Min | Max |
+| --- | --- | --- |
+| 500 | 0 | 1000 |
+
+---
+
+### AutoLaunch_Sticks_Exit
+
+O piloto pode cancelar o Auto-Launch através dos Sticks do rádio somente após o estouro desse tempo [MillisSegundos]
+
+| Valor Padrão | Min | Max |
+| --- | --- | --- |
+| 2000 | 0 | 15000 |
 
 ---
 
