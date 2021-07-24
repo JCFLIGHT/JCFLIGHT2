@@ -277,21 +277,24 @@ static bool WayPointSync10Hz(void)
 
 static void SetWayPointAutoTakeOffState(uint8_t _AutoTakeOffState)
 {
-  if (_AutoTakeOffState == WAYPOINT_ENABLE_AUTO_TAKEOFF)
+  switch (_AutoTakeOffState)
   {
+
+  case WAYPOINT_ENABLE_AUTO_TAKEOFF:
     WayPoint_Resources.AutoTakeOff.Flags.State = true;
-  }
-  if (_AutoTakeOffState == WAYPOINT_DISABLE_AUTO_TAKEOFF)
-  {
+    break;
+
+  case WAYPOINT_DISABLE_AUTO_TAKEOFF:
     WayPoint_Resources.AutoTakeOff.Flags.State = false;
-  }
-  else if (_AutoTakeOffState == WAYPOINT_NORMALIZE_TAKEOFF)
-  {
+    break;
+
+  case WAYPOINT_NORMALIZE_TAKEOFF:
     WayPoint_Resources.AutoTakeOff.Flags.Normalized = true;
-  }
-  else if (_AutoTakeOffState == WAYPOINT_NORMALIZE_RESET)
-  {
+    break;
+
+  case WAYPOINT_NORMALIZE_RESET:
     WayPoint_Resources.AutoTakeOff.Flags.Normalized = false;
+    break;
   }
 }
 
