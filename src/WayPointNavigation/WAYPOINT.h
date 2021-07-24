@@ -194,9 +194,13 @@ typedef struct
 
     struct Throttle_Struct
     {
-      uint8_t IncrementCount = 0;
       int16_t Increment = 1000;
     } Throttle;
+
+    struct Time_Struct
+    {
+      uint32_t ElapsedSinceTakeOff = 0;
+    } Time;
 
   } AutoTakeOff;
 

@@ -45,9 +45,7 @@ _GetWayPointPacketTwo GetWayPointPacketTwo;
 //CLI
 #define THROTTLE_TAKEOFF_ASCENT 1600    //VALOR DO THROTTLE AO FAZER O AUTO-TAKEOFF ATÉ CHEGAR NA ALTITUDE SETADA PELO GCS
 #define THROTTLE_TAKEOFF_NORMALIZE 1500 //VALOR DO THROTTLE AO FAZER O AUTO-TAKEOFF AO CHEGAR NA ALTITUDE SETADA PELO GCS
-#define THROTTLE_CANCEL_TAKEOFF 1450    //VALOR DO THROTTLE LIDO DO RECEPTOR PARA CANCELAR O AUTO-TAKEOFF E VOLTAR AO CONTROLE NORMAL
-#define THROTTLE_INCREMENT 100          //NÚMERO DE INCREMENTAÇÕES A CADA ESTOURO DE TEMPO DEFINIDO PELO PARAMETRO "THROTTLE_INCREMENT_TIME"
-#define THROTTLE_INCREMENT_TIME 1       //INCREMENTA A CADA 0.10 SEGUNDOS
+#define THROTTLE_TAKEOFF_TIME 2000      //TEMPO DE SUBIDA DO THROTTLE DO VALOR MINIMO AO MAXIMO (MS)
 
 void WayPointClass::Initialization(void)
 {
@@ -311,30 +309,26 @@ static void WayPointAutoTakeOffUpdate(void)
 {
   if (!GetWayPointAutoTakeOffState())
   {
+    WayPoint_Resources.AutoTakeOff.Time.ElapsedSinceTakeOff = SCHEDULERTIME.GetMillis();
     return;
   }
 
   if (GetMultirotorEnabled())
   {
-    if (WayPointSync10Hz())
+    if (GetWayPointAutoTakeOffNormalized())
     {
-      if (WayPoint_Resources.AutoTakeOff.Throttle.Increment < THROTTLE_TAKEOFF_ASCENT)
-      {
-        if (WayPoint_Resources.AutoTakeOff.Throttle.IncrementCount >= THROTTLE_INCREMENT_TIME)
-        {
-          WayPoint_Resources.AutoTakeOff.Throttle.Increment += THROTTLE_INCREMENT;
-          WayPoint_Resources.AutoTakeOff.Throttle.IncrementCount = 0;
-        }
-        else
-        {
-          WayPoint_Resources.AutoTakeOff.Throttle.IncrementCount++;
-        }
-      }
-      if (GetWayPointAutoTakeOffNormalized())
-      {
-        WayPoint_Resources.AutoTakeOff.Throttle.Increment = THROTTLE_TAKEOFF_NORMALIZE;
-      }
+      WayPoint_Resources.AutoTakeOff.Throttle.Increment = THROTTLE_TAKEOFF_NORMALIZE;
     }
+    else
+    {
+      //PARTIDA SUAVE PARA OS MOTORES (EM RAMPA)
+      WayPoint_Resources.AutoTakeOff.Throttle.Increment = ScaleRangeFloat(SCHEDULERTIME.GetMillis() - WayPoint_Resources.AutoTakeOff.Time.ElapsedSinceTakeOff,
+                                                                          0.0f,
+                                                                          THROTTLE_TAKEOFF_TIME,
+                                                                          RC_Resources.Attitude.ThrottleMin,
+                                                                          THROTTLE_TAKEOFF_ASCENT);
+    }
+
     WayPoint_Resources.AutoTakeOff.Throttle.Increment = Constrain_16Bits(WayPoint_Resources.AutoTakeOff.Throttle.Increment, RC_Resources.Attitude.ThrottleMin, RC_Resources.Attitude.ThrottleMax);
     DECODE.SetRxChannelInput(THROTTLE, WayPoint_Resources.AutoTakeOff.Throttle.Increment);
     RC_Resources.Attitude.Controller[THROTTLE] = WayPoint_Resources.AutoTakeOff.Throttle.Increment;
@@ -348,7 +342,6 @@ static void WayPointAutoTakeOffUpdate(void)
 static void ResetAutoTakeOff(void)
 {
   WayPoint_Resources.AutoTakeOff.Throttle.Increment = 1000;
-  WayPoint_Resources.AutoTakeOff.Throttle.IncrementCount = 0;
   SetWayPointAutoTakeOffState(WAYPOINT_DISABLE_AUTO_TAKEOFF);
   SetWayPointAutoTakeOffState(WAYPOINT_NORMALIZE_RESET);
 }
@@ -444,7 +437,10 @@ void WayPointClass::Update(void)
         }
         else
         {
-          STICKS.PreArm_Run = true;
+          if (Throttle.Output >= 1400)
+          {
+            STICKS.PreArm_Run = true;
+          }
         }
       }
     }
@@ -504,8 +500,8 @@ void WayPointClass::Update(void)
       //CALCULA UMA NOVA VELOCIDADE DE NAVEGAÇÃO
       Navigation_Speed_Result = Calculate_Navigation_Speed(JCF_Param.Navigation_Vel);
       GPSCalculateNavigationRate(Navigation_Speed_Result);
-      //DESATIVA O TAKEOFF SE A MISSÃO NÃO ESTIVER CONFIGURADA PARA O MESMO E SE O THROTTLE ESTIVER ACIMA DE UM CERTO NIVEL
-      if (WayPoint_Resources.Mission.OthersParams.FlightMode[WayPoint_Resources.Mission.OthersParams.Number] != WAYPOINT_TAKEOFF && Throttle.Output >= THROTTLE_CANCEL_TAKEOFF)
+      //DESATIVA O TAKEOFF SE A MISSÃO NÃO ESTIVER CONFIGURADA PARA O MESMO
+      if (WayPoint_Resources.Mission.OthersParams.FlightMode[WayPoint_Resources.Mission.OthersParams.Number] != WAYPOINT_TAKEOFF)
       {
         SetWayPointAutoTakeOffState(WAYPOINT_DISABLE_AUTO_TAKEOFF);
       }
