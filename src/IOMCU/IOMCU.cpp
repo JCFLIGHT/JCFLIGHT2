@@ -55,6 +55,7 @@
 #include "BitArray/BITARRAY.h"
 #include "RadioControl/DECODE.h"
 #include "Build/BOARDDEFS.h"
+#include "PerformanceCalibration/PERFORMCOMPASS.h"
 
 GCSClass GCS;
 
@@ -789,20 +790,14 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         break;
 
     case 11:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            ACCCALIBRATION.Start();
-        }
+        ACCCALIBRATION.Start();
         Communication_Passed(false, 0);
         Send_Data_To_GCS(SerialCheckSum);
         FASTSERIAL.UartSendData(UART_NUMB_0);
         break;
 
     case 12:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) && I2CResources.Found.Compass)
-        {
-            Calibration.Magnetometer.Calibrating = true;
-        }
+        COMPASSCALIBRATION.RunCalibration();
         Communication_Passed(false, 0);
         Send_Data_To_GCS(SerialCheckSum);
         FASTSERIAL.UartSendData(UART_NUMB_0);
@@ -893,17 +888,11 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         break;
 
     case 27:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            PREARM.UpdateGCSErrorText(PREARM.Checking());
-        }
+        PREARM.UpdateGCSErrorText(PREARM.Checking());
         break;
 
     case 28:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            WATCHDOG.Reboot();
-        }
+        WATCHDOG.Reboot();
         break;
 
     case 29:
@@ -1171,17 +1160,11 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         break;
 
     case 11:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            ACCCALIBRATION.Start();
-        }
+        ACCCALIBRATION.Start();
         break;
 
     case 12:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) && I2CResources.Found.Compass)
-        {
-            Calibration.Magnetometer.Calibrating = true;
-        }
+        COMPASSCALIBRATION.RunCalibration();
         break;
 
     case 13:
@@ -1245,17 +1228,11 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         break;
 
     case 27:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            PREARM.UpdateGCSErrorText(PREARM.Checking());
-        }
+        PREARM.UpdateGCSErrorText(PREARM.Checking());
         break;
 
     case 28:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            WATCHDOG.Reboot();
-        }
+        WATCHDOG.Reboot();
         break;
 
     case 29:

@@ -24,6 +24,7 @@
 #include "Scheduler/SCHEDULERTIME.h"
 #include "GaussNewton/GAUSSNEWTON.h"
 #include "DEVICE.h"
+#include "BitArray/BITARRAY.h"
 #include "Build/GCC.h"
 
 FILE_COMPILE_FOR_SPEED
@@ -57,6 +58,11 @@ static bool GetAllOrientationsHaveCalibrationDataCollected(void)
 void AccCalibClass::Start(void)
 {
     int8_t GetActualPositionOfAcc = GetAxisInclinedToCalibration(IMU.Accelerometer.Read);
+
+    if (IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
+    {
+        return;
+    }
 
     if (GetActualPositionOfAcc == -1)
     {

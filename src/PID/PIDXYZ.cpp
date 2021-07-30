@@ -79,8 +79,6 @@ PT1_Filter_Struct Angle_Pitch_Smooth;
 PT1_Filter_Struct WindUpRoll_Smooth;
 PT1_Filter_Struct WindUpPitch_Smooth;
 
-PT1_Filter_Struct Yaw_Proportional_Smooth;
-
 #ifdef USE_DERIVATIVE_BOOST_PID
 
 PT1_Filter_Struct DerivativeBoost_PT1_Roll_Smooth;
@@ -100,8 +98,6 @@ PT1_Filter_Struct DerivativeBoost_PT1_Yaw_Smooth;
 
 //FREQUENCIA DE CORTE DA ACELERAÇÃO CALCULADA PELO DERIVATIVE BOOST
 #define DERIVATIVE_BOOST_CUTOFF 7 //Hz ~ ESSE VALOR É FIXO
-
-uint8_t Yaw_P_Term_LPF = 100;
 
 //THROW LIMITE - LIMITE MINIMO E MAXIMA NO TERMO INTEGRAL DO CONTROLADOR PID DE AERONAVES DE ASA-FIXA
 int16_t FixedWingIntegralTermThrowLimit = 165; //AJUSTAVEL PELO USUARIO -> (0 a 500)
@@ -151,7 +147,6 @@ void PIDXYZClass::Initialization(void)
 #endif
   PT1FilterInit(&WindUpRoll_Smooth, PID_Resources.Filter.IntegralRelaxCutOff, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);
   PT1FilterInit(&WindUpPitch_Smooth, PID_Resources.Filter.IntegralRelaxCutOff, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);
-  PT1FilterInit(&Yaw_Proportional_Smooth, Yaw_P_Term_LPF, SCHEDULER_SET_PERIOD_US(THIS_LOOP_RATE_IN_US) * 1e-6f);
   MotorIntegralTermWindUpPoint = 1.0f - (PID_Resources.Param.IntegralTermWindUpPercent / 100.0f);
   GPS_Resources.Navigation.HeadingHoldLimit = Fast_Cosine(ConvertToRadians(GET_SET[MAX_ROLL_LEVEL].MaxValue)) * Fast_Cosine(ConvertToRadians(GET_SET[MAX_PITCH_LEVEL].MaxValue));
 }
@@ -571,8 +566,7 @@ void PIDXYZClass::ApplyMulticopterRateControllerYaw(float DeltaTime)
 
   const float RateError = PID_Resources.RCRateTarget.Yaw - IMU.Gyroscope.ReadFloat[YAW];
 
-  float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[YAW].kP, RateError, 1.0f);
-  NewProportionalTerm = PT1FilterApply3(&Yaw_Proportional_Smooth, NewProportionalTerm);
+  const float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[YAW].kP, RateError, 1.0f);
 
   const float RateTargetDelta = PID_Resources.RCRateTarget.Yaw - PreviousRateTarget;
   const float RateTargetDeltaFiltered = BIQUADFILTER.ApplyAndGet(&ControlDerivative_Yaw_Smooth, RateTargetDelta);
@@ -669,8 +663,7 @@ void PIDXYZClass::ApplyFixedWingRateControllerYaw(float DeltaTime)
 
   const float RateError = PID_Resources.RCRateTarget.Yaw - IMU.Gyroscope.ReadFloat[YAW];
 
-  float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[PID_YAW].kP, RateError, TPA_Parameters.CalcedValue);
-  NewProportionalTerm = PT1FilterApply3(&Yaw_Proportional_Smooth, NewProportionalTerm);
+  const float NewProportionalTerm = PIDXYZ.ProportionalTermProcess(GET_SET[PID_YAW].kP, RateError, TPA_Parameters.CalcedValue);
 
   const float NewDerivativeTerm = PIDXYZ.DerivativeTermProcessYaw(IMU.Gyroscope.ReadFloat[YAW], PreviousRateGyro, PreviousRateTarget, TPA_Parameters.CalcedValue, DeltaTime);
   const float NewFeedForwardTerm = PID_Resources.RCRateTarget.Yaw * ((float)GET_SET[PID_YAW].kFF / 31.0f * TPA_Parameters.CalcedValue);

@@ -18,6 +18,8 @@
 #include "REBOOT.h"
 #include "Scheduler/SCHEDULERTIME.h"
 #include "MotorsControl/MOTORS.h"
+#include "BitArray/BITARRAY.h"
+#include "Common/ENUM.h"
 
 WatchDogClass WATCHDOG;
 
@@ -77,6 +79,11 @@ static __inline__ __attribute__((__always_inline__)) void WatchDogReset(const ui
 
 void WatchDogClass::Reboot(void)
 {
+    if (IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
+    {
+        return;
+    }
+
     ShutDownAllMotorsAndServos();
     SCHEDULERTIME.Sleep(1000); //ESPERA O MICROCONTROLADOR DOS ESCS REAGIREM AO PULSO EM LOW
 
@@ -87,8 +94,9 @@ void WatchDogClass::Reboot(void)
 
     WatchDogReset(0); //WATCHDOG 15MS
 
-    for (;;)
-        ;
+    while (true)
+    {
+    }
 
 #elif defined ESP32
 
