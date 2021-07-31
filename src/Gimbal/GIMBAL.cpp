@@ -30,15 +30,15 @@ void Gimbal_Controll(void)
 {
   for (uint8_t IndexCount = 0; IndexCount <= RCAUX8; IndexCount++)
   {
-    if (GimbalConfig == IndexCount)
+    if (AUXFLIGHT.GetModeConfiguration[GIMBAL_MODE] == IndexCount)
     {
-      if (GimbalConfig == NONE)
+      if (AUXFLIGHT.GetModeConfiguration[GIMBAL_MODE] == NONE)
       {
         MotorControl[GIMBAL] = MIDDLE_STICKS_PULSE;
       }
       else
       {
-        MotorControl[GIMBAL] = DECODE.GetRxChannelOutput(AUX1 + (IndexCount - 1));
+        MotorControl[GIMBAL] = DECODE.GetRxChannelOutput(NON_AUX_CHANNEL_COUNT + IndexCount);
       }
       break;
     }

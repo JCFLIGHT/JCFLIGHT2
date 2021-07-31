@@ -17,7 +17,8 @@
 
 #ifndef RCDEFINES_H_
 #define RCDEFINES_H_
-#define MAX_AUX_CHANNELS 8
+#define MAX_AUX_CHANNELS 8                                            //AUX1 ~ AUX8
+#define NON_AUX_CHANNEL_COUNT 3                                       //THROTTLE + YAW + PITCH + ROLL
 #define RANGE_MIN 900                                                 //uS
 #define MIN_PULSE 1100                                                //uS
 #define MAX_PULSE 1900                                                //uS

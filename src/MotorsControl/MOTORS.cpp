@@ -308,7 +308,7 @@ void ApplyPWMControlForMotorsAndServos()
   OCR4C = MotorControl[MOTOR6] << 3; //PINO DIGITAL 8 (MOTOR 6 NO FRAME)
 
   OCR5A = MotorControl[GIMBAL] << 3;         //PINO DIGITAL 46
-  OCR5B = MotorControl[PARACHUTESERVO] << 3; //PINO DIGITAL 45
+  OCR5B = MotorControl[PARACHUTE_SERVO] << 3; //PINO DIGITAL 45
 
 #elif defined ESP32
 
@@ -319,7 +319,7 @@ void ApplyPWMControlForMotorsAndServos()
   AnalogWriteApplyPulse(GPIO_NUM_12, MotorControl[MOTOR5]);
   AnalogWriteApplyPulse(GPIO_NUM_13, MotorControl[MOTOR6]);
   AnalogWriteApplyPulse(GPIO_NUM_23, MotorControl[GIMBAL]);
-  AnalogWriteApplyPulse(GPIO_NUM_19, MotorControl[PARACHUTESERVO]);
+  AnalogWriteApplyPulse(GPIO_NUM_19, MotorControl[PARACHUTE_SERVO]);
 
 #elif defined __arm__
 
