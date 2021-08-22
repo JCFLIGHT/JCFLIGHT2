@@ -40,10 +40,10 @@ int16_t TunningClass::GetConfiguredChannelValue(Tunning_Enum_Typedef OnOffMode)
 {
   if (OnOffMode == TUNNING_TYPE_STATE)
   {
-    return (DECODE.GetRxChannelOutput(TUNNING.ChannelControl + 3) > 1400) ? TUNNING_STATE_ENABLED : TUNNING_STATE_DISABLED;
+    return (DECODE.GetRxChannelOutput(TUNNING.ChannelControl + NON_AUX_CHANNEL_COUNT) > 1400) ? TUNNING_STATE_ENABLED : TUNNING_STATE_DISABLED;
   }
 
-  return DECODE.GetRxChannelOutput(TUNNING.ChannelControl + 3);
+  return DECODE.GetRxChannelOutput(TUNNING.ChannelControl + NON_AUX_CHANNEL_COUNT);
 }
 
 void TunningClass::Update(void)
