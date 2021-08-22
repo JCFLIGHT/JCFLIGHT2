@@ -47,6 +47,7 @@ void Medium_Loop()
         WINDESTIMATOR.Update();
         BATTERY.Update_Voltage();
         BATTERY.Update_Current();
+        TUNNING.Update();
 }
 
 void Fast_Medium_Loop()
@@ -91,7 +92,6 @@ void Integral_Loop()
 
         Acc_ReadBufferData();
         Gyro_ReadBufferData();
-        TUNNING.Update();
         AHRS.Update(ThisDeltaTime);
         RC_PID_Update();
         WAYPOINT.Update();

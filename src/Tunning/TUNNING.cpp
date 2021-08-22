@@ -19,7 +19,10 @@
 #include "StorageManager/EEPROMSTORAGE.h"
 #include "BAR/BAR.h"
 #include "RadioControl/DECODE.h"
-#include "FastSerial/PRINTF.h"
+#include "Common/RCDEFINES.h"
+#include "Common/ENUM.h"
+#include "PID/PIDPARAMS.h"
+#include "Math/MATHSUPPORT.h"
 
 TunningClass TUNNING;
 Tunning_Enum_Typedef Tunning_Status;
@@ -32,8 +35,6 @@ void TunningClass::Initialization(void)
   TUNNING.Mode = STORAGEMANAGER.Read_8Bits(TUNNING_ADDR);
 
 #endif
-
-  TUNNING.ChannelControl = 1;
 }
 
 int16_t TunningClass::GetConfiguredChannelValue(Tunning_Enum_Typedef OnOffMode)
@@ -48,11 +49,6 @@ int16_t TunningClass::GetConfiguredChannelValue(Tunning_Enum_Typedef OnOffMode)
 
 void TunningClass::Update(void)
 {
-
-  Tunning_Status = TUNNING_PITOT_FACTOR;
-
-  DEBUG("State:%d VarValue:%d", TUNNING.GetActivated(TUNNING_PITOT_FACTOR), TUNNING.GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE));
-
 #ifdef USE_TUNNING_MODE
 
   if (TUNNING.Mode == NONE_TUNNING_MODE || TUNNING.ChannelControl == NONE_TUNNING_CHANNEL)
@@ -62,41 +58,52 @@ void TunningClass::Update(void)
 
   switch (TUNNING.Mode)
   {
-
   case TUNNING_KP_ROLL:
+    GET_SET[PID_ROLL].kP = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KI_ROLL:
+    GET_SET[PID_ROLL].kI = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KD_ROLL:
+    GET_SET[PID_ROLL].kD = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KCD_OR_KFF_ROLL:
+    GET_SET[PID_ROLL].kFF = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KP_PITCH:
+    GET_SET[PID_PITCH].kP = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KI_PITCH:
+    GET_SET[PID_PITCH].kI = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KD_PITCH:
+    GET_SET[PID_PITCH].kD = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KCD_OR_KFF_PITCH:
+    GET_SET[PID_PITCH].kFF = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KP_YAW:
+    GET_SET[PID_YAW].kP = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KI_YAW:
+    GET_SET[PID_YAW].kI = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KD_YAW:
+    GET_SET[PID_YAW].kD = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_KCD_OR_KFF_YAW:
+    GET_SET[PID_YAW].kFF = ScaleRange16Bits(GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE), MIN_STICKS_PULSE, MAX_STICKS_PULSE, 0, 200);
     break;
 
   case TUNNING_PITOT_FACTOR:
