@@ -78,7 +78,7 @@ void DesarmLowThrClass::Update()
   }
   //THROTTLE NO MINIMO,DRONE ARMADO,FAIL-SAFE DESATIVADO?SIM...
   if (Check_Throttle() && Check_Others_Channels() && IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) &&
-      !FastSystemFailSafe() && !IS_FLIGHT_MODE_ACTIVE(WAYPOINT_MODE) && ArmDisarmConfig == NONE)
+      !FastSystemFailSafe() && !IS_FLIGHT_MODE_ACTIVE(WAYPOINT_MODE) && AUXFLIGHT.GetModeConfiguration[SECONDARY_ARM_DISARM] == NONE)
   {
     if (DESARMLOWTHROTTLE.TimerDesarm == (THIS_LOOP_RATE * AUTO_DISARM_TIME))
     {

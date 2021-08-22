@@ -17,8 +17,43 @@
 
 #include "EEPROMSTORAGE.h"
 #include "HAL/HALEEPROM.h"
+#include "StorageManager/EEPROMCHECK.h"
+#include "Build/BOARDDEFS.h"
 
 EEPROMSTORAGE STORAGEMANAGER;
+
+//#define OPERATOR_CHECK_EEPROM
+//#define ERASE_ALL_EEPROM
+
+void EEPROMSTORAGE::Initialization(void)
+{
+#ifdef OPERATOR_CHECK_EEPROM
+
+  Operator_Check_Values_In_Address(SIZE_OF_EEPROM);
+
+#endif
+
+#ifdef ERASE_ALL_EEPROM
+
+  STORAGEMANAGER.Erase(INITIAL_ADDRESS_EEPROM_TO_CLEAR, FINAL_ADDRESS_EEPROM_TO_CLEAR);
+
+#endif
+}
+
+void EEPROMSTORAGE::Erase(uint16_t GetInitialAddress, uint16_t GetFinalAddress)
+{
+  uint16_t InitialAddress = GetInitialAddress;
+  uint16_t Size = (GetFinalAddress - GetInitialAddress) + 1;
+  while (Size--)
+  {
+    uint8_t GetAddrUsed = STORAGEMANAGER.Read_8Bits(InitialAddress);
+    if (GetAddrUsed != 0) //LIMPA APENAS OS ENDEREÇOS UTILIZADOS
+    {
+      STORAGEMANAGER.Write_8Bits(InitialAddress, 0x00);
+    }
+    InitialAddress++;
+  }
+}
 
 void EEPROMSTORAGE::Write_8Bits(int16_t Address, uint8_t Value)
 {

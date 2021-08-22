@@ -34,6 +34,7 @@ public:
   bool CheckAnglesInclination(int16_t Angle);
   void TransformVectorEarthFrameToBodyFrame(Vector3x3_Struct *VectorPointer);
   void TransformVectorBodyFrameToEarthFrame(Vector3x3_Struct *VectorPointer);
+  bool Get_Cosine_Z_Overflowed(void);
   float GetSineRoll(void);
   float GetCosineRoll(void);
   float GetSinePitch(void);

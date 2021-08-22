@@ -30,8 +30,10 @@ FILE_COMPILE_FOR_SPEED
 
 GyroCalClass GYROCALIBRATION;
 
-#define GYRO_MAX_DELTA 32             //DESVIO MAXIMO SUPORTADO NO GYRO PRA COMPLETAR A CALIBRAÇÃO.ISSO SERVE PARA EVITAR COM QUE A CALIBRAÇÃO CONCLUA COM O USUARIO MOVENDO O UAV
+Device_Struct GyroDevice[3];
+
 #define CALIBRATING_GYRO_TIME_MS 2000 //TEMPO MAXIMO DE CALIBRAÇÃO DO GYRO EM MS
+#define GYRO_CALIBRATION_VARIANCE 32  //DESVIO MAXIMO SUPORTADO NO GYRO PRA COMPLETAR A CALIBRAÇÃO.ISSO SERVE PARA EVITAR COM QUE A CALIBRAÇÃO CONCLUA COM O USUARIO MOVENDO O UAV
 
 bool GyroCalClass::GetRunning(void)
 {
@@ -47,7 +49,6 @@ void GyroCalClass::Update(void)
 
     if (!Calibration.Gyroscope.Flags.Calibrated)
     {
-        static Device_Struct GyroDevice[3];
         RGB.Function(CALL_LED_GYRO_CALIBRATION);
 
         if (Calibration.Gyroscope.Flags.Restart)
@@ -63,17 +64,15 @@ void GyroCalClass::Update(void)
             Calibration.Gyroscope.Flags.Restart = false;
         }
 
-        Calibration.Gyroscope.Time.Actual = SCHEDULERTIME.GetMillis() - Calibration.Gyroscope.Time.Previous;
-
-        if (Calibration.Gyroscope.Time.Actual >= CALIBRATING_GYRO_TIME_MS)
+        if ((SCHEDULERTIME.GetMillis() - Calibration.Gyroscope.Time.Previous) >= CALIBRATING_GYRO_TIME_MS)
         {
             Calibration.Gyroscope.Deviation[ROLL] = DeviceStandardDeviation(&GyroDevice[ROLL]);
             Calibration.Gyroscope.Deviation[PITCH] = DeviceStandardDeviation(&GyroDevice[PITCH]);
             Calibration.Gyroscope.Deviation[YAW] = DeviceStandardDeviation(&GyroDevice[YAW]);
             //CHECA SE A IMU FOI MOVIDA DURANTE A CALIBRAÇÃO
-            if ((Calibration.Gyroscope.Deviation[ROLL] > GYRO_MAX_DELTA) ||
-                (Calibration.Gyroscope.Deviation[PITCH] > GYRO_MAX_DELTA) ||
-                (Calibration.Gyroscope.Deviation[YAW] > GYRO_MAX_DELTA))
+            if ((Calibration.Gyroscope.Deviation[ROLL] > GYRO_CALIBRATION_VARIANCE) ||
+                (Calibration.Gyroscope.Deviation[PITCH] > GYRO_CALIBRATION_VARIANCE) ||
+                (Calibration.Gyroscope.Deviation[YAW] > GYRO_CALIBRATION_VARIANCE))
             {
                 BEEPER.Play(BEEPER_ACTION_FAIL);            //SINALIZA COM O BUZZER QUE HOUVE UM ERRO
                 Calibration.Gyroscope.Flags.Restart = true; //REINICIA A CALIBRAÇÃO DO GYRO

@@ -15,12 +15,8 @@
   junto com a JCFLIGHT. Caso contrário, consulte <http://www.gnu.org/licenses/>.
 */
 
-#ifndef FRAMESTATUS_H_
-#define FRAMESTATUS_H_
-#include <inttypes.h>
-void SetPlatformType(uint8_t _FrameType);
-uint8_t GetActualPlatformType(void);
-bool GetMultirotorEnabled(void);
-bool GetAirPlaneEnabled(void);
-bool GetActualPlatformEnabledUsingName(uint8_t FrameName);
+#ifndef WHOAMI_H_
+#define WHOAMI_H_
+bool GetMS5611DeviceDetect(void);
+bool GetBMP280DeviceDetect(void);
 #endif

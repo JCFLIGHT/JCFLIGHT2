@@ -27,6 +27,7 @@
 #include "Scheduler/SCHEDULERTIME.h"
 #include "Scheduler/SCHEDULER.h"
 #include "StorageManager/EEPROMSTORAGE.h"
+#include "Build/BOARDDEFS.h"
 #include "BAR/BAR.h"
 #include "Tunning/TUNNING.h"
 
@@ -55,10 +56,15 @@ Vector3x3Float StateEstimate(0.0f, 0.0f, 0.0f);
 #define CALIBRATION_SAMPLES JCF_Param.AirSpeed_Samples
 
 #endif
+
 void AirSpeedCalibrationClass::Initialization(void)
 {
+#ifdef USE_AIRSPEED_AUTO_SCALE_CALIBRATION
+
     AIRSPEEDCALIBRATION.Previous_Scale = AirSpeed.Param.Factor;
     StateEstimate.Z = 1.0f / sqrtf(AirSpeed.Param.Factor);
+
+#endif
 }
 
 bool AirSpeedCalibrationClass::Calibrate(void)
@@ -94,6 +100,8 @@ bool AirSpeedCalibrationClass::Calibrate(void)
     AirSpeed.Calibration.Read_Count++;
     return false;
 }
+
+#ifdef USE_AIRSPEED_AUTO_SCALE_CALIBRATION
 
 static float Get_Scale_Calibration(float True_AirSpeed, const Vector3x3Float &GPSVelocity)
 {
@@ -146,8 +154,12 @@ static float Get_Scale_Calibration(float True_AirSpeed, const Vector3x3Float &GP
     return StateEstimate.Z;
 }
 
+#endif
+
 void AirSpeedCalibrationClass::Scale_Update(void)
 {
+#ifdef USE_AIRSPEED_AUTO_SCALE_CALIBRATION
+
     static Scheduler_Struct AirSpeedScale_Scheduler;
 
     if (!Scheduler(&AirSpeedScale_Scheduler, SCHEDULER_SET_FREQUENCY(2, "Hz")))
@@ -200,7 +212,7 @@ void AirSpeedCalibrationClass::Scale_Update(void)
             AIRSPEEDCALIBRATION.Previous_Scale > (1.05f * AirSpeed.Param.Factor))
         {
             //GUARDA UM NOVO VALOR DE CALIBRAÇÃO NA EEPROM A CADA 2 MINUTOS
-            STORAGEMANAGER.Write_Float(AIRSPEED_FACTOR_ADDR, AirSpeed.Param.Factor);
+            STORAGEMANAGER.Write_32Bits(AIRSPEED_FACTOR_ADDR, (int32_t)(AirSpeed.Param.Factor * 10000.0f));
             AIRSPEEDCALIBRATION.Previous_Scale = AirSpeed.Param.Factor;
             AIRSPEEDCALIBRATION.Scale_Counter = 0;
         }
@@ -209,4 +221,6 @@ void AirSpeedCalibrationClass::Scale_Update(void)
     {
         AIRSPEEDCALIBRATION.Scale_Counter++;
     }
+
+#endif
 }

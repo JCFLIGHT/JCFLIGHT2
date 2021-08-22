@@ -17,6 +17,6 @@
 
 #ifndef INSNAVIGATION_H_
 #define INSNAVIGATION_H_
-void MultirotorSetThisPointToPositionHold(void);
+void SetThisPointToPositionHold(void);
 void MultirotorUpdateAutoPilotControl(void);
 #endif

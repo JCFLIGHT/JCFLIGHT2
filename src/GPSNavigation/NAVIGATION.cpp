@@ -66,8 +66,8 @@ void Load_GPS_Navigation_Params(void)
 void GPS_Reset_Navigation(void)
 {
   GPS_Resources.Mode.Navigation = DO_NONE;
-  GPS_Resources.Navigation.AutoPilot.INS.Angle[COORD_LATITUDE] = 0;
-  GPS_Resources.Navigation.AutoPilot.INS.Angle[COORD_LONGITUDE] = 0;
+  GPS_Resources.Navigation.AutoPilot.INS.Angle[ROLL] = 0;
+  GPS_Resources.Navigation.AutoPilot.INS.Angle[PITCH] = 0;
   ResetAllPIDOfGPS();
 }
 
@@ -139,115 +139,119 @@ void GPS_Process_FlightModes(float DeltaTime)
     GPS_Resources.Home.Distance = CalculateDistance / 100;
   }
 
-  if (GPS_Resources.Navigation.AutoPilot.Control.Enabled && GetMultirotorEnabled())
+  if (GPS_Resources.Navigation.AutoPilot.Control.Enabled)
   {
 
     GPS_Calcule_Bearing(GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE], GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE], &GPS_Resources.Navigation.Bearing.ActualTarget);
     GPS_Calcule_Distance_In_CM(GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE], GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE], &GPS_Resources.Navigation.Coordinates.Distance);
 
-    int16_t CalculateNavigationSpeed = 0;
-
-    switch (GPS_Resources.Mode.Navigation)
+    if (GetMultirotorEnabled())
     {
 
-    case DO_NONE:
-      break;
+      int16_t CalculateNavigationSpeed = 0;
 
-    case DO_POSITION_HOLD:
-      break;
-
-    case DO_START_RTH:
-      if (GPS_Resources.Home.Distance <= JCF_Param.GPS_RTH_Land_Radius)
+      switch (GPS_Resources.Mode.Navigation)
       {
-        if (GPS_Resources.Navigation.LandAfterRTH)
+
+      case DO_NONE:
+        break;
+
+      case DO_POSITION_HOLD:
+        break;
+
+      case DO_START_RTH:
+        if (GPS_Resources.Home.Distance <= JCF_Param.GPS_RTH_Land_Radius)
         {
-          GPS_Resources.Mode.Navigation = DO_LAND_INIT;
+          if (GPS_Resources.Navigation.LandAfterRTH)
+          {
+            GPS_Resources.Mode.Navigation = DO_LAND_INIT;
+          }
+          else
+          {
+            SetNewAltitudeToHold(INS_Resources.Estimated.Position.Z);
+            GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
+          }
+          GPS_Resources.Navigation.HeadingHoldTarget = GPS_Resources.Navigation.Bearing.InitialTarget;
         }
-        else
+        else if (GetAltitudeReached())
         {
-          SetNewAltitudeToHold(Barometer.INS.Altitude.Estimated);
-          GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
+          Set_Next_Point_To_Navigation(GPS_Resources.Home.Coordinates[COORD_LATITUDE], GPS_Resources.Home.Coordinates[COORD_LONGITUDE]);
+          GPS_Resources.Mode.Navigation = DO_RTH_ENROUTE;
         }
-        GPS_Resources.Navigation.HeadingHoldTarget = GPS_Resources.Navigation.Bearing.InitialTarget;
-      }
-      else if (GetAltitudeReached())
-      {
-        Set_Next_Point_To_Navigation(GPS_Resources.Home.Coordinates[COORD_LATITUDE], GPS_Resources.Home.Coordinates[COORD_LONGITUDE]);
-        GPS_Resources.Mode.Navigation = DO_RTH_ENROUTE;
-      }
-      break;
+        break;
 
-    case DO_RTH_ENROUTE:
-      CalculateNavigationSpeed = Calculate_Navigation_Speed(JCF_Param.Navigation_Vel);
-      GPSCalculateNavigationRate(CalculateNavigationSpeed);
-      GPS_Adjust_Heading();
-      if ((GPS_Resources.Navigation.Coordinates.Distance <= ConverMetersToCM(JCF_Param.GPS_WP_Radius)) || Point_Reached())
-      {
-        if (GPS_Resources.Navigation.LandAfterRTH)
+      case DO_RTH_ENROUTE:
+        CalculateNavigationSpeed = Calculate_Navigation_Speed(JCF_Param.Navigation_Vel);
+        GPSCalculateNavigationRate(CalculateNavigationSpeed);
+        GPS_Adjust_Heading();
+        if ((GPS_Resources.Navigation.Coordinates.Distance <= ConverMetersToCM(JCF_Param.GPS_WP_Radius)) || GetWaypointMissed())
         {
-          GPS_Resources.Mode.Navigation = DO_LAND_INIT;
+          if (GPS_Resources.Navigation.LandAfterRTH)
+          {
+            GPS_Resources.Mode.Navigation = DO_LAND_INIT;
+          }
+          else
+          {
+            GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
+          }
+          GPS_Resources.Navigation.HeadingHoldTarget = GPS_Resources.Navigation.Bearing.InitialTarget;
         }
-        else
+        break;
+
+      case DO_LAND_INIT:
+        Do_RTH_Or_Land_Call_Alt_Hold = true;
+        SetNewAltitudeToHold(INS_Resources.Estimated.Position.Z);
+        GPS_Resources.DeltaTime.InitLand = SCHEDULERTIME.GetMillis() + TIME_TO_INIT_LAND;
+        GPS_Resources.Mode.Navigation = DO_LAND_SETTLE;
+        break;
+
+      case DO_LAND_SETTLE:
+        if (SCHEDULERTIME.GetMillis() >= GPS_Resources.DeltaTime.InitLand)
         {
-          GPS_Resources.Mode.Navigation = DO_POSITION_HOLD;
+          GPS_Resources.Mode.Navigation = DO_LAND_DESCENT;
         }
-        GPS_Resources.Navigation.HeadingHoldTarget = GPS_Resources.Navigation.Bearing.InitialTarget;
-      }
-      break;
+        break;
 
-    case DO_LAND_INIT:
-      Do_RTH_Or_Land_Call_Alt_Hold = true;
-      SetNewAltitudeToHold(Barometer.INS.Altitude.Estimated);
-      GPS_Resources.DeltaTime.InitLand = SCHEDULERTIME.GetMillis() + TIME_TO_INIT_LAND;
-      GPS_Resources.Mode.Navigation = DO_LAND_SETTLE;
-      break;
+      case DO_LAND_DESCENT:
+        if (GetLanded())
+        {
+          GPS_Resources.Mode.Navigation = DO_LANDED;
+        }
+        else if (GetGroundDetected())
+        {
+          GPS_Resources.Mode.Navigation = DO_LAND_DETECTED;
+        }
+        break;
 
-    case DO_LAND_SETTLE:
-      if (SCHEDULERTIME.GetMillis() >= GPS_Resources.DeltaTime.InitLand)
-      {
-        GPS_Resources.Mode.Navigation = DO_LAND_DESCENT;
-      }
-      break;
+      case DO_LAND_DETECTED:
+        if (GetLanded())
+        {
+          GPS_Resources.Mode.Navigation = DO_LANDED;
+        }
+        break;
 
-    case DO_LAND_DESCENT:
-      if (GetLanded())
-      {
-        GPS_Resources.Mode.Navigation = DO_LANDED;
+      case DO_LANDED:
+        DISABLE_THIS_STATE(PRIMARY_ARM_DISARM);
+        Do_RTH_Or_Land_Call_Alt_Hold = false;
+        BEEPER.Play(BEEPER_ACTION_SUCCESS);
+        GPS_Reset_Navigation();
+        break;
       }
-      else if (GetGroundDetected())
-      {
-        GPS_Resources.Mode.Navigation = DO_LAND_DETECTED;
-      }
-      break;
-
-    case DO_LAND_DETECTED:
-      if (GetLanded())
-      {
-        GPS_Resources.Mode.Navigation = DO_LANDED;
-      }
-      break;
-
-    case DO_LANDED:
-      DISABLE_THIS_STATE(PRIMARY_ARM_DISARM);
-      Do_RTH_Or_Land_Call_Alt_Hold = false;
-      BEEPER.Play(BEEPER_ACTION_SUCCESS);
-      GPS_Reset_Navigation();
-      break;
     }
   }
 }
 
-void Do_Mode_RTH_Now(void)
+void Multirotor_Do_Mode_RTH_Now(void)
 {
-  if (Barometer.INS.Altitude.Estimated < ConverMetersToCM(GPS_Resources.Home.Altitude))
+  if (INS_Resources.Estimated.Position.Z < ConverMetersToCM(GPS_Resources.Home.Altitude))
   {
     SetNewAltitudeToHold(ConverMetersToCM(GPS_Resources.Home.Altitude));
   }
   else
   {
-    SetNewAltitudeToHold(Barometer.INS.Altitude.Estimated);
+    SetNewAltitudeToHold(INS_Resources.Estimated.Position.Z);
   }
-  MultirotorSetThisPointToPositionHold();
+  SetThisPointToPositionHold();
 }
 
 void Set_Next_Point_To_Navigation(int32_t Latitude_Destiny, int32_t Longitude_Destiny)
@@ -257,8 +261,8 @@ void Set_Next_Point_To_Navigation(int32_t Latitude_Destiny, int32_t Longitude_De
   GPS_Calcule_Longitude_Scaling(Latitude_Destiny);
   GPS_Calcule_Bearing(GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE], GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE], &GPS_Resources.Navigation.Bearing.ActualTarget);
   GPS_Calcule_Distance_In_CM(GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE], GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE], &GPS_Resources.Navigation.Coordinates.Distance);
-  INS.Position.Hold[INS_LATITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE] - GPS_Resources.Home.Coordinates[COORD_LATITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
-  INS.Position.Hold[INS_LONGITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE] - GPS_Resources.Home.Coordinates[COORD_LONGITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * GPS_Resources.ScaleDownOfLongitude;
+  INS_Resources.Position.Hold[COORD_LATITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LATITUDE] - GPS_Resources.Home.Coordinates[COORD_LATITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
+  INS_Resources.Position.Hold[COORD_LONGITUDE] = (GPS_Resources.Navigation.Coordinates.Destiny[COORD_LONGITUDE] - GPS_Resources.Home.Coordinates[COORD_LONGITUDE]) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * GPS_Resources.ScaleDownOfLongitude;
   GPS_Resources.Navigation.Bearing.TargetPrev = GPS_Resources.Navigation.Bearing.ActualTarget;
 }
 

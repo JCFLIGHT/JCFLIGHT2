@@ -15,19 +15,10 @@
   junto com a JCFLIGHT. Caso contrário, consulte <http://www.gnu.org/licenses/>.
 */
 
-#include "EEPROMSTORAGE.h"
-
-void EEPROMSTORAGE::Erase(uint16_t GetInitialAddress, uint16_t GetFinalAddress)
-{
-    uint16_t InitialAddress = GetInitialAddress;
-    uint16_t Size = (GetFinalAddress - GetInitialAddress) + 1;
-    while (Size--)
-    {
-        uint8_t GetAddrUsed = STORAGEMANAGER.Read_8Bits(InitialAddress);
-        if (GetAddrUsed != 0) //LIMPA APENAS OS ENDEREÇOS UTILIZADOS
-        {
-            STORAGEMANAGER.Write_8Bits(InitialAddress, 0);
-        }
-        InitialAddress++;
-    }
-}
+#ifndef ASPA_H_
+#define ASPA_H_
+//#define TEST_AIRSPEED_PID_TPA //PARA TESTES FUTURAMENTE
+#include <stdbool.h>
+bool Get_ASPA_Enabled(void);
+float Get_ASPA_Scaler(void);
+#endif

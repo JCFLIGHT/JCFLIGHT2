@@ -19,12 +19,48 @@
 #define STRUCTS_H_
 
 #include "ENUM.h"
-#include "inttypes.h"
+#include <inttypes.h>
+
+typedef struct
+{
+  float kP_Accelerometer = 0.25f;
+  float kI_Accelerometer = 0.0050f;
+  float kP_Magnetometer = 1.0f;
+  float kI_Magnetometer = 0.0f;
+  float Cosine_Z = 25.0f;
+} AHRS_Configuration_Struct;
+
+typedef struct
+{
+  float q0 = 0.0f;
+  float q1 = 0.0f;
+  float q2 = 0.0f;
+  float q3 = 0.0f;
+} Quaternion_Struct;
+
+typedef union
+{
+  float Vector[3];
+
+  struct
+  {
+    float X;
+    float Y;
+    float Z;
+  };
+
+} Vector3x3_Struct;
+
+typedef struct
+{
+  float Matrix3x3[3][3] = {{0, 0, 0}, {0, 0, 0}};
+} Matrix3x3_Struct;
 
 typedef struct
 {
   struct Accelerometer_Struct
   {
+    uint8_t Temperature = 0;
     int16_t Read[3] = {0, 0, 0};
     float ReadFloat[3] = {0.0f, 0.0f, 0.0f};
 
@@ -54,13 +90,60 @@ typedef struct
 
 typedef struct
 {
-  //LPF
-  float AccelerationEarthFrame_LPF[3] = {0, 0, 0};
+  float DeltaTime = 0.0f;
+  float NewEstimatedPositionVertical = 0.0f;
+  float NewEstimatedPositionHorizontal = 0.0f;
+  uint32_t NewFlags = 0;
+  Vector3x3_Struct EstimatedPosistionCorrected;
+  Vector3x3_Struct EstimatedVelocityCorrected;
+  Vector3x3_Struct AccBiasCorrected;
+} INS_Context_Struct;
 
-  //AVERAGE
-  uint8_t AccelerationEarthFrame_Sum_Count[3] = {0, 0, 0};
-  float AccelerationEarthFrame_Filtered[3] = {0, 0, 0};
-  float AccelerationEarthFrame_Sum[3] = {0, 0, 0};
+typedef struct
+{
+
+  uint32_t Flags;
+
+  struct State_Struct
+  {
+    bool BaroGroundValid = false;
+    float BaroGroundAlt = 0.0f;
+    uint32_t BaroGroundTimeout = 0;
+  } State;
+
+  struct IMU_Struct
+  {
+    uint32_t LastUpdateTime = 0;
+    Vector3x3_Struct AccelerationNEU;
+    Vector3x3_Struct AccelerationBias;
+    float AccWeightFactor;
+  } IMU;
+
+  struct Barometer_Struct
+  {
+    uint32_t LastUpdateTime = 0;
+    float ActualAltitude = 0.0f;
+    float EstimatedPositionVertical = 0.0f;
+  } Barometer;
+
+  struct GPS_Struct
+  {
+    uint32_t LastUpdateTime = 0;
+    Vector3x3_Struct Position;
+    Vector3x3_Struct Velocity;
+    float EstimatedPositionHorizontal = 0.0f;
+    float EstimatedPositionVertical = 0.0f;
+    float AltitudeOffSet = 0.0f;
+  } GPS;
+
+  struct Estimated_Struct
+  {
+    uint32_t LastUpdateTime = 0;
+    Vector3x3_Struct Position;
+    Vector3x3_Struct Velocity;
+    float EstimatedPositionHorizontal = 0.0f;
+    float EstimatedPositionVertical = 0.0f;
+  } Estimated;
 
   struct Math_Struct
   {
@@ -76,40 +159,26 @@ typedef struct
 
   } Math;
 
-  struct History_Struct
-  {
-    uint8_t XYCount = 0;
-    uint8_t ZCount = 0;
-    int32_t XYPosition[2][10] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
-    int32_t ZPosition[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  } History;
+  Vector3x3_Struct NewAccelerationEarthFrame;
 
   struct EarthFrame_Struct
   {
-    float AccelerationNEU[3] = {0, 0, 0};
-    float Velocity[3] = {0, 0, 0};
-    float Position[3] = {0, 0, 0};
+    float AccelerationNEU[3] = {0.0f, 0.0f, 0.0f};
   } EarthFrame;
-
-  struct Bias_Struct
-  {
-    float Adjust[3] = {0, 0, 0};
-    float Difference[3] = {0, 0, 0};
-  } Bias;
 
   struct Position_Struct
   {
     int32_t Hold[2] = {0, 0};
   } Position;
 
-} INS_Struct;
+} INS_Resources_Struct;
 
 typedef struct
 {
   struct Calibration_Struct
   {
-    float GroundPressure = 0;
-    float GroundTemperature = 0;
+    float GroundPressure = 0.0f;
+    float GroundTemperature = 0.0f;
   } Calibration;
 
   struct Raw_Struct
@@ -124,20 +193,6 @@ typedef struct
     int32_t Actual = 0;
     int32_t GroundOffSet = 0;
   } Altitude;
-
-  struct INS_Struct
-  {
-    struct Velocity_Struct
-    {
-      int16_t Vertical = 0;
-    } Velocity;
-
-    struct Altitude_Struct
-    {
-      int32_t Estimated = 0;
-    } Altitude;
-
-  } INS;
 
 } Barometer_Struct;
 
@@ -162,21 +217,22 @@ typedef struct
 
     struct Flags_Struct
     {
+      bool Fail = false;
       bool InCalibration = false;
       bool CalibratedPosition[6] = {false, false, false, false, false, false};
+      uint8_t State = 0;
     } Flags;
 
     struct Time_Struct
     {
-      uint32_t Actual = 0;
-      uint32_t Previous = 0;
-      uint32_t Difference = 0;
+      uint32_t Start = 0;
     } Time;
 
     struct Samples_Struct
     {
-      int16_t Counter = 0;
-      int32_t Window[6][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+      float Sum[3] = {0, 0, 0};
+      uint16_t Count = 0;
+      int32_t Window[6][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
     } Samples;
 
     int16_t OffSet[3] = {0, 0, 0};
@@ -192,7 +248,6 @@ typedef struct
 
       struct Time_Struct
       {
-        uint32_t Actual = 0;
         uint32_t Previous = 0;
       } Time;
 
@@ -217,7 +272,6 @@ typedef struct
 
     struct Time_Struct
     {
-      uint32_t Actual = 0;
       uint32_t Previous = 0;
     } Time;
 
@@ -336,11 +390,14 @@ typedef struct
       struct Get_Struct
       {
         bool Marked3DFix = false;
+        bool HeadingInitialized = false;
         uint8_t Satellites = 0;
         uint16_t GroundCourse = 0;
         uint16_t Altitude = 0;
         uint16_t GroundSpeed = 0;
         uint16_t HDOP = 0;
+        uint32_t EstimatedPositionHorizontal;
+        uint32_t EstimatedPositionVertical;
       } Get;
 
     } Misc;
@@ -383,40 +440,6 @@ typedef struct
   uint8_t Priority;
   const uint8_t *Sequence;
 } BeeperEntry_Struct;
-
-typedef struct
-{
-  float kP_Accelerometer = 0.25f;
-  float kI_Accelerometer = 0.0050f;
-  float kP_Magnetometer = 1.0f;
-  float kI_Magnetometer = 0.0f;
-} AHRS_Configuration_Struct;
-
-typedef struct
-{
-  float q0 = 0.0f;
-  float q1 = 0.0f;
-  float q2 = 0.0f;
-  float q3 = 0.0f;
-} Quaternion_Struct;
-
-typedef union
-{
-  float Vector[3];
-
-  struct
-  {
-    float Roll;
-    float Pitch;
-    float Yaw;
-  };
-
-} Vector3x3_Struct;
-
-typedef struct
-{
-  float Matrix3x3[3][3] = {{0, 0, 0}, {0, 0, 0}};
-} Matrix3x3_Struct;
 
 typedef struct
 {
@@ -558,6 +581,11 @@ typedef struct
     int8_t GetAndSet[4] = {0, 0, 0, 0};
   } Rate;
 
+  struct Weight_Struct
+  {
+    int8_t GetAndSet[4] = {0, 0, 0, 0};
+  } Weight;
+
   struct Filter_Struct
   {
     int16_t CutOff = 0;
@@ -572,25 +600,17 @@ typedef struct
   struct AutoTrim_Struct
   {
     bool Enabled = false;
-
     int16_t ActualPulse[4] = {0, 0, 0, 0};
     int16_t MiddleBackup[4] = {0, 0, 0, 0};
-
     int32_t MiddleAccum[4] = {0, 0, 0, 0};
     int32_t MiddleAccumCount = 0;
-
     uint32_t PreviousTime = 0;
     uint32_t SavePreviousTime = 0;
-
   } AutoTrim;
 
   struct ContinousTrim_Struct
   {
     bool Enabled = false;
-    // @param descrição: Os pontos médios do servo são atualizados quando a rotação total do UAV for menor que esse limite [graus/s].
-    // @param min: 1
-    // @param max: 60
-    float Rotation_Limit = 15;
   } ContinousTrim;
 
 } Servo_Struct;
@@ -641,7 +661,7 @@ typedef struct
   void *Ptr;
   const int32_t Value_Min;
   const int32_t Value_Max;
-  const float DefaultValue;
+  const int32_t DefaultValue;
 } Resources_Of_Param;
 
 typedef struct
@@ -651,16 +671,16 @@ typedef struct
   uint8_t kI_Acc_AHRS;
   uint8_t kP_Mag_AHRS;
   uint8_t kI_Mag_AHRS;
+  uint8_t AngleLevelBlockArm;
   uint8_t AutoLaunch_AHRS_BankAngle;
-  int16_t AutoLaunch_IMU_BankAngle;
   uint8_t AutoLaunch_Velocity_Thresh;
-  uint16_t AutoLaunch_Trigger_Motor_Delay;
+  uint16_t AutoLaunch_Motor_Delay;
   uint8_t AutoLaunch_Elevator;
-  uint16_t AutoLaunch_SpinUp;
-  uint16_t AutoLaunch_SpinUp_Time;
+  uint16_t AutoLaunch_Motor_SpinUp_Time;
   uint16_t AutoLaunch_MaxThrottle;
   uint16_t AutoLaunch_Exit;
   uint8_t AutoLaunch_Altitude;
+  uint16_t AutoLaunch_Sticks_Exit;
   uint8_t CrashCheck_BankAngle;
   uint8_t CrashCheck_Time;
   uint16_t GimbalMinValue;
@@ -671,7 +691,6 @@ typedef struct
   uint16_t AutoDisarm_Throttle_Min;
   uint16_t AutoDisarm_YPR_Min;
   uint16_t AutoDisarm_YPR_Max;
-  uint8_t AirPlane_Wheels;
   uint8_t GPS_Baud_Rate;
 #endif
   uint16_t Navigation_Vel;
@@ -684,6 +703,7 @@ typedef struct
   uint8_t Arm_Time_Safety;
   uint8_t Disarm_Time_Safety;
   uint8_t Compass_Cal_Timer;
+  uint8_t Continuous_Servo_Trim_Rot_Limit;
 } JCF_Param_Adjustable_Struct;
 
 typedef struct
@@ -716,7 +736,7 @@ typedef struct
     int16_t ControlDerivativeCutOff = 0;
   } Filter;
 
-  struct RcRateTarget_Struct
+  struct RCRateTarget_Struct
   {
     float Roll = 0.0f;
     float Pitch = 0.0f;
@@ -729,7 +749,7 @@ typedef struct
       int16_t Yaw = 0;
     } GCS;
 
-  } RcRateTarget;
+  } RCRateTarget;
 
   struct Controller_Struct
   {
@@ -755,12 +775,6 @@ typedef struct
   } Param;
 
 } PID_Resources_Struct;
-
-typedef union
-{
-  float Type_Float;
-  int32_t Type_Int32;
-} Variable_Union;
 
 typedef struct
 {
@@ -827,19 +841,6 @@ typedef struct
 
 typedef struct
 {
-  float X = 0.0f;
-  float Y = 0.0f;
-  int32_t Altitude = 0;
-  void Clear(void)
-  {
-    X = 0.0f;
-    Y = 0.0f;
-    Altitude = 0;
-  }
-} Frame3D_Struct;
-
-typedef struct
-{
   Scheduler_Struct Scheduler;
   Scheduler_Struct YawScheduler;
 
@@ -849,9 +850,9 @@ typedef struct
 
   struct Position_Struct
   {
-    Frame3D_Struct DestinationNEU;
-    Frame3D_Struct Virtual;
-    Frame3D_Struct HomePoint;
+    Vector3x3_Struct DestinationNEU;
+    Vector3x3_Struct Virtual;
+    Vector3x3_Struct HomePoint;
 
     struct AutoPilot_Struct
     {
@@ -994,8 +995,9 @@ typedef struct
 
   struct Expo_Struct
   {
-    uint8_t YawPitchRoll = 0;
     uint8_t Throttle = 0;
+    uint8_t Yaw = 0;
+    uint8_t PitchRoll = 0;
   } Expo;
 
   struct Middle_Struct

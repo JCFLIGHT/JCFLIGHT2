@@ -66,11 +66,11 @@ enum PID_Params_Enum
     PI_AUTO_LEVEL,
     P_YAW_RATE,
     P_YAW_RATE_LIMIT,
-    ROLL_BANK_MAX,
-    PITCH_BANK_MIN,
-    PITCH_BANK_MAX,
+    NAV_ROLL_BANK_MAX,
+    NAV_PITCH_BANK_MIN,
+    NAV_PITCH_BANK_MAX,
     ATTACK_BANK_MAX,
-    GPS_BANK_MAX,
+    NAV_GPS_BANK_MAX,
     MAX_ROLL_LEVEL,
     MAX_PITCH_LEVEL,
 
@@ -82,9 +82,7 @@ enum PID_Params_Enum
 enum FlightModes_Enum
 {
     //MODOS DE VOO PARA TODOS OS FRAMES
-    PRIMARY_ARM_DISARM = 0,
-    SECONDARY_ARM_DISARM,
-    STABILIZE_MODE,
+    STABILIZE_MODE = 0,
     HEADING_HOLD_MODE,
     ALTITUDE_HOLD_MODE,
     RTH_MODE,
@@ -104,6 +102,12 @@ enum FlightModes_Enum
     CRUISE_MODE,
     TURN_MODE,
     CLIMBOUT_MODE,
+
+    //RECURSOS
+    PRIMARY_ARM_DISARM,
+    SECONDARY_ARM_DISARM,
+    GIMBAL_MODE,
+    PARACHUTE_MODE,
 
     //TAMANHO TOTAL PARA O ARRAY
     SIZE_OF_FLIGHT_MODES
@@ -146,7 +150,7 @@ enum PWM_Output_Enum
     MOTOR6,
     MOTOR5,
     GIMBAL,
-    PARACHUTESERVO
+    PARACHUTE_SERVO
 };
 
 enum Servos_Enum
@@ -373,8 +377,7 @@ enum VarType_Enum
 {
     VAR_8BITS,
     VAR_16BITS,
-    VAR_32BITS,
-    VAR_FLOAT
+    VAR_32BITS
 };
 
 enum Led_Pattern_Enum
@@ -382,30 +385,6 @@ enum Led_Pattern_Enum
     FMU_INIT_ARM = 0x0003,
     FMU_REFUSE_TO_ARM = 0x5555,
     FMU_SAFE_TO_ARM = 0xFFFF,
-};
-
-enum WayPoint_States_Enum
-{
-    WAYPOINT_INIT = 0,
-    WAYPOINT_RUN_TAKEOFF,
-    WAYPOINT_SET_ALTITUDE,
-    WAYPOINT_START_MISSION,
-    WAYPOINT_MISSION_ENROUTE
-};
-
-enum WayPoint_FlightModes_Enum
-{
-    WAYPOINT_ADVANCE = 1,
-    WAYPOINT_TIMED,
-    WAYPOINT_LAND,
-    WAYPOINT_RTH,
-    WAYPOINT_TAKEOFF
-};
-
-enum AirPlane_Wheels_Enum
-{
-    WITHOUT_WHEELS = 0,
-    WITH_WHEELS
 };
 
 enum AirSpeed_Type_Enum
@@ -544,11 +523,13 @@ enum GPS_Type_Enum
     GPS_DJI_NAZA
 };
 
-enum Inertial_Navigation_Enum
+enum INS_Flags_Enum
 {
-    INS_LATITUDE = 0,
-    INS_LONGITUDE,
-    INS_VERTICAL_Z
+    EST_GPS_XY_VALID = (1 << 0),
+    EST_GPS_Z_VALID = (1 << 1),
+    EST_BARO_VALID = (1 << 2),
+    EST_XY_VALID = (1 << 3),
+    EST_Z_VALID = (1 << 4)
 };
 
 enum GPS_Orientation_Enum

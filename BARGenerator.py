@@ -9,7 +9,7 @@ Import("env")
 FIRMWARE_STORAGE_REVISION = 10
 
 WAYPOINTS_MAXIMUM = 10  # NÚMERO MAXIMO DE WAYPOINTS SUPORTADO
-OTHERS_PARAMS_MAXIMUM = 3  # ALTITUDE,TEMPO DO GPS-HOLD E O MODO DE VOO
+WAYPOINT_OTHERS_PARAMS_MAXIMUM = 3  # ALTITUDE,TEMPO DO GPS-HOLD E O MODO DE VOO
 
 
 class AddrSizeOf(enum.Enum):
@@ -61,7 +61,7 @@ StorageLayout = [
         StorageSizeOf.WAYPOINT_SIZE_FINAL_RESERVED.value],
     ['FIRMWARE_MAGIC_ADDRESS', StorageSizeOf.NONE.value,
         StorageSizeOf.FIRMWARE_RESERVED_MAGIC_ADDR.value],
-    ['TOTAL_SIZE_OF_STORAGE', StorageSizeOf.NONE.value,
+    ['TOTAL_SIZE_OF_STORAGE_RESERVED', StorageSizeOf.NONE.value,
         StorageSizeOf.TOTAL_SIZE_OF_STORAGE_RESERVED_TO_USE.value],
     ['SENSORS_CALIBRATION_STORAGE', StorageSizeOf.CALIBRATION_SIZE_INITIAL_RESERVED.value,
         StorageSizeOf.CALIBRATION_SIZE_FINAL_RESERVED.value],
@@ -73,27 +73,25 @@ DefsCLITable = [
     ['KI_ACC_AHRS_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['KP_MAG_AHRS_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['KI_MAG_AHRS_ADDR', AddrSizeOf.TYPE_8_BITS.value],
+    ['ANGLE_BLOCK_ARM_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['AL_AHRS_BA_ADDR', AddrSizeOf.TYPE_16_BITS.value],
-    ['AL_IMU_BA_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['AL_IMU_GPS_VEL_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['AL_TRIGGER_MOTOR_DELAY_ADDR', AddrSizeOf.TYPE_16_BITS.value],
+    ['AL_MOTOR_SPINUP_TIME_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['AL_ELEVATOR_ADDR', AddrSizeOf.TYPE_8_BITS.value],
-    ['AL_SPINUP_ADDR', AddrSizeOf.TYPE_16_BITS.value],
-    ['AL_SPINUP_TIME_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['AL_MAX_THROTTLE_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['AL_EXIT_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['AL_ALTITUDE_ADDR', AddrSizeOf.TYPE_32_BITS.value],
+    ['AL_STICKS_EXIT_ADDR',AddrSizeOf.TYPE_16_BITS.value],
     ['CC_BANKANGLE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['CC_TIME_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['GIMBAL_MIN_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['GIMBAL_MAX_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['LAND_CHECKACC_ADDR', AddrSizeOf.TYPE_8_BITS.value],
-    ['THROTTLE_FACTOR_ADDR', AddrSizeOf.TYPE_FLOAT.value],
     ['AUTODISARM_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['AUTODISARM_THR_MIN_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['AUTODISARM_YPR_MIN_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['AUTODISARM_YPR_MAX_ADDR', AddrSizeOf.TYPE_16_BITS.value],
-    ['WHEELS_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['GPS_BAUDRATE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['NAV_VEL_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['WP_RADIUS_ADDR', AddrSizeOf.TYPE_8_BITS.value],
@@ -104,6 +102,7 @@ DefsCLITable = [
     ['DISARM_TIME_SAFETY_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['COMPASS_CAL_TIME_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['AS_AUTO_CAL_SCALE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
+    ['CONT_SERVO_TRIM_ROTATION_LIMIT_ADDR', AddrSizeOf.TYPE_8_BITS.value],
 ]
 
 DefsSensorsCalibrationTable = [
@@ -188,11 +187,12 @@ DefsNormalConfigTable = [
     ['THR_ATTITUDE_MAX_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['THROTTLE_MIDDLE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['THROTTLE_EXPO_ADDR', AddrSizeOf.TYPE_8_BITS.value],
-    ['RC_RATE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
-    ['RC_EXPO_ADDR', AddrSizeOf.TYPE_8_BITS.value],
+    ['PR_RATE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
+    ['PR_EXPO_ADDR', AddrSizeOf.TYPE_8_BITS.value],
+    ['YAW_RATE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
+    ['YAW_EXPO_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['ROLL_BANK_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['PITCH_BANK_MIN_ADDR', AddrSizeOf.TYPE_8_BITS.value],
-    ['YAW_RATE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['FF_OR_CD_PITCH_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['FF_OR_CD_YAW_ADDR', AddrSizeOf.TYPE_8_BITS.value],
     ['SERVO1_RATE_ADDR', AddrSizeOf.TYPE_16_BITS.value],
@@ -259,6 +259,7 @@ DefsNormalConfigTable = [
     ['TECS_CRUISE_MAX_THR_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['TECS_CRUISE_THR_ADDR', AddrSizeOf.TYPE_16_BITS.value],
     ['TECS_CIRCLE_DIR_ADDR', AddrSizeOf.TYPE_8_BITS.value],
+    ['CONT_SERVO_TRIM_STATE_ADDR', AddrSizeOf.TYPE_8_BITS.value],
 ]
 
 FinalAddrOfWayPointCoordinates = (
@@ -269,7 +270,7 @@ FinalAddrOfWayPointCoordinatesWithOffSet = (
 DefsWayPointTable = [
     ['Nome da Definição', 'OffSet'],
     ['WAYPOINTS_MAXIMUM', WAYPOINTS_MAXIMUM],
-    ['OTHERS_PARAMS_MAXIMUM', OTHERS_PARAMS_MAXIMUM],
+    ['WAYPOINT_OTHERS_PARAMS_MAXIMUM', WAYPOINT_OTHERS_PARAMS_MAXIMUM],
     ['INITIAL_ADDR_OF_COORDINATES', StorageLayout[3][1]],
     ['FINAL_ADDR_OF_COORDINATES', FinalAddrOfWayPointCoordinates],
     ['INITIAL_ADDR_OF_OTHERS_PARAMS', FinalAddrOfWayPointCoordinatesWithOffSet],

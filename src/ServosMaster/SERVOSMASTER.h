@@ -29,7 +29,7 @@ public:
 
 private:
   bool LoadBiquadSettings(void);
-  void Rate_Update(void);
+  void UpdateRates(void);
   void UpdateMinAndMax(void);
   void UpdateDirection(void);
   void Rate_Apply(void);

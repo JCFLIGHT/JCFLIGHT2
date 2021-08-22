@@ -36,7 +36,7 @@ void SticksClass::Update()
 {
   if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
   {
-    if ((ArmDisarmConfig == 0) && (GetSticksStateToArm()))
+    if ((AUXFLIGHT.GetModeConfiguration[SECONDARY_ARM_DISARM] == NONE) && (GetSticksStateToArm()))
     {
       if (!BATTERY.GetExhausted())
       {
@@ -53,7 +53,7 @@ void SticksClass::Update()
   }
   else
   {
-    if ((ArmDisarmConfig == 0) && (GetSticksStateToDisarm()))
+    if ((AUXFLIGHT.GetModeConfiguration[SECONDARY_ARM_DISARM] == NONE) && (GetSticksStateToDisarm()))
     {
       if (GetDisarmDelayedState())
       {
@@ -66,11 +66,12 @@ void SticksClass::Update()
       ResetDisarmDelayed();
     }
   }
+
   if (GetActualThrottleStatus(THROTTLE_LOW))
   {
     if (!FastSystemFailSafe())
     {
-      if (ArmDisarmConfig > 0)
+      if (AUXFLIGHT.GetModeConfiguration[SECONDARY_ARM_DISARM] > NONE)
       {
         if (IS_STATE_ACTIVE(SECONDARY_ARM_DISARM))
         {
@@ -94,10 +95,11 @@ void SticksClass::Update()
 
 void SticksClass::Pre_Arm(void)
 {
-  if (ArmDisarmConfig != 0)
+  if (AUXFLIGHT.GetModeConfiguration[SECONDARY_ARM_DISARM] > NONE)
   {
     return; //FAÇA UMA RAPIDA SAÍDA SE O ARM-DISARM ESTIVER CONFIGURADO PELA CHAVE AUX
   }
+
   //ROTINA PRE-ARM
   if (STICKS.PreArm_Run)
   {
@@ -127,6 +129,7 @@ void SticksClass::Pre_Arm_Leds(void)
     RGB.Function(CALL_LED_PRE_ARM_INIT);
     BEEPER.Play(BEEPER_ARM);
   }
+
   if (!PREARM.CheckSafeState()) //SE TIVER ALGUMA CONDIÇÃO INCORRETA,NÃO ARMA
   {
     if ((STICKS.PreArm_Run_Count > 20 && STICKS.PreArm_Run_Count <= 30))

@@ -41,7 +41,9 @@ int8_t GetAxisInclinedToCalibration(int16_t AccSample[3])
     return (AccSample[YAW] > 0) ? 0 : 1;
   }
   else
+  {
     return -1;
+  }
 }
 
 uint8_t GetImageToGCS(void)

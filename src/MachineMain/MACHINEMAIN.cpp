@@ -26,15 +26,17 @@ void MachineInit(void)
     FirmwareOrganizeAllParams();
     //INICIALIZA A LISTA DE PARAMETROS
     PARAM.Initialization();
-    //INICIALIZA TODAS AS SERIAIS
-    FASTSERIAL.Initialization();
     //INICIALIZA AS CONFIGURAÇÕES GERAIS DO RC
     DECODE.Initialization();
+    //INICIALIZA TODAS AS SERIAIS
+    FASTSERIAL.Initialization();
+    //INICIALIZA OS RECURSOS PARA USO DO DESENVOLVEDOR.TAIS COMO:LIMPEZA COMPLETA E LEITURA DOS ENDEREÇÕES DO ARMAZENAMENTO
+    STORAGEMANAGER.Initialization();
     //INICIALIZA AS CONFIGURAÇÕES DOS MODOS DE VOO
     AUXFLIGHT.Initialization();
     //INICIALIZA O LED RGB
     RGB.Initialization();
-    //CALIBRAÇÃO DOS ESCS
+    //CALIBRAÇÃO DOS ESC'S
     ESC.Calibration();
     //CARREGA OS VALORES DE CALIBRAÇÃO DA IMU
     UpdateIMUCalibration();
@@ -42,14 +44,14 @@ void MachineInit(void)
     I2C.All_Initialization();
     //INICIALIZA AS CONFIGURAÇÕES DOS PINOS IO
     ConfigureRegisters(false);
+    //INICIALIZA O SISTEMA DE NAVEGAÇÃO INERCIAL
+    INERTIALNAVIGATION.Initialization();
     //INCIALIZA O PID
     PIDXYZ.Initialization();
     //INICIALIZA O AHRS
     AHRS.Initialization();
     //INICIALIZA O TECS
     TECS.Initialization();
-    //INICIALIZA O WAYPOINT
-    WAYPOINT.Initialization();
     //INICIALIZA O SISTEMA DE MONITORAMENTO DA BATERIA
     BATTERY.Initialization();
     //INICIALIZA AS CONFIGURAÇÕES DOS SERVOS
@@ -63,6 +65,7 @@ void MachineInit(void)
     //INICIA O MODO DE AJUSTE DE PARÂMETROS
     TUNNING.Initialization();
     //INICIALIZA O SISTEMA DE TASKS
+    //INICIA O SISTEMA DE TASKS
     TaskSystemInitialization();
 }
 

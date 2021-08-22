@@ -24,17 +24,17 @@ Members:
     Min: 0
     Max: 255
 
-  - Name: AutoLaunch_AHRS_BankAngle
-    Description: "Ângulo no AHRS para considerar que o Auto-Launch deve iniciar [Graus]"
+  - Name: Angle_Block_Arm
+    Description: "Se o Coseno de Z for maior que o valor definido aqui,o sistema não irá armar [Graus]"
     DefaultValue: 25
     Min: 0
-    Max: 255
+    Max: 180
 
-  - Name: AutoLaunch_IMU_BankAngle
-    Description: "Ângulo na IMU para considerar que o Auto-Launch deve iniciar [Graus*10]"
-    DefaultValue: -450
-    Min: -1000
-    Max: 1000
+  - Name: AutoLaunch_AHRS_BankAngle
+    Description: "Ângulo no AHRS para considerar que o Auto-Launch deve iniciar [Graus]"
+    DefaultValue: 45
+    Min: 5
+    Max: 180
 
   - Name: AutoLaunch_Velocity_Thresh
     Description: "Velocidade da IMU ou GPS para validar o Auto-Launch [Metros/Segundo]"
@@ -42,29 +42,23 @@ Members:
     Min: 0
     Max: 20
 
-  - Name: AutoLaunch_Trigger_Motor_Delay
-    Description: "Tempo para iniciar o motor após o status de lançado [MillisSegundos]"
+  - Name: AutoLaunch_Motor_Delay
+    Description: "Tempo para subir o Throttle em rampa,assim fazendo uma partida suave,isso evita um pico de corrente no ESC [MillisSegundos]"
     DefaultValue: 1500
     Min: 0
     Max: 10000
+
+  - Name: AutoLaunch_Motor_SpinUp_Time
+    Description: "Tempo para iniciar o motor após o lançamento for detectado [MillisSegundos]"
+    DefaultValue: 500
+    Min: 0
+    Max: 1000
 
   - Name: AutoLaunch_Elevator
     Description: "Inclinação no Pitch (Elevator) ao fazer o Auto-Launch [Graus]"
     DefaultValue: 18
     Min: 0
     Max: 100
-
-  - Name: AutoLaunch_SpinUp
-    Description: "Valor de incrimentação no Throttle para Aeros com rodas [uS]"
-    DefaultValue: 100
-    Min: 0
-    Max: 2000
-
-  - Name: AutoLaunch_SpinUp_Time
-    Description: "Tempo de incrimentação no Throttle para Aeros com rodas [MillisSegundos]"
-    DefaultValue: 300
-    Min: 0
-    Max: 5000
 
   - Name: AutoLaunch_MaxThrottle
     Description: "Valor do Throttle aplicado ao motor durante o Auto-Launch [uS]"
@@ -84,8 +78,14 @@ Members:
     Min: 0
     Max: 255
 
+  - Name: AutoLaunch_Sticks_Exit
+    Description: "O piloto pode cancelar o Auto-Launch através dos Sticks do rádio somente após o estouro desse tempo [MillisSegundos]"
+    DefaultValue: 2000
+    Min: 0
+    Max: 15000
+
   - Name: CrashCheck_BankAngle
-    Description: "Ângulo da IMU a ser considerado como Crash [Radianos*100]"
+    Description: "Ângulo da IMU a ser considerado como Crash [Radianos * 100]"
     DefaultValue: 30
     Min: 0
     Max: 255
@@ -144,12 +144,6 @@ Members:
     Min: 800
     Max: 2200
 
-  - Name: AirPlane_Wheels
-    Description: "0 - Sem trem de pouso / 1 - Com trem de pouso (Apenas para o Auto-Launch)"
-    DefaultValue: 0
-    Min: 0
-    Max: 1
-
   - Name: GPS_Baud_Rate
     Description: "0 - 9600KBPS / 1 - 19200KBPS / 2 - 38400KBPS / 3 - 57600KBPS / 4 - 115200KBPS"
     DefaultValue: 4
@@ -203,3 +197,9 @@ Members:
     DefaultValue: 60
     Min: 0
     Max: 120
+
+  - Name: Cont_Servo_Trim_Rot_Limit
+    Description: "Os pontos médios dos servos serão atualizados sempre que a rotação total do UAV for menor que esse limite [Graus/s]"
+    DefaultValue: 15
+    Min: 1
+    Max: 60

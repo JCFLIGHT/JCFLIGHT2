@@ -54,6 +54,8 @@
 #include "PID/PIDPARAMS.h"
 #include "BitArray/BITARRAY.h"
 #include "RadioControl/DECODE.h"
+#include "Build/BOARDDEFS.h"
+#include "PerformanceCalibration/PERFORMCOMPASS.h"
 
 GCSClass GCS;
 
@@ -224,9 +226,10 @@ struct _Send_Radio_Control_Parameters
 {
     uint8_t SendThrottleMiddle;
     uint8_t SendThrottleExpo;
-    uint8_t SendRCRate;
-    uint8_t SendRCExpo;
+    uint8_t SendPRRate;
+    uint8_t SendPRExpo;
     uint8_t SendYawRate;
+    uint8_t SendYawExpo;
     int16_t SendRCPulseMin;
     int16_t SendRCPulseMax;
     int16_t SendThrottleMin;
@@ -276,15 +279,17 @@ struct _Send_Radio_Control_Parameters
     int16_t SendTECSCruiseMaxThrottle;
     int16_t SendTECSCruiseThrottle;
     uint8_t SendTECSCircleDirection;
+    uint8_t SendContServosTrimState;
 } Send_Radio_Control_Parameters;
 
 struct _Get_Radio_Control_Parameters
 {
     uint8_t GetThrottleMiddle;
     uint8_t GetThrottleExpo;
-    uint8_t GetRCRate;
-    uint8_t GetRCExpo;
+    uint8_t GetPRRate;
+    uint8_t GetPRExpo;
     uint8_t GetYawRate;
+    uint8_t GetYawExpo;
     int16_t GetRCPulseMin;
     int16_t GetRCPulseMax;
     int16_t GetThrottleMin;
@@ -310,6 +315,7 @@ struct _Get_Radio_Control_Parameters
     uint8_t GetLandAfterRTH;
     int16_t GetHoverThrottle;
     int16_t GetAirSpeedReference;
+    uint8_t GetContServosTrimState;
 } Get_Radio_Control_Parameters;
 
 struct _Get_Servos_Parameters
@@ -632,19 +638,18 @@ void GCSClass::Send_String_To_GCS(const char *String)
 
 void GCSClass::Serial_Parse_Protocol(void)
 {
+#ifdef USE_CLI
+
     if (GCS.CliMode)
     {
         return;
     }
 
+#endif
+
     SerialAvailableGuard = FASTSERIAL.Available(UART_NUMB_0);
     while (SerialAvailableGuard--)
     {
-        if (FASTSERIAL.UsedTXBuffer(UART_NUMB_0) > 78)
-        {
-            return;
-        }
-
         SerialBuffer = FASTSERIAL.Read(UART_NUMB_0);
         ProtocolTaskOrder = PreviousProtocolTaskOrder;
 
@@ -656,10 +661,15 @@ void GCSClass::Serial_Parse_Protocol(void)
             {
                 ProtocolTaskOrder = 1;
             }
+
+#ifdef USE_CLI
+
             if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) && SerialBuffer == 0x23)
             {
                 GCS.CliMode = true;
             }
+
+#endif
             break;
 
         case 1:
@@ -671,11 +681,6 @@ void GCSClass::Serial_Parse_Protocol(void)
             break;
 
         case 3:
-            if (SerialBuffer > 78)
-            {
-                ProtocolTaskOrder = 0;
-                continue;
-            }
             SerialDataSize = SerialBuffer;
             SerialCheckSum = SerialBuffer;
             SerialOffSet = 0;
@@ -785,20 +790,14 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         break;
 
     case 11:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            ACCCALIBRATION.Start();
-        }
+        ACCCALIBRATION.Start();
         Communication_Passed(false, 0);
         Send_Data_To_GCS(SerialCheckSum);
         FASTSERIAL.UartSendData(UART_NUMB_0);
         break;
 
     case 12:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) && I2CResources.Found.Compass)
-        {
-            Calibration.Magnetometer.Calibrating = true;
-        }
+        COMPASSCALIBRATION.RunCalibration();
         Communication_Passed(false, 0);
         Send_Data_To_GCS(SerialCheckSum);
         FASTSERIAL.UartSendData(UART_NUMB_0);
@@ -889,17 +888,11 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         break;
 
     case 27:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            PREARM.UpdateGCSErrorText(PREARM.Checking());
-        }
+        PREARM.UpdateGCSErrorText(PREARM.Checking());
         break;
 
     case 28:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            WATCHDOG.Reboot();
-        }
+        WATCHDOG.Reboot();
         break;
 
     case 29:
@@ -1167,17 +1160,11 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         break;
 
     case 11:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            ACCCALIBRATION.Start();
-        }
+        ACCCALIBRATION.Start();
         break;
 
     case 12:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) && I2CResources.Found.Compass)
-        {
-            Calibration.Magnetometer.Calibrating = true;
-        }
+        COMPASSCALIBRATION.RunCalibration();
         break;
 
     case 13:
@@ -1241,17 +1228,11 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         break;
 
     case 27:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            PREARM.UpdateGCSErrorText(PREARM.Checking());
-        }
+        PREARM.UpdateGCSErrorText(PREARM.Checking());
         break;
 
     case 28:
-        if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
-        {
-            WATCHDOG.Reboot();
-        }
+        WATCHDOG.Reboot();
         break;
 
     case 29:
@@ -1262,13 +1243,13 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         //RESETA E CALCULA O TAMANHO DO NOVO BUFFER
         SerialOutputBufferSizeCount = 0;
         OutputVectorCount = 0;
-        Communication_Passed(false, (sizeof(uint8_t) * 16) +     //NÚMERO TOTAL DE VARIAVEIS DE 8 BITS CONTIDO AQUI
+        Communication_Passed(false, (sizeof(uint8_t) * 17) +     //NÚMERO TOTAL DE VARIAVEIS DE 8 BITS CONTIDO AQUI
                                         (sizeof(int16_t) * 29) + //NÚMERO TOTAL DE VARIAVEIS DE 16 BITS CONTIDO AQUI
                                         (sizeof(int32_t) * 1));  //NÚMERO TOTAL DE VARIAVEIS DE 32 BITS CONTIDO AQUI
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendThrottleMiddle, VAR_8BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendThrottleExpo, VAR_8BITS);
-        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendRCRate, VAR_8BITS);
-        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendRCExpo, VAR_8BITS);
+        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendPRRate, VAR_8BITS);
+        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendPRExpo, VAR_8BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendYawRate, VAR_8BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendRCPulseMin, VAR_16BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendRCPulseMax, VAR_16BITS);
@@ -1319,6 +1300,7 @@ void GCSClass::Update_BiDirect_Protocol(uint8_t TaskOrderGCS)
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendTECSCruiseMaxThrottle, VAR_16BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendTECSCruiseThrottle, VAR_16BITS);
         Send_Data_To_GCS(Send_Radio_Control_Parameters.SendTECSCircleDirection, VAR_8BITS);
+        Send_Data_To_GCS(Send_Radio_Control_Parameters.SendContServosTrimState, VAR_8BITS);
 
         //SOMA DO BUFFER
         SerialOutputBuffer[SerialOutputBufferSizeCount++] = SerialCheckSum;
@@ -1392,7 +1374,7 @@ void GCSClass::First_Packet_Request_Parameters(void)
     Essential_First_Packet_Parameters.SendActualFlightMode = AUXFLIGHT.FlightMode;
     Essential_First_Packet_Parameters.SendFrameType = GetActualPlatformType();
     Essential_First_Packet_Parameters.SendHomePointState = GPS_Resources.Home.Marked;
-    Essential_First_Packet_Parameters.SendTemperature = ConvertCentiDegreesToDegrees(Barometer.Raw.Temperature);
+    Essential_First_Packet_Parameters.SendTemperature = IMU.Accelerometer.Temperature;
     Essential_First_Packet_Parameters.SendHomePointDistance = GPS_Resources.Home.Distance;
     Essential_First_Packet_Parameters.SendCurrentInMah = BATTERY.Get_Current_In_Mah();
 #ifndef MACHINE_CYCLE
@@ -1423,17 +1405,17 @@ void GCSClass::Second_Packet_Request_Parameters(void)
     Essential_Second_Packet_Parameters.SendActualAuxSevenValue = DECODE.DirectRadioControlRead[AUX7];
     Essential_Second_Packet_Parameters.SendActualAuxEightValue = DECODE.DirectRadioControlRead[AUX8];
     Essential_Second_Packet_Parameters.SendAttitudeThrottleValue = RC_Resources.Attitude.Controller[THROTTLE];
-    Essential_Second_Packet_Parameters.SendAttitudeYawValue = PID_Resources.RcRateTarget.GCS.Yaw;
-    Essential_Second_Packet_Parameters.SendAttitudePitchValue = PID_Resources.RcRateTarget.GCS.Pitch;
-    Essential_Second_Packet_Parameters.SendAttitudeRollValue = PID_Resources.RcRateTarget.GCS.Roll;
+    Essential_Second_Packet_Parameters.SendAttitudeYawValue = -PID_Resources.RCRateTarget.GCS.Yaw;
+    Essential_Second_Packet_Parameters.SendAttitudePitchValue = PID_Resources.RCRateTarget.GCS.Pitch;
+    Essential_Second_Packet_Parameters.SendAttitudeRollValue = PID_Resources.RCRateTarget.GCS.Roll;
     Essential_Second_Packet_Parameters.SendMemoryRamUsed = MEMORY.Check();
     Essential_Second_Packet_Parameters.SendMemoryRamUsedPercent = MEMORY.GetPercentageRAMUsed();
-    Essential_Second_Packet_Parameters.SendAccX = IMU.Accelerometer.Read[ROLL];
-    Essential_Second_Packet_Parameters.SendAccY = IMU.Accelerometer.Read[PITCH];
-    Essential_Second_Packet_Parameters.SendAccZ = IMU.Accelerometer.Read[YAW];
-    Essential_Second_Packet_Parameters.SendGyroX = IMU.Gyroscope.Read[ROLL];
-    Essential_Second_Packet_Parameters.SendGyroY = IMU.Gyroscope.Read[PITCH];
-    Essential_Second_Packet_Parameters.SendGyroZ = IMU.Gyroscope.Read[YAW];
+    Essential_Second_Packet_Parameters.SendAccX = IMU.Accelerometer.ReadFloat[ROLL] * 100;
+    Essential_Second_Packet_Parameters.SendAccY = IMU.Accelerometer.ReadFloat[PITCH] * 100;
+    Essential_Second_Packet_Parameters.SendAccZ = IMU.Accelerometer.ReadFloat[YAW] * 100;
+    Essential_Second_Packet_Parameters.SendGyroX = IMU.Gyroscope.ReadFloat[ROLL] * 100;
+    Essential_Second_Packet_Parameters.SendGyroY = IMU.Gyroscope.ReadFloat[PITCH] * 100;
+    Essential_Second_Packet_Parameters.SendGyroZ = IMU.Gyroscope.ReadFloat[YAW] * 100;
     Essential_Second_Packet_Parameters.SendGPSGroundSpeed = GPS_Resources.Navigation.Misc.Get.GroundSpeed;
     Essential_Second_Packet_Parameters.SendI2CError = I2CResources.Error.Count;
     Essential_Second_Packet_Parameters.SendAirSpeedValue = AirSpeed.Raw.IASPressureInCM;
@@ -1442,60 +1424,118 @@ void GCSClass::Second_Packet_Request_Parameters(void)
 
 void GCSClass::WayPoint_Request_Coordinates_Parameters(void)
 {
-    Send_WayPoint_Coordinates.SendLatitudeOne = STORAGEMANAGER.Read_32Bits(704);
-    Send_WayPoint_Coordinates.SendLatitudeTwo = STORAGEMANAGER.Read_32Bits(708);
-    Send_WayPoint_Coordinates.SendLatitudeThree = STORAGEMANAGER.Read_32Bits(712);
-    Send_WayPoint_Coordinates.SendLatitudeFour = STORAGEMANAGER.Read_32Bits(716);
-    Send_WayPoint_Coordinates.SendLatitudeFive = STORAGEMANAGER.Read_32Bits(720);
-    Send_WayPoint_Coordinates.SendLatitudeSix = STORAGEMANAGER.Read_32Bits(724);
-    Send_WayPoint_Coordinates.SendLatitudeSeven = STORAGEMANAGER.Read_32Bits(728);
-    Send_WayPoint_Coordinates.SendLatitudeEight = STORAGEMANAGER.Read_32Bits(732);
-    Send_WayPoint_Coordinates.SendLatitudeNine = STORAGEMANAGER.Read_32Bits(736);
-    Send_WayPoint_Coordinates.SendLatitudeTen = STORAGEMANAGER.Read_32Bits(740);
-    Send_WayPoint_Coordinates.SendLongitudeOne = STORAGEMANAGER.Read_32Bits(744);
-    Send_WayPoint_Coordinates.SendLongitudeTwo = STORAGEMANAGER.Read_32Bits(748);
-    Send_WayPoint_Coordinates.SendLongitudeThree = STORAGEMANAGER.Read_32Bits(752);
-    Send_WayPoint_Coordinates.SendLongitudeFour = STORAGEMANAGER.Read_32Bits(756);
-    Send_WayPoint_Coordinates.SendLongitudeFive = STORAGEMANAGER.Read_32Bits(760);
-    Send_WayPoint_Coordinates.SendLongitudeSix = STORAGEMANAGER.Read_32Bits(764);
-    Send_WayPoint_Coordinates.SendLongitudeSeven = STORAGEMANAGER.Read_32Bits(768);
-    Send_WayPoint_Coordinates.SendLongitudeEight = STORAGEMANAGER.Read_32Bits(772);
-    Send_WayPoint_Coordinates.SendLongitudeNine = STORAGEMANAGER.Read_32Bits(776);
-    Send_WayPoint_Coordinates.SendLongitudeTen = STORAGEMANAGER.Read_32Bits(780);
+    int16_t AddressCount = 0;
+
+    Send_WayPoint_Coordinates.SendLatitudeOne = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeTwo = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeThree = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeFour = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeFive = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeSix = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeSeven = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeEight = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeNine = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLatitudeTen = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeOne = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeTwo = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeThree = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeFour = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeFive = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeSix = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeSeven = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeEight = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeNine = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
+    AddressCount += sizeof(int32_t);
+    Send_WayPoint_Coordinates.SendLongitudeTen = STORAGEMANAGER.Read_32Bits(INITIAL_ADDR_OF_COORDINATES + AddressCount);
 }
 
 void GCSClass::WayPoint_Request_Misc_Parameters(void)
 {
-    Send_WayPoint_Misc_Parameters.SendAltitudeOne = STORAGEMANAGER.Read_8Bits(804);
-    Send_WayPoint_Misc_Parameters.SendAltitudeTwo = STORAGEMANAGER.Read_8Bits(805);
-    Send_WayPoint_Misc_Parameters.SendAltitudeThree = STORAGEMANAGER.Read_8Bits(806);
-    Send_WayPoint_Misc_Parameters.SendAltitudeFour = STORAGEMANAGER.Read_8Bits(807);
-    Send_WayPoint_Misc_Parameters.SendAltitudeFive = STORAGEMANAGER.Read_8Bits(808);
-    Send_WayPoint_Misc_Parameters.SendAltitudeSix = STORAGEMANAGER.Read_8Bits(809);
-    Send_WayPoint_Misc_Parameters.SendAltitudeSeven = STORAGEMANAGER.Read_8Bits(810);
-    Send_WayPoint_Misc_Parameters.SendAltitudeEight = STORAGEMANAGER.Read_8Bits(811);
-    Send_WayPoint_Misc_Parameters.SendAltitudeNine = STORAGEMANAGER.Read_8Bits(812);
-    Send_WayPoint_Misc_Parameters.SendAltitudeTen = STORAGEMANAGER.Read_8Bits(813);
-    Send_WayPoint_Misc_Parameters.SendFlightModeOne = STORAGEMANAGER.Read_8Bits(794);
-    Send_WayPoint_Misc_Parameters.SendFlightModeTwo = STORAGEMANAGER.Read_8Bits(795);
-    Send_WayPoint_Misc_Parameters.SendFlightModeThree = STORAGEMANAGER.Read_8Bits(796);
-    Send_WayPoint_Misc_Parameters.SendFlightModeFour = STORAGEMANAGER.Read_8Bits(797);
-    Send_WayPoint_Misc_Parameters.SendFlightModeFive = STORAGEMANAGER.Read_8Bits(798);
-    Send_WayPoint_Misc_Parameters.SendFlightModeSix = STORAGEMANAGER.Read_8Bits(799);
-    Send_WayPoint_Misc_Parameters.SendFlightModeSeven = STORAGEMANAGER.Read_8Bits(800);
-    Send_WayPoint_Misc_Parameters.SendFlightModeEight = STORAGEMANAGER.Read_8Bits(801);
-    Send_WayPoint_Misc_Parameters.SendFlightModeNine = STORAGEMANAGER.Read_8Bits(802);
-    Send_WayPoint_Misc_Parameters.SendFlightModeTen = STORAGEMANAGER.Read_8Bits(803);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedOne = STORAGEMANAGER.Read_8Bits(784);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedTwo = STORAGEMANAGER.Read_8Bits(785);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedThree = STORAGEMANAGER.Read_8Bits(786);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedFour = STORAGEMANAGER.Read_8Bits(787);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedFive = STORAGEMANAGER.Read_8Bits(788);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedSix = STORAGEMANAGER.Read_8Bits(789);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedSeven = STORAGEMANAGER.Read_8Bits(790);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedEight = STORAGEMANAGER.Read_8Bits(791);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedNine = STORAGEMANAGER.Read_8Bits(792);
-    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedTen = STORAGEMANAGER.Read_8Bits(793);
+    int16_t AddressCount = 0;
+
+    //TEMPO DO POS-HOLD
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedOne = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedTwo = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedThree = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedFour = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedFive = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedSix = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedSeven = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedEight = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedNine = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendGPSHoldTimedTen = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+
+    //MODO DE VOO
+    Send_WayPoint_Misc_Parameters.SendFlightModeOne = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeTwo = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeThree = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeFour = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeFive = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeSix = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeSeven = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeEight = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeNine = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendFlightModeTen = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+
+    //ALTITUDE DE NAVEGAÇÃO
+    Send_WayPoint_Misc_Parameters.SendAltitudeOne = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeTwo = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeThree = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeFour = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeFive = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeSix = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeSeven = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeEight = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeNine = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
+    AddressCount += sizeof(uint8_t);
+    Send_WayPoint_Misc_Parameters.SendAltitudeTen = STORAGEMANAGER.Read_8Bits(INITIAL_ADDR_OF_OTHERS_PARAMS + AddressCount);
 }
 
 void GCSClass::Save_Basic_Configuration(void)
@@ -1539,9 +1579,10 @@ void GCSClass::Save_Radio_Control_Configuration(void)
 {
     STORAGEMANAGER.Write_8Bits(THROTTLE_MIDDLE_ADDR, Get_Radio_Control_Parameters.GetThrottleMiddle);
     STORAGEMANAGER.Write_8Bits(THROTTLE_EXPO_ADDR, Get_Radio_Control_Parameters.GetThrottleExpo);
-    STORAGEMANAGER.Write_8Bits(RC_RATE_ADDR, Get_Radio_Control_Parameters.GetRCRate);
-    STORAGEMANAGER.Write_8Bits(RC_EXPO_ADDR, Get_Radio_Control_Parameters.GetRCExpo);
+    STORAGEMANAGER.Write_8Bits(PR_RATE_ADDR, Get_Radio_Control_Parameters.GetPRRate);
+    STORAGEMANAGER.Write_8Bits(PR_EXPO_ADDR, Get_Radio_Control_Parameters.GetPRExpo);
     STORAGEMANAGER.Write_8Bits(YAW_RATE_ADDR, Get_Radio_Control_Parameters.GetYawRate);
+    STORAGEMANAGER.Write_8Bits(YAW_EXPO_ADDR, Get_Radio_Control_Parameters.GetYawExpo);
     STORAGEMANAGER.Write_16Bits(THR_ATTITUDE_MIN_ADDR, Get_Radio_Control_Parameters.GetRCPulseMin);
     STORAGEMANAGER.Write_16Bits(THR_ATTITUDE_MAX_ADDR, Get_Radio_Control_Parameters.GetRCPulseMax);
     STORAGEMANAGER.Write_16Bits(THROTTLE_MIN_ADDR, Get_Radio_Control_Parameters.GetThrottleMin);
@@ -1591,6 +1632,7 @@ void GCSClass::Save_Radio_Control_Configuration(void)
     STORAGEMANAGER.Write_16Bits(TECS_CRUISE_MAX_THR_ADDR, Get_Servos_Parameters.GetTECSCruiseMaxThrottle);
     STORAGEMANAGER.Write_16Bits(TECS_CRUISE_THR_ADDR, Get_Servos_Parameters.GetTECSCruiseThrottle);
     STORAGEMANAGER.Write_8Bits(TECS_CIRCLE_DIR_ADDR, Get_Servos_Parameters.GetTECSCircleDirection);
+    STORAGEMANAGER.Write_8Bits(CONT_SERVO_TRIM_STATE_ADDR, Get_Radio_Control_Parameters.GetContServosTrimState);
 }
 
 void GCSClass::Save_Medium_Configuration(void)
@@ -1697,9 +1739,10 @@ void GCSClass::Default_RadioControl_Configuration(void)
     //LIMPA TODAS AS CONFIGURAÇÕES SALVAS DO RÁDIO E DOS SERVOS
     STORAGEMANAGER.Write_8Bits(THROTTLE_MIDDLE_ADDR, 50);
     STORAGEMANAGER.Write_8Bits(THROTTLE_EXPO_ADDR, 0);
-    STORAGEMANAGER.Write_8Bits(RC_EXPO_ADDR, 65);
-    STORAGEMANAGER.Write_8Bits(RC_RATE_ADDR, 90);
+    STORAGEMANAGER.Write_8Bits(PR_RATE_ADDR, 20);
+    STORAGEMANAGER.Write_8Bits(PR_EXPO_ADDR, 70);
     STORAGEMANAGER.Write_8Bits(YAW_RATE_ADDR, 20);
+    STORAGEMANAGER.Write_8Bits(YAW_EXPO_ADDR, 20);
     STORAGEMANAGER.Write_16Bits(THR_ATTITUDE_MIN_ADDR, 1000);
     STORAGEMANAGER.Write_16Bits(THR_ATTITUDE_MAX_ADDR, 1850);
     STORAGEMANAGER.Write_16Bits(THROTTLE_MIN_ADDR, 1050);
@@ -1727,6 +1770,7 @@ void GCSClass::Default_RadioControl_Configuration(void)
     STORAGEMANAGER.Write_16Bits(SERVO2_MAX_ADDR, 2000);
     STORAGEMANAGER.Write_16Bits(SERVO3_MAX_ADDR, 2000);
     STORAGEMANAGER.Write_16Bits(SERVO4_MAX_ADDR, 2000);
+    STORAGEMANAGER.Write_8Bits(SERVOS_REVERSE_ADDR, 0);
     STORAGEMANAGER.Write_16Bits(SERVO1_RATE_ADDR, 100);
     STORAGEMANAGER.Write_16Bits(SERVO2_RATE_ADDR, 100);
     STORAGEMANAGER.Write_16Bits(SERVO3_RATE_ADDR, 100);
@@ -1735,7 +1779,7 @@ void GCSClass::Default_RadioControl_Configuration(void)
     STORAGEMANAGER.Write_8Bits(MAX_PITCH_LEVEL_ADDR, 30);
     STORAGEMANAGER.Write_8Bits(MAX_ROLL_LEVEL_ADDR, 30);
     STORAGEMANAGER.Write_8Bits(AUTO_PILOT_MODE_ADDR, 0);
-    STORAGEMANAGER.Write_32Bits(AIRSPEED_FACTOR_ADDR, 19936);
+    STORAGEMANAGER.Write_32Bits(AIRSPEED_FACTOR_ADDR, 10000);
     STORAGEMANAGER.Write_8Bits(CH_TUNNING_ADDR, 0);
     STORAGEMANAGER.Write_8Bits(TUNNING_ADDR, 0);
     STORAGEMANAGER.Write_8Bits(LAND_AFTER_RTH_ADDR, 1);
@@ -1748,6 +1792,7 @@ void GCSClass::Default_RadioControl_Configuration(void)
     STORAGEMANAGER.Write_16Bits(TECS_CRUISE_MAX_THR_ADDR, 1700);
     STORAGEMANAGER.Write_16Bits(TECS_CRUISE_THR_ADDR, 1400);
     STORAGEMANAGER.Write_8Bits(TECS_CIRCLE_DIR_ADDR, 1);
+    STORAGEMANAGER.Write_8Bits(CONT_SERVO_TRIM_STATE_ADDR, 0);
 }
 
 void GCSClass::Default_Medium_Configuration(void)
@@ -1828,9 +1873,10 @@ void GCSClass::LoadAllParameters(void)
     //ATUALIZA OS PARAMETROS DO RADIO CONTROLE
     Send_Radio_Control_Parameters.SendThrottleMiddle = STORAGEMANAGER.Read_8Bits(THROTTLE_MIDDLE_ADDR);
     Send_Radio_Control_Parameters.SendThrottleExpo = STORAGEMANAGER.Read_8Bits(THROTTLE_EXPO_ADDR);
-    Send_Radio_Control_Parameters.SendRCRate = STORAGEMANAGER.Read_8Bits(RC_RATE_ADDR);
-    Send_Radio_Control_Parameters.SendRCExpo = STORAGEMANAGER.Read_8Bits(RC_EXPO_ADDR);
+    Send_Radio_Control_Parameters.SendPRRate = STORAGEMANAGER.Read_8Bits(PR_RATE_ADDR);
+    Send_Radio_Control_Parameters.SendPRExpo = STORAGEMANAGER.Read_8Bits(PR_EXPO_ADDR);
     Send_Radio_Control_Parameters.SendYawRate = STORAGEMANAGER.Read_8Bits(YAW_RATE_ADDR);
+    Send_Radio_Control_Parameters.SendYawExpo = STORAGEMANAGER.Read_8Bits(YAW_EXPO_ADDR);
     Send_Radio_Control_Parameters.SendRCPulseMin = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MIN_ADDR);
     Send_Radio_Control_Parameters.SendRCPulseMax = STORAGEMANAGER.Read_16Bits(THR_ATTITUDE_MAX_ADDR);
     Send_Radio_Control_Parameters.SendThrottleMin = STORAGEMANAGER.Read_16Bits(THROTTLE_MIN_ADDR);
@@ -1880,8 +1926,9 @@ void GCSClass::LoadAllParameters(void)
     Send_Radio_Control_Parameters.SendTECSCruiseMaxThrottle = STORAGEMANAGER.Read_16Bits(TECS_CRUISE_MAX_THR_ADDR);
     Send_Radio_Control_Parameters.SendTECSCruiseThrottle = STORAGEMANAGER.Read_16Bits(TECS_CRUISE_THR_ADDR);
     Send_Radio_Control_Parameters.SendTECSCircleDirection = STORAGEMANAGER.Read_8Bits(TECS_CIRCLE_DIR_ADDR);
+    Send_Radio_Control_Parameters.SendContServosTrimState = STORAGEMANAGER.Read_8Bits(CONT_SERVO_TRIM_STATE_ADDR);
 
-     //ATUALIZA OS PARAMETROS MEDIOS AJUSTAVEIS PELO USUARIO
+    //ATUALIZA OS PARAMETROS MEDIOS AJUSTAVEIS PELO USUARIO
     Send_User_Medium_Parameters.SendTPAInPercent = STORAGEMANAGER.Read_8Bits(TPA_PERCENT_ADDR);
     Send_User_Medium_Parameters.SendBreakPointValue = STORAGEMANAGER.Read_16Bits(BREAKPOINT_ADDR);
     Send_User_Medium_Parameters.SendGyroLPF = STORAGEMANAGER.Read_8Bits(HW_GYRO_LPF_ADDR);

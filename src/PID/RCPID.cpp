@@ -36,7 +36,9 @@ FILE_COMPILE_FOR_SPEED
 RC_Resources_Struct RC_Resources;
 
 #ifndef __AVR_ATmega2560__
+
 PT1_Filter_Struct FixedWingTPA_Smooth;
+
 #endif
 
 //DEBUG
@@ -50,9 +52,9 @@ static void GetRCDataConvertedAndApplyFilter(void)
   CalcedThrottle = Constrain_16Bits(DECODE.GetRxChannelOutput(THROTTLE), RC_Resources.Attitude.ThrottleMin, MAX_STICKS_PULSE);
   CalcedThrottle = (uint32_t)(CalcedThrottle - RC_Resources.Attitude.ThrottleMin) * MIN_STICKS_PULSE / (MAX_STICKS_PULSE - RC_Resources.Attitude.ThrottleMin);
   RC_Resources.Attitude.Controller[THROTTLE] = CalcedLookupThrottle(CalcedThrottle);
-  RC_Resources.Attitude.Controller[YAW] = -CalcedAttitudeRC(YAW, RC_Resources.Expo.YawPitchRoll);
-  RC_Resources.Attitude.Controller[PITCH] = CalcedAttitudeRC(PITCH, RC_Resources.Expo.YawPitchRoll);
-  RC_Resources.Attitude.Controller[ROLL] = CalcedAttitudeRC(ROLL, RC_Resources.Expo.YawPitchRoll);
+  RC_Resources.Attitude.Controller[YAW] = -CalcedAttitudeRC(YAW, RC_Resources.Expo.PitchRoll);
+  RC_Resources.Attitude.Controller[PITCH] = CalcedAttitudeRC(PITCH, RC_Resources.Expo.PitchRoll);
+  RC_Resources.Attitude.Controller[ROLL] = CalcedAttitudeRC(ROLL, RC_Resources.Expo.Yaw);
 
   //APLICA O FILTRO LPF NO RC DA ATTITUDE
   RCInterpolationApply();
@@ -122,8 +124,12 @@ void RC_PID_Update(void)
     }
     TPA_Parameters.UpdateRequired = false;
   }
+
 #if defined(PRINTLN_TPA)
+
   DEBUG("TPA:%d", TPA_Parameters.CalcedValue);
+
 #endif
+
   Simple_Mode_Update();
 }

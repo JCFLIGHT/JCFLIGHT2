@@ -28,6 +28,7 @@
 #include "PerformanceCalibration/PERFORMGYRO.h"
 #include "ParamsToGCS/IMUCALGCS.h"
 #include "GPS/GPSSTATES.h"
+#include "BitArray/BITARRAY.h"
 
 PreArmClass PREARM;
 
@@ -63,6 +64,11 @@ const char *const Message_10 = "Erro:Barometro ruim;";
 
 void PreArmClass::UpdateGCSErrorText(uint8_t GCSErrorType)
 {
+    if (IS_STATE_ACTIVE(PRIMARY_ARM_DISARM))
+    {
+        return;
+    }
+
     switch (GCSErrorType)
     {
 

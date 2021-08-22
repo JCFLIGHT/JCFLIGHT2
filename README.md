@@ -1,9 +1,11 @@
 ![JCFLIGHT](Docs/Logo.png)
 
-## Se você for novato com a JCFLIGHT,leia a Wiki,ou acesse o YouTube
+## Se você for novato com a JCFLIGHT,leia a Wiki,baixe e leia o manual,ou acesse o YouTube
 [<img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white">](https://github.com/JCFLIGHT/JCFLIGHT/wiki)
 
 [<img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white">](https://www.youtube.com/channel/UC6kk7H1CiaPVv4iKVGS9GsA)
+
+Baixe o manual da JCFLIGHT clicando [aqui](https://github.com/JCFLIGHT/JCLFIGHTGCS/blob/master/ManualJCFLIGHT.rtf).
 
 ## Requesitos para Desenvolver e Compilar
 [<img src="https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white">](https://visualstudio.microsoft.com/pt-br/downloads/)
@@ -19,13 +21,13 @@
 
 [![Travis-CI Build Status](https://travis-ci.com/JCFLIGHT/JCFLIGHT.svg?branch=master)](https://travis-ci.com/github/JCFLIGHT/JCFLIGHT)
 
-[![Versão](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/JCFLIGHT/JCFLIGHT/releases)
+[![Versão](https://img.shields.io/badge/version-0.0.0-blue)](https://github.com/JCFLIGHT/JCFLIGHT/releases)
 
 ## Suporte JCFLIGHT
 Se você gostaria de apoiar o desenvolvimento da JCFLIGHT,sinta-se à vontade para fazer uma doação.Isso nos ajuda a comprar hardware para portabilidade,desenvolvimento e prototipagem.<br/><br/>
 [<img src="https://img.shields.io/badge/Donate-PayPal-253B80.svg">](https://www.paypal.com/donate?business=SQZHMV2JMJBTA&item_name=Ajude+o+projeto+da+JCFLIGHT+a+se+manter+vivo.&currency_code=BRL)
 
-JCFLIGHT é um software de piloto automático de código aberto,ele está em desenvolvimento desde 2018.Este software de piloto automático é capaz de controlar alguns sistemas de veículos,tais como:Multirotores,Aeromodelos Convencionais,Aeromodelos do tipo V-Tail e Asa-Fixa.
+JCFLIGHT é um software de piloto automático de código aberto,ele está em desenvolvimento desde 2018.Este software de piloto automático é capaz de controlar alguns sistemas de veículos,tais como:Multirotores,Aeromodelos Convencionais,Aeronaves do tipo V-Tail e Asa-Fixa.
 
 | Status | Microcontrolador | Nome | Versão | Notas |
 | :----: | :-------: | ---- | :-----: | :---- |

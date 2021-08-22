@@ -18,5 +18,5 @@
 #ifndef SIMPLEMODE_H_
 #define SIMPLEMODE_H_
 #include "Build/LIBDEPENDENCIES.h"
-void Simple_Mode_Update();
+void Simple_Mode_Update(void);
 #endif

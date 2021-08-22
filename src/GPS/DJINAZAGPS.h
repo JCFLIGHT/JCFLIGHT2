@@ -17,7 +17,7 @@
 
 #ifndef DJINAZAGPS_H_
 #define DJINAZAGPS_H_
-#include "inttypes.h"
+#include <inttypes.h>
 extern int16_t DJINaza_Compass_Roll;
 extern int16_t DJINaza_Compass_Pitch;
 extern int16_t DJINaza_Compass_Yaw;

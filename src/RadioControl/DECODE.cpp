@@ -38,8 +38,8 @@ DecodeClass DECODE;
 
 void DecodeClass::Initialization(void)
 {
-  RC_Resources.ReceiverTypeEnabled = STORAGEMANAGER.Read_8Bits(UART_NUMB_2_ADDR);
   RC_Resources.ReceiverSequency = STORAGEMANAGER.Read_8Bits(RC_SEQUENCY_ADDR);
+  RC_Resources.ReceiverTypeEnabled = STORAGEMANAGER.Read_8Bits(UART_NUMB_2_ADDR);
 
   if (RC_Resources.ReceiverTypeEnabled == PPM_RECEIVER)
   {

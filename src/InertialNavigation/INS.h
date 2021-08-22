@@ -19,25 +19,22 @@
 #define INS_H_
 #include "Build/LIBDEPENDENCIES.h"
 #include "Common/STRUCTS.h"
-extern INS_Struct INS;
+extern INS_Resources_Struct INS_Resources;
 class InertialNavigationClass
 {
 public:
-  void Calculate_AccelerationXYZ_To_EarthFrame(void);
+  void Initialization(void);
+  void Update(void);
   bool WaitForSample(void);
-  void Calculate_AccelerationXY(float DeltaTime);
-  void Calculate_AccelerationZ(float DeltaTime);
 
 private:
-  void UpdateAccelerationEarthFrame_Filtered(uint8_t ArrayCount);
-  void CorrectXYStateWithGPS(float DeltaTime);
-  void EstimationPredictXY(float DeltaTime);
-  void SaveXYPositionToHistory(void);
-  void ResetXYState(void);
-  void CorrectZStateWithBaro(float DeltaTime);
-  void EstimationPredictZ(float DeltaTime);
-  void SaveZPositionToHistory(void);
-  void ResetZState(void);
+  void UpdateIMU(uint32_t ActualTimeInUs);
+  void UpdateBarometer(uint32_t ActualTimeInUs);
+  void UpdateGPS(void);
+  void UpdatePredictXYZ(INS_Context_Struct *Context);
+  bool CorrectXYStateWithGPS(INS_Context_Struct *Context);
+  bool CorrectZStateWithBaroOrGPS(INS_Context_Struct *Context);
+  void UpdateEstimationPredictXYZ(uint32_t ActualTimeInUs);
 };
 extern InertialNavigationClass INERTIALNAVIGATION;
 #endif

@@ -38,7 +38,7 @@ bool GetCheckInclinationForArm(void)
         return false; //PULA A CHECAGEM DE INCLINAÇÃO NO MODO PLANE
     }
 
-    if (GetMultirotorEnabled() && AHRS.CosineTiltAngle() < GPS_Resources.Navigation.HeadingHoldLimit)
+    if (GetMultirotorEnabled() && AHRS.Get_Cosine_Z_Overflowed())
     {
         return true; //INVALIDA O ARMAMENTO DO SISTEMA SE HOUVER INCLINAÇÃO NOS EIXOS
     }

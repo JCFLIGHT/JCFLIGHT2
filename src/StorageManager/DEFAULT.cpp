@@ -19,10 +19,10 @@
 #include "IOMCU/IOMCU.h"
 #include "StorageManager/EEPROMSTORAGE.h"
 #include "BAR/BAR.h"
-#include "BOARDDEFS.h"
+#include "Build/BOARDDEFS.h"
 #include "Param/PARAM.h"
-#include "FastSerial/PRINTF.h"
 #include "WayPointNavigation/WAYPOINT.h"
+
 #ifdef ESP32
 #include "EEPROM.h"
 #endif
@@ -53,13 +53,14 @@ void ClearSensorsCalibration(void)
     STORAGEMANAGER.Write_16Bits(MAG_ROLL_OFFSET_ADDR, 0);
     STORAGEMANAGER.Write_16Bits(MAG_PITCH_OFFSET_ADDR, 0);
     STORAGEMANAGER.Write_16Bits(MAG_YAW_OFFSET_ADDR, 0);
+
     //COLOCANDO O GANHO DOS SENSORES NO MAXIMO EVITA DE OCORRER DIVISÕES POR ZERO NO CICLO DE MAQUINA
     STORAGEMANAGER.Write_16Bits(ACC_ROLL_SCALE_ADDR, 4096);
     STORAGEMANAGER.Write_16Bits(ACC_PITCH_SCALE_ADDR, 4096);
     STORAGEMANAGER.Write_16Bits(ACC_YAW_SCALE_ADDR, 4096);
-    STORAGEMANAGER.Write_16Bits(MAG_ROLL_GAIN_ADDR, 4096);
-    STORAGEMANAGER.Write_16Bits(MAG_PITCH_GAIN_ADDR, 4096);
-    STORAGEMANAGER.Write_16Bits(MAG_YAW_GAIN_ADDR, 4096);
+    STORAGEMANAGER.Write_16Bits(MAG_ROLL_GAIN_ADDR, 1024);
+    STORAGEMANAGER.Write_16Bits(MAG_PITCH_GAIN_ADDR, 1024);
+    STORAGEMANAGER.Write_16Bits(MAG_YAW_GAIN_ADDR, 1024);
 }
 
 void RecallAllParams(void)
@@ -76,14 +77,12 @@ void FirmwareOrganizeAllParams(void)
 #ifdef ESP32
     EEPROM.begin(SIZE_OF_EEPROM);
 #endif
+
     if (!CheckActualFormatVersion())
     {
-        LOG("Restaurando os valores de fabrica dos parametros...");
         for (uint8_t IndexCount = 0; IndexCount < MAX_RETRY_COUNT; IndexCount++)
         {
             RecallAllParams();
         }
-        LOG("Ok...Parametros reconfigurados!");
-        LINE_SPACE;
     }
 }

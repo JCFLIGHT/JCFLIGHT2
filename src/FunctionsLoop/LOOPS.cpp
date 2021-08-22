@@ -18,7 +18,7 @@
 #include "LOOPS.h"
 #include "Common/COMMON.h"
 
-void Slow_Loop()
+void Slow_Loop(void)
 {
         STICKS.Pre_Arm();
         COMPASS.Constant_Read();
@@ -26,7 +26,7 @@ void Slow_Loop()
         UpdateValuesOfPID();
 }
 
-void Medium_Loop()
+void Medium_Loop(void)
 {
         uint32_t ThisTaskTimeUs = GetTaskDeltaTime(TASK_MEDIUM_LOOP);
         const float ThisDeltaTime = (float)ThisTaskTimeUs * 1e-6f;
@@ -42,15 +42,13 @@ void Medium_Loop()
         GPS_Process_FlightModes(ThisDeltaTime);
         AUXFLIGHT.Update();
         FlightModesUpdate();
-        INERTIALNAVIGATION.Calculate_AccelerationXY(ThisDeltaTime);
-        INERTIALNAVIGATION.Calculate_AccelerationZ(ThisDeltaTime);
         WINDESTIMATOR.Update();
         BATTERY.Update_Voltage();
         BATTERY.Update_Current();
         TUNNING.Update();
 }
 
-void Fast_Medium_Loop()
+void Fast_Medium_Loop(void)
 {
         BEEPER.Run();
         STICKS.Pre_Arm_Leds();
@@ -62,24 +60,24 @@ void Fast_Medium_Loop()
         PARAM.Update();
 }
 
-void Fast_Loop()
+void Fast_Loop(void)
 {
         Update_PrecisionLand();
 }
 
-void Super_Fast_Loop()
+void Super_Fast_Loop(void)
 {
         RGB.Update();
         SAFETYBUTTON.UpdateRoutine();
         SBUSRC.Update();
         IBUSRC.Update();
-        INERTIALNAVIGATION.Calculate_AccelerationXYZ_To_EarthFrame();
+        INERTIALNAVIGATION.Update();
         AIRSPEED.Update();
         Switch_Flag();
         BATTERY.Calculate_Total_Current_In_Mah();
 }
 
-void Integral_Loop()
+void Integral_Loop(void)
 {
         uint32_t ThisTaskTimeUs = GetTaskDeltaTime(TASK_INTEGRAL_LOOP);
         const float ThisDeltaTime = (float)ThisTaskTimeUs * 1e-6f;
@@ -90,8 +88,8 @@ void Integral_Loop()
         Super_Fast_Loop();
 #endif
 
-        Acc_ReadBufferData();
-        Gyro_ReadBufferData();
+        Update_Accelerometer();
+        Update_Gyroscope();
         AHRS.Update(ThisDeltaTime);
         RC_PID_Update();
         WAYPOINT.Update();

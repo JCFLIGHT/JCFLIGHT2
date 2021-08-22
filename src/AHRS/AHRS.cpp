@@ -30,6 +30,7 @@
 #include "IMU/ACCGYROREAD.h"
 #include "GPSNavigation/NAVIGATION.h"
 #include "PID/PIDPARAMS.h"
+#include "Param/PARAM.h"
 #include "Build/GCC.h"
 
 FILE_COMPILE_FOR_SPEED
@@ -37,10 +38,15 @@ FILE_COMPILE_FOR_SPEED
 AHRSClass AHRS;
 
 #ifdef __AVR_ATmega2560__
+
 #define NEARNESS 100.0f //FATOR DE GANHO DE CORREÇÃO DO ACELEROMETRO NO AHRS
+
 #else
+
 #define NEARNESS 1.0f //FATOR DE GANHO DE CORREÇÃO DO ACELEROMETRO NO AHRS
+
 #endif
+
 #define SPIN_RATE_LIMIT 20     //VALOR DE GYRO^2 PARA CORTAR A CORREÇÃO DO INTEGRAL NO AHRS
 #define MAX_ACC_NEARNESS 0.33f //33% (0.67G - 1.33G)
 
@@ -52,8 +58,6 @@ Matrix3x3_Struct Rotation;
 
 static Vector3x3_Struct CorrectedMagneticFieldNorth;
 static AHRS_Configuration_Struct AHRSConfiguration;
-
-static bool GPSHeadingInitialized = false;
 
 static void ComputeRotationMatrix(void)
 {
@@ -85,6 +89,7 @@ void AHRSClass::Initialization(void)
   AHRSConfiguration.kI_Accelerometer = JCF_Param.kI_Acc_AHRS / 10000.0f;
   AHRSConfiguration.kP_Magnetometer = JCF_Param.kP_Mag_AHRS / 10000.0f;
   AHRSConfiguration.kI_Magnetometer = JCF_Param.kI_Mag_AHRS > 0 ? JCF_Param.kI_Mag_AHRS / 10000.0f : 0.0f;
+  AHRSConfiguration.Cosine_Z = JCF_Param.AngleLevelBlockArm;
 
 #endif
 
@@ -92,10 +97,10 @@ void AHRSClass::Initialization(void)
   const int16_t Degrees = ((int16_t)(STORAGEMANAGER.Read_Float(MAG_DECLINATION_ADDR) * 100)) / 100;
   const int16_t Remainder = ((int16_t)(STORAGEMANAGER.Read_Float(MAG_DECLINATION_ADDR) * 100)) % 100;
   const float CalcedValueInRadians = -ConvertToRadians(Degrees + Remainder / 60.0f);
-  CorrectedMagneticFieldNorth.Roll = Fast_Cosine(CalcedValueInRadians);
-  CorrectedMagneticFieldNorth.Pitch = Fast_Sine(CalcedValueInRadians);
-  CorrectedMagneticFieldNorth.Yaw = 0;
-  GPS_Resources.Navigation.HeadingHoldLimit = Fast_Cosine(ConvertToRadians(GET_SET[MAX_ROLL_LEVEL].MaxValue)) * Fast_Cosine(ConvertToRadians(GET_SET[MAX_PITCH_LEVEL].MaxValue));
+  CorrectedMagneticFieldNorth.X = Fast_Cosine(CalcedValueInRadians);
+  CorrectedMagneticFieldNorth.Y = Fast_Sine(CalcedValueInRadians);
+  CorrectedMagneticFieldNorth.Z = 0;
+
   //RESETA O QUATERNION E A MATRIX
   QuaternionInit(&Orientation);
   ComputeRotationMatrix();
@@ -107,24 +112,28 @@ static bool ValidateQuaternion(const Quaternion_Struct *Quaternion)
                                    ABS(Quaternion->q1) +
                                    ABS(Quaternion->q2) +
                                    ABS(Quaternion->q3);
+
   if (!isnan(CheckAbsoluteValue) && !isinf(CheckAbsoluteValue))
   {
     return true;
   }
+
   const float QuatSquared = QuaternionNormalizedSquared(&Orientation);
+
   if (QuatSquared > (1.0f - 1e-6f) && QuatSquared < (1.0f + 1e-6f))
   {
     return true;
   }
+
   return false;
 }
 
 static void ResetOrientationQuaternion(const Vector3x3_Struct *AccelerationBodyFrame)
 {
   const float AccVectorSquared = Fast_SquareRoot(VectorNormSquared(AccelerationBodyFrame));
-  Orientation.q0 = AccelerationBodyFrame->Yaw + AccVectorSquared;
-  Orientation.q1 = AccelerationBodyFrame->Pitch;
-  Orientation.q2 = -AccelerationBodyFrame->Roll;
+  Orientation.q0 = AccelerationBodyFrame->Z + AccVectorSquared;
+  Orientation.q1 = AccelerationBodyFrame->Y;
+  Orientation.q2 = -AccelerationBodyFrame->X;
   Orientation.q3 = 0.0f;
   QuaternionNormalize(&Orientation, &Orientation);
 }
@@ -136,6 +145,7 @@ static void CheckAndResetOrientationQuaternion(const Quaternion_Struct *Quaterni
   {
     return;
   }
+
   //ORIENTAÇÃO INVALIDA,É NECESSARIO RESETAR O QUATERNION
   if (ValidateQuaternion(Quaternion))
   {
@@ -214,7 +224,7 @@ static void MahonyAHRSUpdate(float DeltaTime,
       QuaternionRotateVectorInverse(&MagnetormeterVector, MagnetometerBodyFrame, &Orientation);
 
       //IGNORA A INCLINAÇÃO Z DO MAGNETOMETRO
-      MagnetormeterVector.Yaw = 0.0f;
+      MagnetormeterVector.Z = 0.0f;
 
       //VERIFICA SE O MAGNETOMETRO^2 ESTÁ OK
       if (VectorNormSquared(&MagnetormeterVector) > 0.01f)
@@ -249,7 +259,7 @@ static void MahonyAHRSUpdate(float DeltaTime,
 
       //ROTACIONA O VETOR DO BODY FRAME PARA EARTH FRAME
       QuaternionRotateVectorInverse(&HeadingEarthFrame, &Forward, &Orientation);
-      HeadingEarthFrame.Yaw = 0.0f;
+      HeadingEarthFrame.Z = 0.0f;
 
       //CORRIJA APENAS SE O SQUARE FOR POSITIVO E MAIOR QUE ZERO
       if (VectorNormSquared(&HeadingEarthFrame) > 0.01f)
@@ -404,11 +414,11 @@ void AHRSClass::Update(float DeltaTime)
     if (I2CResources.Found.Compass)
     {
       SafeToUseCompass = true;
-      GPSHeadingInitialized = true;
+      GPS_Resources.Navigation.Misc.Get.HeadingInitialized = true;
     }
     else if (SafeToUseCOG)
     {
-      if (GPSHeadingInitialized)
+      if (GPS_Resources.Navigation.Misc.Get.HeadingInitialized)
       {
         CourseOverGround = ConvertDeciDegreesToRadians(GPS_Resources.Navigation.Misc.Get.GroundCourse);
         SafeToUseGPSHeading = true;
@@ -416,7 +426,7 @@ void AHRSClass::Update(float DeltaTime)
       else
       {
         ComputeQuaternionFromRPY(Attitude.EulerAngles.Roll, Attitude.EulerAngles.Pitch, GPS_Resources.Navigation.Misc.Get.GroundCourse);
-        GPSHeadingInitialized = true;
+        GPS_Resources.Navigation.Misc.Get.HeadingInitialized = true;
       }
     }
   }
@@ -473,16 +483,21 @@ bool AHRSClass::CheckAnglesInclination(int16_t Angle)
   return false;
 }
 
+bool AHRSClass::Get_Cosine_Z_Overflowed(void)
+{
+  return AHRS.CheckAnglesInclination(AHRSConfiguration.Cosine_Z);
+}
+
 void AHRSClass::TransformVectorEarthFrameToBodyFrame(Vector3x3_Struct *VectorPointer)
 {
-  VectorPointer->Pitch = -VectorPointer->Pitch;
+  VectorPointer->Y = -VectorPointer->Y;
   QuaternionRotateVector(VectorPointer, VectorPointer, &Orientation);
 }
 
 void AHRSClass::TransformVectorBodyFrameToEarthFrame(Vector3x3_Struct *VectorPointer)
 {
   QuaternionRotateVectorInverse(VectorPointer, VectorPointer, &Orientation);
-  VectorPointer->Pitch = -VectorPointer->Pitch;
+  VectorPointer->Y = -VectorPointer->Y;
 }
 
 float AHRSClass::GetSineRoll(void)

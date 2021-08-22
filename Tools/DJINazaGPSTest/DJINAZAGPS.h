@@ -17,7 +17,7 @@
 
 #ifndef DJINAZAGPS_H_
 #define DJINAZAGPS_H_
-#include "inttypes.h"
+#include <inttypes.h>
 #include "math.h"
 #include "HardwareSerial.h"
 #include "wiring_private.h"

@@ -24,13 +24,15 @@
 
 GravityClass GRAVITYCALIBRATION;
 
-#define CALIBRATING_GRAVITY_TIME_MS 2000 //TEMPO MAXIMO DE CALIBRAÇÃO DO 1G DO EIXO Z EM MS
+Device_Struct GravityDevice;
+
+#define CALIBRATING_GRAVITY_TIME_MS 2000   //TEMPO MAXIMO DE CALIBRAÇÃO DO 1G DO EIXO Z EM MS
+#define GRAVITY_CALIBRATION_VARIANCE 0.05f //5% MAXIMO ACEITAVEL DE DESVIO DURANTE A CALIBRAÇÃO
 
 void GravityClass::Update(Vector3x3_Struct *VectorPointer)
 {
     if (!Calibration.Accelerometer.Gravity.Flags.Calibrated)
     {
-        static Device_Struct GravityDevice;
 
         if (Calibration.Accelerometer.Gravity.Flags.Restart)
         {
@@ -42,14 +44,12 @@ void GravityClass::Update(Vector3x3_Struct *VectorPointer)
             Calibration.Accelerometer.Gravity.Flags.Restart = false;
         }
 
-        Calibration.Accelerometer.Gravity.Time.Actual = SCHEDULERTIME.GetMillis() - Calibration.Accelerometer.Gravity.Time.Previous;
-
-        if (Calibration.Accelerometer.Gravity.Time.Actual >= CALIBRATING_GRAVITY_TIME_MS)
+        if ((SCHEDULERTIME.GetMillis() - Calibration.Accelerometer.Gravity.Time.Previous) >= CALIBRATING_GRAVITY_TIME_MS)
         {
             //5% DE DESVIO MAXIMO SUPORTADO NO EIXO Z DO NEU PRA COMPLETAR A CALIBRAÇÃO,CASO CONTRARIO SERÁ REINICIADA.
             //A CALIBRAÇÃO DA GRAVIDADE OCORRE AO MESMO TEMPO QUE A CALIBRAÇÃO DO GYRO,ENTÃO SE A CALIBRAÇÃO DO GYRO FALHAR,
             //A DA GRAVIDADE TAMBÉM FALHARÁ.A FALHA SÓ OCORRERÁ SE O USUARIO MOVER O UAV,OU PROVAVEL IMU COM DEFEITO.
-            if (DeviceStandardDeviation(&GravityDevice) > (GRAVITY_CMSS * 0.05f))
+            if (DeviceStandardDeviation(&GravityDevice) > (GRAVITY_CMSS * GRAVITY_CALIBRATION_VARIANCE))
             {
                 Calibration.Accelerometer.Gravity.Flags.Restart = true;
             }
@@ -63,18 +63,18 @@ void GravityClass::Update(Vector3x3_Struct *VectorPointer)
         }
         else
         {
-            Calibration.Accelerometer.Gravity.Samples.Sum = Calibration.Accelerometer.Gravity.Samples.Sum + VectorPointer->Yaw;
-            DevicePushValues(&GravityDevice, VectorPointer->Yaw);
+            Calibration.Accelerometer.Gravity.Samples.Sum = Calibration.Accelerometer.Gravity.Samples.Sum + VectorPointer->Z;
+            DevicePushValues(&GravityDevice, VectorPointer->Z);
             Calibration.Accelerometer.Gravity.Samples.Count++;
         }
 
         //RESETA TODOS OS EIXOS DO NEU SE A CALIBRAÇÃO AINDA ESTIVER CORRENDO
-        VectorPointer->Roll = 0.0f;
-        VectorPointer->Pitch = 0.0f;
-        VectorPointer->Yaw = 0.0f;
+        VectorPointer->X = 0.0f;
+        VectorPointer->Y = 0.0f;
+        VectorPointer->Z = 0.0f;
     }
     else //SUBTRAI O 1G QUE FOI CALCULADO DURANTE A CALIBRAÇÃO DO EIXO Z DO NEU
     {
-        VectorPointer->Yaw = VectorPointer->Yaw - Calibration.Accelerometer.Gravity.Samples.Sum;
+        VectorPointer->Z = VectorPointer->Z - Calibration.Accelerometer.Gravity.Samples.Sum;
     }
 }

@@ -39,13 +39,17 @@ float Get_EAS2TAS(void)
     {
         return 1.0f;
     }
+
     float ActualBaroAltitude = (float)Barometer.Altitude.Actual;
+
     if ((ABS(ActualBaroAltitude - Last_EAS2TAS) < 100.0f) && (EAS2TAS != 0.0f))
     {
         return EAS2TAS;
     }
+
     float TempKelvin = ((float)Barometer.Calibration.GroundTemperature) + 273.15f - 0.0065f * ActualBaroAltitude;
     EAS2TAS = Fast_SquareRoot(1.225f / ((float)Barometer.Raw.Pressure / (287.26f * TempKelvin)));
     Last_EAS2TAS = ActualBaroAltitude;
+
     return EAS2TAS;
 }

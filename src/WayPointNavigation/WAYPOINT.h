@@ -47,7 +47,7 @@ typedef struct
   uint8_t AltitudeFive;
   uint8_t FlightModeFive;
   uint8_t GPSHoldTimedFive;
-  void Reset()
+  void Reset(void)
   {
     LatitudeOne = 0;
     LongitudeOne = 0;
@@ -104,7 +104,7 @@ typedef struct
   uint8_t AltitudeTen;
   uint8_t FlightModeTen;
   uint8_t GPSHoldTimedTen;
-  void Reset()
+  void Reset(void)
   {
     LatitudeSix = 0;
     LongitudeSix = 0;
@@ -134,10 +134,28 @@ typedef struct
   }
 } _GetWayPointPacketTwo;
 
-#define COORDINATES_ADDR_TO_COMPARE ((INITIAL_ADDR_OF_COORDINATES + FINAL_ADDR_OF_COORDINATES + 2) / 2)
-#define GPS_HOLD_TIMED_ADDR_TO_COMPARE (INITIAL_ADDR_OF_OTHERS_PARAMS + WAYPOINTS_MAXIMUM - 1)
-#define FLIGHT_MODE_ADDR_TO_COMPARE ((WAYPOINTS_MAXIMUM * (OTHERS_PARAMS_MAXIMUM - 1)) + INITIAL_ADDR_OF_OTHERS_PARAMS)
-#define ALTITUDE_ADDR_TO_COMPARE ((WAYPOINTS_MAXIMUM * OTHERS_PARAMS_MAXIMUM) + INITIAL_ADDR_OF_OTHERS_PARAMS)
+#define COORDINATES_ADDR_TO_COMPARE ((INITIAL_ADDR_OF_COORDINATES + FINAL_ADDR_OF_COORDINATES) / 2)
+#define GPS_HOLD_TIMED_ADDR_TO_COMPARE (INITIAL_ADDR_OF_OTHERS_PARAMS + WAYPOINTS_MAXIMUM)
+#define FLIGHT_MODE_ADDR_TO_COMPARE ((WAYPOINTS_MAXIMUM * (WAYPOINT_OTHERS_PARAMS_MAXIMUM - 1)) + INITIAL_ADDR_OF_OTHERS_PARAMS)
+#define ALTITUDE_ADDR_TO_COMPARE ((WAYPOINTS_MAXIMUM * WAYPOINT_OTHERS_PARAMS_MAXIMUM) + INITIAL_ADDR_OF_OTHERS_PARAMS)
+
+enum WayPoint_States_Enum
+{
+  WAYPOINT_INIT = 0,
+  WAYPOINT_RUN_TAKEOFF,
+  WAYPOINT_SET_ALTITUDE,
+  WAYPOINT_START_MISSION,
+  WAYPOINT_MISSION_ENROUTE
+};
+
+enum WayPoint_FlightModes_Enum
+{
+  WAYPOINT_ADVANCE = 1,
+  WAYPOINT_TIMED,
+  WAYPOINT_LAND,
+  WAYPOINT_RTH,
+  WAYPOINT_TAKEOFF
+};
 
 enum WayPointOnce_Enum
 {
@@ -176,9 +194,13 @@ typedef struct
 
     struct Throttle_Struct
     {
-      uint8_t IncrementCount = 0;
       int16_t Increment = 1000;
     } Throttle;
+
+    struct Time_Struct
+    {
+      uint32_t ElapsedSinceTakeOff = 0;
+    } Time;
 
   } AutoTakeOff;
 
@@ -213,6 +235,18 @@ typedef struct
   {
     uint8_t Function = WAYPOINT_STORAGE_NONE;
     uint8_t ArrayCount = 0;
+    uint8_t GetArrayCount(void)
+    {
+      return ArrayCount;
+    }
+    void IncrementArrayCount(void)
+    {
+      ArrayCount++;
+    }
+    void ResetArrayCount(void)
+    {
+      ArrayCount = 0;
+    }
   } Storage;
 
 } WayPoint_Resources_Struct;

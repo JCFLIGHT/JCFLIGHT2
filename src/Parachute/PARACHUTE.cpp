@@ -30,13 +30,13 @@ void ParachuteClass::Auto_Do_Now(bool ActiveParachute)
 {
   if (!ActiveParachute)
   {
-    MotorControl[PARACHUTESERVO] = 400; //0 GRAUS
+    MotorControl[PARACHUTE_SERVO] = 400; //0 GRAUS
     PARACHUTE.ParachuteReleased = false;
     return;
   }
 
   PARACHUTE.ParachuteInAuto = true;
-  MotorControl[PARACHUTESERVO] = 2400; //180 GRAUS
+  MotorControl[PARACHUTE_SERVO] = 2400; //180 GRAUS
 
   if (!PARACHUTE.ParachuteReleased)
   {
@@ -58,14 +58,14 @@ void ParachuteClass::Manual_Do_Now(void)
     return;
   }
 
-  if (!ParachuteControlAux)
+  if (!AUXFLIGHT.GetModeState[PARACHUTE_MODE])
   {
-    MotorControl[PARACHUTESERVO] = 400; //0 GRAUS
+    MotorControl[PARACHUTE_SERVO] = 400; //0 GRAUS
     PARACHUTE.ParachuteReleased = false;
     return;
   }
 
-  MotorControl[PARACHUTESERVO] = 2400; //180 GRAUS
+  MotorControl[PARACHUTE_SERVO] = 2400; //180 GRAUS
 
   if (!PARACHUTE.ParachuteReleased)
   {
@@ -77,7 +77,7 @@ void ParachuteClass::Manual_Do_Now(void)
 
 bool ParachuteClass::GetSafeStateToDisarmMotors(void)
 {
-  if (ParachuteConfig == 0)
+  if (AUXFLIGHT.GetModeConfiguration[PARACHUTE_MODE] == NONE)
   {
     return false;
   }

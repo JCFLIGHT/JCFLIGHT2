@@ -33,15 +33,18 @@
 #include "GPS/GPSSTATES.h"
 #include "PID/PIDXYZ.h"
 #include "Build/BOARDDEFS.h"
+#include "Param/PARAM.h"
 
 static PT1_Filter_Struct RotationRateFilter;
 static PT1_Filter_Struct TargetRateFilter;
 
+//DEFINIÇÕES PARA O TRIM CONTINUO DOS SERVOS
 #define SERVO_AUTOTRIM_FILTER_CUTOFF 1
 #define SERVO_AUTOTRIM_UPDATE_SIZE 5
 #define SERVO_AUTOTRIM_CENTER_MIN 1300
 #define SERVO_AUTOTRIM_CENTER_MAX 1700
 
+//DEFINIÇÕES PARA O AUTO-TRIM
 #define SERVO_AUTOTRIM_OVERFLOW 2000
 #define SAVE_OVERFLOW 2500
 
@@ -159,9 +162,9 @@ void PIDReduceErrorAccumulators(int8_t Delta, uint8_t Axis)
 
 float GetTotalRateTarget(void)
 {
-    return sqrtf(SquareFloat(PID_Resources.RcRateTarget.Roll) +
-                 SquareFloat(PID_Resources.RcRateTarget.Pitch) +
-                 SquareFloat(PID_Resources.RcRateTarget.Yaw));
+    return sqrtf(SquareFloat(PID_Resources.RCRateTarget.Roll) +
+                 SquareFloat(PID_Resources.RCRateTarget.Pitch) +
+                 SquareFloat(PID_Resources.RCRateTarget.Yaw));
 }
 
 float GetNewIntegralTerm(uint8_t Axis)
@@ -169,9 +172,6 @@ float GetNewIntegralTerm(uint8_t Axis)
     return PID_Resources.Controller.Integral.ErrorGyro[Axis];
 }
 
-/*
-    ESSA FUNÇÃO IRÁ FICAR RODANDO CONSTANTEMENTE,AINDA É NECESSARIO COLOCAR UM BOTÃO NO GCS PARA QUE O USUARIO A ATIVE OU NÃO.
- */
 void ProcessContinuousServoAutoTrim(float DeltaTime)
 {
 #ifdef __AVR_ATmega2560__
@@ -191,8 +191,8 @@ void ProcessContinuousServoAutoTrim(float DeltaTime)
         ServoAutoTrimState = SERVO_AUTOTRIM_COLLECTING;
         if ((SCHEDULERTIME.GetMillis() - PreviousTime) > 500)
         {
-            const bool FuselageIsFlyingStraight = RotationRateMagnitudeFiltered <= ConvertToRadians(Servo.ContinousTrim.Rotation_Limit);
-            const bool NoRotationCommanded = TargetRateMagnitudeFiltered <= Servo.ContinousTrim.Rotation_Limit;
+            const bool FuselageIsFlyingStraight = RotationRateMagnitudeFiltered <= ConvertToRadians((float)JCF_Param.Continuous_Servo_Trim_Rot_Limit);
+            const bool NoRotationCommanded = TargetRateMagnitudeFiltered <= (float)JCF_Param.Continuous_Servo_Trim_Rot_Limit;
             const bool FuselageIsFlyingLevel = AHRS.CosineTiltAngle() >= 0.878153032f;
 
             if (FuselageIsFlyingStraight && NoRotationCommanded && FuselageIsFlyingLevel && !IS_FLIGHT_MODE_ACTIVE(MANUAL_MODE) && Get_GPS_Heading_Is_Valid())
@@ -200,13 +200,14 @@ void ProcessContinuousServoAutoTrim(float DeltaTime)
                 for (uint8_t IndexCount = 0; IndexCount < 3; IndexCount++)
                 {
                     const float NewIntegralTerm = GetNewIntegralTerm(IndexCount);
-                    if (fabsf(NewIntegralTerm) > SERVO_AUTOTRIM_UPDATE_SIZE)
+                    if (ABS(NewIntegralTerm) > SERVO_AUTOTRIM_UPDATE_SIZE)
                     {
                         const int8_t IntegralTermUpdate = NewIntegralTerm > 0.0f ? SERVO_AUTOTRIM_UPDATE_SIZE : -SERVO_AUTOTRIM_UPDATE_SIZE;
                         for (uint8_t ServoIndex = SERVO1; ServoIndex < MAX_SUPPORTED_SERVOS; ServoIndex++)
                         {
                             const float ServoRate = Servo.Rate.GetAndSet[ServoIndex] / 100.0f;
-                            Servo.Pulse.Middle[ServoIndex] += IntegralTermUpdate * ServoRate;
+                            const float ServoWeight = Servo.Weight.GetAndSet[ServoIndex] / 100.0f;
+                            Servo.Pulse.Middle[ServoIndex] += IntegralTermUpdate * ServoRate * ServoWeight;
                             Servo.Pulse.Middle[ServoIndex] = Constrain_16Bits(Servo.Pulse.Middle[ServoIndex], SERVO_AUTOTRIM_CENTER_MIN, SERVO_AUTOTRIM_CENTER_MAX);
                         }
                         PIDReduceErrorAccumulators(IntegralTermUpdate, IndexCount);

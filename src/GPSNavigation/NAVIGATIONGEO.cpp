@@ -102,12 +102,12 @@ void GPS_Calcule_Velocity(void)
     Last_CoordinatesOfGPS[COORD_LONGITUDE] = GPS_Resources.Navigation.Coordinates.Actual[COORD_LONGITUDE];
 }
 
-bool Point_Reached(void)
+bool GetWaypointMissed(void)
 {
     int32_t TargetCalculed;
     TargetCalculed = GPS_Resources.Navigation.Bearing.ActualTarget - GPS_Resources.Navigation.Bearing.TargetPrev;
     TargetCalculed = WRap_18000(TargetCalculed);
-    return (ABS(TargetCalculed) > 10000);
+    return (ABS(TargetCalculed) > 10000); //BEARING PASSOU DE 100°
 }
 
 void GPS_Calcule_Longitude_Scaling(int32_t LatitudeVectorInput)
@@ -154,7 +154,7 @@ void GPSCalculateNavigationRate(uint16_t Maximum_Velocity)
         {
             NavCompensation = 0;
         }
-        GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount] = Constrain_16Bits(GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount] + NavCompensation, -ConvertDegreesToDecidegrees(GET_SET[GPS_BANK_MAX].MaxValue), ConvertDegreesToDecidegrees(GET_SET[GPS_BANK_MAX].MaxValue));
+        GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount] = Constrain_16Bits(GPS_Resources.Navigation.AutoPilot.INS.Angle[IndexCount] + NavCompensation, -ConvertDegreesToDecidegrees(GET_SET[NAV_GPS_BANK_MAX].MaxValue), ConvertDegreesToDecidegrees(GET_SET[NAV_GPS_BANK_MAX].MaxValue));
         PositionHoldRatePIDArray[IndexCount].GPSFilter.IntegralSum = NavigationPIDArray[IndexCount].GPSFilter.IntegralSum;
     }
 }

@@ -27,17 +27,18 @@ def Generate_MD_Doc_From_YAML(Settings_YAML):
             "Max": Member["Max"] if "Max" in Member else ""
         }
 
-    MD_Table = [
-        "| Nome | Valor Padrão | Min | Max | Descrição |\n",
-        "| ------------- | ------------- | --- | --- | ----------- |\n",
-    ]
+    Output_Lines = []
 
     for Param in sorted(Params.items()):
-        MD_Table.append("| {} | {} | {} | {} | {} |\n".format(
-            Param[0], Param[1]['Valor Padrão'], Param[1]['Min'], Param[1]['Max'], Param[1]['Descrição']
-        ))
+        Output_Lines.extend([
+            f"### {Param[0]}\n\n",
+            f"{Param[1]['Descrição'] if Param[1]['Descrição'] else '_// Sem Descrição_'}\n\n",
+            "| Valor Padrão | Min | Max |\n| --- | --- | --- |\n",
+            f"| {Param[1]['Valor Padrão']} | {Param[1]['Min']} | {Param[1]['Max']} |\n\n",
+            "---\n\n"
+        ])
 
-    return MD_Table
+    return Output_Lines
 
 
 def Regex_Search(Regex):

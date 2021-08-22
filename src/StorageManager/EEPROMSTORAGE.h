@@ -21,6 +21,7 @@
 class EEPROMSTORAGE
 {
 public:
+  void Initialization(void);
   uint8_t Read_8Bits(int16_t Address);
   int16_t Read_16Bits(int16_t Address);
   int32_t Read_32Bits(int16_t Address);

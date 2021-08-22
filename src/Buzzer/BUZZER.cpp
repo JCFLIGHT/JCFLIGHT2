@@ -23,7 +23,7 @@
 #include "StorageManager/EEPROMSTORAGE.h"
 #include "BAR/BAR.h"
 #include "Build/BOARDDEFS.h"
-#include "Common/STRUCTS.h"
+#include "SafetyButton/SAFETYBUTTON.h"
 
 BEEPERCLASS BEEPER;
 
@@ -156,8 +156,8 @@ static const BeeperEntry_Struct *BeeperEntry = NULL;
 
 void BEEPERCLASS::Play(Beeper_Mode Mode)
 {
-  if (STORAGEMANAGER.Read_8Bits(DISP_PASSIVES_ADDR) == OFF_ALL_DISP ||
-      STORAGEMANAGER.Read_8Bits(DISP_PASSIVES_ADDR) == ONLY_SWITCH)
+  if (SAFETYBUTTON.DispositivesPassives == OFF_ALL_DISP ||
+      SAFETYBUTTON.DispositivesPassives == ONLY_SWITCH)
   {
     return;
   }
@@ -255,13 +255,14 @@ void BEEPERCLASS::UpdateSafeToOthersBeepsCounter(void)
 
 void BEEPERCLASS::Run(void)
 {
-  if (STORAGEMANAGER.Read_8Bits(DISP_PASSIVES_ADDR) == OFF_ALL_DISP ||
-      STORAGEMANAGER.Read_8Bits(DISP_PASSIVES_ADDR) == ONLY_SWITCH)
+  if (SAFETYBUTTON.DispositivesPassives == OFF_ALL_DISP ||
+      SAFETYBUTTON.DispositivesPassives == ONLY_SWITCH)
   {
     SafeToOthersBeeps = 0xFF;
     BEEPER.Silence();
     return;
   }
+
   if (!BuzzerInit)
   {
     BEEP_PINOUT;
@@ -271,5 +272,6 @@ void BEEPERCLASS::Run(void)
     BEEPER.Play(BEEPER_ALGORITHM_INIT);
     BuzzerInit = true;
   }
+
   BEEPER.Update();
 }

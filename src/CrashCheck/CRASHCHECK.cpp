@@ -125,6 +125,6 @@ void CrashCheck()
     }
 
     //CHAMA O PARACHUTE SE ESTIVER EQUIPADO
-    PARACHUTE.Auto_Do_Now(ParachuteConfig > 0);
+    PARACHUTE.Auto_Do_Now(AUXFLIGHT.GetModeConfiguration[PARACHUTE_MODE] > NONE);
   }
 }

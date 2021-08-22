@@ -27,6 +27,8 @@
 #include "Param/PARAM.h"
 #include "Math/MATHSUPPORT.h"
 #include "GaussNewton/GAUSSNEWTON.h"
+#include "BitArray/BITARRAY.h"
+#include "I2C/I2C.h"
 
 PerformCompassClass COMPASSCALIBRATION;
 
@@ -43,9 +45,22 @@ void PerformCompassClass::Initialization(void)
     Calibration.Magnetometer.Gain[YAW] = STORAGEMANAGER.Read_16Bits(MAG_YAW_GAIN_ADDR);
 }
 
+void PerformCompassClass::RunCalibration(void)
+{
+    if (!IS_STATE_ACTIVE(PRIMARY_ARM_DISARM) && I2CResources.Found.Compass)
+    {
+        Calibration.Magnetometer.Calibrating = true;
+    }
+}
+
+bool PerformCompassClass::GetRunningCalibration(void)
+{
+    return Calibration.Magnetometer.Calibrating;
+}
+
 void PerformCompassClass::Update(void)
 {
-    if (!Calibration.Magnetometer.Calibrating) //CALIBRAÇÃO INICIADA?NÃO...
+    if (!COMPASSCALIBRATION.GetRunningCalibration()) //CALIBRAÇÃO INICIADA?NÃO...
     {
         return;
     }
@@ -85,10 +100,9 @@ void PerformCompassClass::Update(void)
             }
         }
 
-        if ((Calibration.Magnetometer.Average > 0.01f) &&
-            ((Calibration.Magnetometer.Difference / Calibration.Magnetometer.Average) > (0.01960000023f)))
+        if ((Calibration.Magnetometer.Average > 0.01f) && ((Calibration.Magnetometer.Difference / Calibration.Magnetometer.Average) > (0.01960000023f)))
         {
-            GaussNewtonPushSampleForOffSetCalculation(&Jacobian_Matrices_To_Compass, IMU.Compass.Read);
+            GaussNewtonPushSampleForOffSetCalculation(&Jacobian_Matrices_To_Compass, (int32_t *)IMU.Compass.Read);
             Calibration.Magnetometer.Previous[ROLL] = IMU.Compass.Read[ROLL];
             Calibration.Magnetometer.Previous[PITCH] = IMU.Compass.Read[PITCH];
             Calibration.Magnetometer.Previous[YAW] = IMU.Compass.Read[YAW];
@@ -126,7 +140,7 @@ void PerformCompassClass::Update(void)
 void PerformCompassClass::Apply(void)
 {
     //AJUSTA O VALOR FINAL DO COMPASS DE ACORDO COM A CALIBRAÇÃO DO MESMO
-    if (!Calibration.Magnetometer.Calibrating)
+    if (!COMPASSCALIBRATION.GetRunningCalibration())
     {
         IMU.Compass.Read[ROLL] = ((int32_t)IMU.Compass.Read[ROLL] - Calibration.Magnetometer.OffSet[ROLL]) * 1024 / Calibration.Magnetometer.Gain[ROLL];
         IMU.Compass.Read[PITCH] = ((int32_t)IMU.Compass.Read[PITCH] - Calibration.Magnetometer.OffSet[PITCH]) * 1024 / Calibration.Magnetometer.Gain[PITCH];

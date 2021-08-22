@@ -364,6 +364,8 @@ void UBLOX_GetAllGPSData(void)
     GPS_Resources.Navigation.Coordinates.Actual[COORD_LATITUDE] = Buffer.PositionLLH.Latitude;
     GPS_Resources.Navigation.Coordinates.Actual[COORD_LONGITUDE] = Buffer.PositionLLH.Longitude;
     GPS_Resources.Navigation.Misc.Get.Altitude = Buffer.PositionLLH.Altitude_MSL / 1000;
+    GPS_Resources.Navigation.Misc.Get.EstimatedPositionHorizontal = (Buffer.PositionLLH.Horizontal_Accuracy / 10);
+    GPS_Resources.Navigation.Misc.Get.EstimatedPositionVertical = (Buffer.PositionLLH.Vertical_Accuracy / 10);
     break;
 
   case MSG_STATUS:

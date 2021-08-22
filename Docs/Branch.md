@@ -24,3 +24,7 @@ Documento apenas para desenvolvedores.
 - Exemplo da Branch atualizada:
 
 ![JCFLIGHT](BranchSynchronized.png)
+
+## Resolvendo Conflitos
+
+- Use o comando `git merge master` após a atualização da Branch para resolver os conflitos

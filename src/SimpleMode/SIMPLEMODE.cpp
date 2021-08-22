@@ -33,7 +33,7 @@ FILE_COMPILE_FOR_SPEED
 //DEBUG
 //#define PRINTLN_SIMPLE_MODE
 
-void Simple_Mode_Update()
+void Simple_Mode_Update(void)
 {
   if (IS_FLIGHT_MODE_ACTIVE(SIMPLE_MODE) && GetMultirotorEnabled() && I2CResources.Found.Compass)
   {

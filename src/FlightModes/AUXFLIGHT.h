@@ -20,10 +20,6 @@
 #include "Build/LIBDEPENDENCIES.h"
 #include "Common/ENUM.h"
 
-extern bool ParachuteControlAux;
-
-extern uint8_t ArmDisarmConfig, GimbalConfig, ParachuteConfig;
-
 class AUXFLIGHTCLASS
 {
 public:

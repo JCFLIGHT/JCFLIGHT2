@@ -21,6 +21,8 @@ class PerformCompassClass
 {
 public:
   void Initialization(void);
+  void RunCalibration(void);
+  bool GetRunningCalibration(void);
   void Update(void);
   void Apply(void);
 };

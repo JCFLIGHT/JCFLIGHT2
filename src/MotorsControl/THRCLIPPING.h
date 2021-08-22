@@ -17,7 +17,7 @@
 
 #ifndef THRCLIPPING_H_
 #define THRCLIPPING_H_
-#include "inttypes.h"
+#include <inttypes.h>
 void Throttle_Clipping_Update(uint8_t MotorCount, int16_t MixerThrottleCommand);
 bool MixerIsOutputSaturated(void);
 float GetMotorMixRange(void);
