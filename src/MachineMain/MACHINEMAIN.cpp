@@ -62,10 +62,11 @@ void MachineInit(void)
     SAFETYBUTTON.Initialization();
     //CARREGA TODAS AS CONFIGURAÇÕES DO SISTEMA PARA ENVIAR PARA O GCS
     GCS.LoadAllParameters();
-    //INICIA O MODO DE AJUSTE DE PARÂMETROS
+    //INICIALIZA O WAYPOINT
+    WAYPOINT.Initialization();
+    //INICIALIZA O MODO DE AJUSTE DE PARÂMETROS
     TUNNING.Initialization();
     //INICIALIZA O SISTEMA DE TASKS
-    //INICIA O SISTEMA DE TASKS
     TaskSystemInitialization();
 }
 
