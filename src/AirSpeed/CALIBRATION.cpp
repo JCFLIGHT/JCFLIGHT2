@@ -155,7 +155,7 @@ void AirSpeedCalibrationClass::Scale_Update(void)
         return;
     }
 
-    if (TUNNING.GetActivated(TUNNING_PITOT_FACTOR))
+    if (!TUNNING.GetActivated(TUNNING_PITOT_FACTOR))
     {
         return;
     }

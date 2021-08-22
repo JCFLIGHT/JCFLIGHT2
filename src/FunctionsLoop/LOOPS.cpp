@@ -91,6 +91,7 @@ void Integral_Loop()
 
         Acc_ReadBufferData();
         Gyro_ReadBufferData();
+        TUNNING.Update();
         AHRS.Update(ThisDeltaTime);
         RC_PID_Update();
         WAYPOINT.Update();

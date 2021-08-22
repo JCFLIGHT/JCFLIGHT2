@@ -19,29 +19,43 @@
 #include "StorageManager/EEPROMSTORAGE.h"
 #include "BAR/BAR.h"
 #include "RadioControl/DECODE.h"
+#include "FastSerial/PRINTF.h"
 
 TunningClass TUNNING;
 Tunning_Enum_Typedef Tunning_Status;
 
 void TunningClass::Initialization(void)
 {
-  TUNNING.ChannelControll = STORAGEMANAGER.Read_8Bits(CH_TUNNING_ADDR);
+#ifdef USE_TUNNING_MODE
+
+  TUNNING.ChannelControl = STORAGEMANAGER.Read_8Bits(CH_TUNNING_ADDR);
   TUNNING.Mode = STORAGEMANAGER.Read_8Bits(TUNNING_ADDR);
+
+#endif
+
+  TUNNING.ChannelControl = 1;
 }
 
 int16_t TunningClass::GetConfiguredChannelValue(Tunning_Enum_Typedef OnOffMode)
 {
   if (OnOffMode == TUNNING_TYPE_STATE)
   {
-    return (DECODE.GetRxChannelOutput(TUNNING.ChannelControll + 3) > 1400) ? TUNNING_STATE_ENABLED : TUNNING_STATE_DISABLED;
+    return (DECODE.GetRxChannelOutput(TUNNING.ChannelControl + 3) > 1400) ? TUNNING_STATE_ENABLED : TUNNING_STATE_DISABLED;
   }
 
-  return DECODE.GetRxChannelOutput(TUNNING.ChannelControll + 3);
+  return DECODE.GetRxChannelOutput(TUNNING.ChannelControl + 3);
 }
 
 void TunningClass::Update(void)
 {
-  if (TUNNING.Mode == NONE_TUNNING_MODE || TUNNING.ChannelControll == NONE_TUNNING_CHANNEL)
+
+  Tunning_Status = TUNNING_PITOT_FACTOR;
+
+  DEBUG("State:%d VarValue:%d", TUNNING.GetActivated(TUNNING_PITOT_FACTOR), TUNNING.GetConfiguredChannelValue(TUNNING_TYPE_ADJUSTABLE));
+
+#ifdef USE_TUNNING_MODE
+
+  if (TUNNING.Mode == NONE_TUNNING_MODE || TUNNING.ChannelControl == NONE_TUNNING_CHANNEL)
   {
     return;
   }
@@ -89,6 +103,8 @@ void TunningClass::Update(void)
     Tunning_Status = TUNNING_PITOT_FACTOR;
     break;
   }
+
+#endif
 }
 
 bool TunningClass::GetActivated(Tunning_Enum_Typedef TunningParam)
