@@ -50,6 +50,7 @@
 #undef USE_SBUS_EXTENDED
 #undef USE_IBUS_EXTENDED
 #undef USE_CLI
+#undef USE_TUNNING_MODE
 
 #else //STM32
 
@@ -73,5 +74,6 @@
 #define USE_SBUS_EXTENDED
 #define USE_IBUS_EXTENDED
 #define USE_CLI
+#define USE_TUNNING_MODE
 
 #endif

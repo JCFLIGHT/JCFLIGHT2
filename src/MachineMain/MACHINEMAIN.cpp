@@ -22,7 +22,7 @@ FILE_COMPILE_FOR_SPEED
 
 void MachineInit(void)
 {
-    //CHECA SE É A PRIMEIRA VEZ QUE O FIRMWARE FOI CARREGADO
+    //CHECA SE É O PRIMEIRO FLASH DO FIRMWARE
     FirmwareOrganizeAllParams();
     //INICIALIZA A LISTA DE PARAMETROS
     PARAM.Initialization();
@@ -62,8 +62,9 @@ void MachineInit(void)
     SAFETYBUTTON.Initialization();
     //CARREGA TODAS AS CONFIGURAÇÕES DO SISTEMA PARA ENVIAR PARA O GCS
     GCS.LoadAllParameters();
-    //INICIALIZA O WAYPOINT
-    WAYPOINT.Initialization();
+    //INICIA O MODO DE AJUSTE DE PARÂMETROS
+    TUNNING.Initialization();
+    //INICIALIZA O SISTEMA DE TASKS
     //INICIA O SISTEMA DE TASKS
     TaskSystemInitialization();
 }

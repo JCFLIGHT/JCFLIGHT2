@@ -45,6 +45,7 @@ void Medium_Loop(void)
         WINDESTIMATOR.Update();
         BATTERY.Update_Voltage();
         BATTERY.Update_Current();
+        TUNNING.Update();
 }
 
 void Fast_Medium_Loop(void)
