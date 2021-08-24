@@ -16,7 +16,7 @@
 */
 
 #include "SWITCHFLAG.h"
-#include "FlightModes/AUXFLIGHT.h"
+#include "RadioControl/DECODE.h"
 #include "Scheduler/SCHEDULERTIME.h"
 #include "FrameStatus/FRAMESTATUS.h"
 #include "ServosMaster/SERVOSMASTER.h"
@@ -26,22 +26,17 @@
 #include "PerformanceCalibration/PERFORMACC.h"
 
 //***********************************************************************************************
-//ATIVAÇÃO PARA O CALIBRÇÃO DO MAG,SERVO AUTO-TRIM & TRIMAGEM MANUAL DOS SERVOS VIA CHAVE AUX
+//ATIVAÇÃO PARA O CALIBRÇÃO DO MAG & SERVO AUTO-TRIM DOS SERVOS VIA CANAL AUX
 //
-//PERFIL MULTIROTOR >> CHAVE DO MODO DE VOO SIMPLES
-//PERFIL AERO E ASA-FIXA >> CHAVE DO MODO DE VOO MANUAL
+//O CANAL 5 É USADO PARA ESSE MODO
 //
-//CALIB MAG IMPLEMENTADO       >> 28/06/2020 (8 TOQUES PARA ATIVAR)
-//SERVO-TRIM IMPLEMENTADO      >> 24/09/2020 (4 TOQUES PARA ATIVAR,2 TOQUES PARA DESATIVAR)
-//SERVO AUTO-TRIM IMPLEMENTADO >> 01/02/2021 (4 TOQUES PARA ATIVAR,2 TOQUES PARA DESATIVAR)
+//CALIBRAÇÃO DO MAG IMPLEMENTADO >> 28/06/2020 (8 TOQUES PARA ATIVAR)
+//SERVO AUTO-TRIM IMPLEMENTADO   >> 01/02/2021 (4 TOQUES PARA ATIVAR,2 TOQUES PARA DESATIVAR)
 //
 //OBS:
 //CALIB MAG SÓ FUNCIONA COM A CONTROLADORA DESARMADA
-//SERVO-TRIM SÓ FUNCIONA COM A CONTROLADORA DESARMADA E COM O PERFIL DE AERO
 //SERVO AUTO-TRIM SÓ FUNCIONA COM A CONTROLADORA ARMADA E EM VOO COM O PERFIL DE AERO
 //***********************************************************************************************
-
-bool ServoManualTrimEnabled = false; //REMOVIDO DO ALGORITIMO
 
 uint8_t FlagParameterFunction;
 uint8_t GuardValue;
@@ -91,11 +86,13 @@ static void Switch_Flag_Clear(void)
   }
 }
 
-void Switch_Flag(void)
+void Switch_Flag_Update(void)
 {
-  const bool InAirPlaneMode = GetAirPlaneEnabled();
+  const bool GetAuxChannelFlagState = DECODE.GetRxChannelOutput(AUX1) > 1400;
+  const bool GetInAirPlaneMode = GetAirPlaneEnabled();
+
   //INICIA A CONTAGEM DA FLAG PRINCIPAL
-  if (AUXFLIGHT.GetModeState[SIMPLE_MODE])
+  if (GetAuxChannelFlagState)
   {
     if ((SCHEDULERTIME.GetMillis() - TimerFunction) > 50) //DEBOUNCE
     {
@@ -108,45 +105,53 @@ void Switch_Flag(void)
     CloseReset = 5; //5 SEGUNDOS
     TimerFunction = SCHEDULERTIME.GetMillis();
   }
+
   //DELAY PARA RESETAR A FLAG PRINCIPAL
   if (CloseReset > 0 && (SCHEDULERTIME.GetMillis() - CR_Clear) > 100)
   {
     CloseReset -= 0.10f;
     CR_Clear = SCHEDULERTIME.GetMillis();
   }
+
   if (CloseReset < 0)
   {
-    CloseReset = 0; //EVITA GUARDAR VALORES NEGATIVOS CAUSADO PELA DECREMENTAÇÃO DA FUNÇÃO ACIMA
+    CloseReset = 0; //EVITA GUARDAR VALORES NEGATIVOS CAUSADO PELA DECREMENTAÇÃO ACIMA
   }
+
   //RESETA A FLAG SE O VALOR DELA FOR IGUAL A 8,E A CHAVE AUX DO MODO SIMPLES FOR FALSA
-  if (FlagParameterFunction == 8 && !AUXFLIGHT.GetModeState[SIMPLE_MODE])
+  if (FlagParameterFunction == 8 && !GetAuxChannelFlagState)
   {
     FlagParameterFunction = 0;
   }
+
   //ESPERA A DECREMENTAÇÃO DA VARIAVEL ACABAR E RESETA A FLAG PRINCIPAL
-  if (!AUXFLIGHT.GetModeState[SIMPLE_MODE] && CloseReset == 0)
+  if (!GetAuxChannelFlagState && CloseReset == 0)
   {
     FlagParameterFunction = 0;
   }
+
   //FLAG PRINCIPAL IGUAL A 4?CHAVE AUX ATIVADA?CAL DO MAG ACABOU?SIM...GUARDE O VALOR DA FLAG PRINCIPAL NA VARIAVEL "GUARDVALUE"
-  if (FlagParameterFunction == 4 && AUXFLIGHT.GetModeState[SIMPLE_MODE] && !Calibration.Magnetometer.Calibrating)
+  if (FlagParameterFunction == 4 && GetAuxChannelFlagState && !Calibration.Magnetometer.Calibrating)
   {
     GuardValue = FlagParameterFunction;
   }
+
   //FLAG PRINCIPAL IGUAL A 8?CHAVE AUX ATIVADA?SIM...GUARDE O VALOR DA FLAG PRINCIPAL NA VARIAVEL "GUARDVALUE"
-  if (FlagParameterFunction == 8 && AUXFLIGHT.GetModeState[SIMPLE_MODE])
+  if (FlagParameterFunction == 8 && GetAuxChannelFlagState)
   {
     GuardValue = FlagParameterFunction;
   }
+
   if (IS_STATE_ACTIVE(PRIMARY_ARM_DISARM)) //CONTROLADORA ARMADA?SIM...
   {
     //O VALOR GUARDADO É IGUAL A 4?E A DECREMENTAÇÃO ACABOU?SIM...INICIA O SERVO AUTO-TRIM
-    if (GuardValue == 4 && CloseReset < 2.51f && InAirPlaneMode)
+    if (GuardValue == 4 && CloseReset < 2.51f && GetInAirPlaneMode)
     {
       Servo.AutoTrim.Enabled = true;
     }
+
     //O VALOR GUARDADO É IGUAL A 6?E A DECREMENTAÇÃO ACABOU?SIM...DESATIVA O SERVO AUTO-TRIM
-    if (GuardValue == 6 && CloseReset < 2.51f && InAirPlaneMode)
+    if (GuardValue == 6 && CloseReset < 2.51f && GetInAirPlaneMode)
     {
       Servo.AutoTrim.Enabled = false;
       GuardValue = 0;
@@ -154,35 +159,29 @@ void Switch_Flag(void)
   }
   else //CONTROLADORA DESARMADA?SIM...
   {
+    //O VALOR GUARDADO É IGUAL A 8?E A DECREMENTAÇÃO ACABOU?SIM...INICIA A CALIBRAÇÃO DO COMPASS
     if (GuardValue == 8 && CloseReset > 2.0f && CloseReset < 4.0f)
     {
-      Calibration.Magnetometer.Calibrating = true; //O VALOR GUARDADO É IGUAL A 8?E A DECREMENTAÇÃO ACABOU?SIM...INICIA A CALIBRAÇÃO DO COMPASS
+      Calibration.Magnetometer.Calibrating = true;
     }
+
+    //RESETA O VALOR GUARDADO NA FLAG
     if (GuardValue == 8 && CloseReset == 2.0f)
     {
       GuardValue = 0;
     }
+
     //LIMPA A FLAG SE O USUARIO REJEITAR OS VALORES DO SERVO AUTO-TRIM
-    if (GuardValue == 4 && CloseReset < 2.51f && InAirPlaneMode && Servo.AutoTrim.Enabled)
+    if (GuardValue == 4 && CloseReset < 2.51f && GetInAirPlaneMode && Servo.AutoTrim.Enabled)
     {
-      GuardValue = 0;
-    }
-    //ATIVA O MANUAL SERVO-TRIM
-    if (GuardValue == 4 && CloseReset < 2.51f)
-    {
-      ServoManualTrimEnabled = true;
-    }
-    //DESATIVA O MANUAL SERVO-TRIM
-    if (GuardValue == 6 && CloseReset < 2.51f)
-    {
-      ServoManualTrimEnabled = false;
       GuardValue = 0;
     }
   }
+
   //O VALOR GUARDADO É IGUAL A 12?E A DECREMENTAÇÃO ACABOU?SIM...SE O SERVO AUTO-TRIM ESTIVER ATIVADO NÃO LIMPA A FLAG,CASO CONTRARIO LIMPA
   if (GuardValue == 12 && CloseReset == 0)
   {
-    if (Servo.AutoTrim.Enabled || ServoManualTrimEnabled)
+    if (Servo.AutoTrim.Enabled)
     {
       GuardValue = 4;
     }
@@ -191,5 +190,7 @@ void Switch_Flag(void)
       GuardValue = 0;
     }
   }
+
+  //LIMPA A FLAG QUANDO O VALOR DA MESMA FOR UM QUE NÃO É UTILIZAVEL
   Switch_Flag_Clear();
 }
