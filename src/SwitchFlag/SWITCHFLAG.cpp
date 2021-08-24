@@ -42,44 +42,19 @@
 #define FLAG_DEBOUNCE_TIME 50
 #define FLAG_RESET_TIME 100
 #define CH_5_SAFE_US 1400
+#define FLAG_ITERATION_COUNT 1
+#define FLAG_TIME_RESET 5
+#define FLAG_TIME_DECREMENT 0.10f
+#define COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED 4
+#define COUNTED_MAX_SERVOS_AUTO_TRIM_ZONE_USED 6
+#define COUNTED_MIN_MAG_CALIB_ZONE_USED 8
+#define COUNTED_MAX_MAG_CALIB_ZONE_USED 12
 
 Switch_Flag_Struct Switch_Flag;
 
 static void Switch_Flag_Clear(void)
 {
-  if (Switch_Flag.Flag.GuardValue == 1 && Switch_Flag.Time.Reset == 0)
-  {
-    Switch_Flag.Flag.GuardValue = 0;
-  }
-  else if (Switch_Flag.Flag.GuardValue == 2 && Switch_Flag.Time.Reset == 0)
-  {
-    Switch_Flag.Flag.GuardValue = 0;
-  }
-  else if (Switch_Flag.Flag.GuardValue == 3 && Switch_Flag.Time.Reset == 0)
-  {
-    Switch_Flag.Flag.GuardValue = 0;
-  }
-  else if (Switch_Flag.Flag.GuardValue == 5 && Switch_Flag.Time.Reset == 0)
-  {
-    Switch_Flag.Flag.GuardValue = 0;
-  }
-  else if (Switch_Flag.Flag.GuardValue == 7 && Switch_Flag.Time.Reset == 0)
-  {
-    Switch_Flag.Flag.GuardValue = 0;
-  }
-  else if (Switch_Flag.Flag.GuardValue == 9 && Switch_Flag.Time.Reset == 0)
-  {
-    Switch_Flag.Flag.GuardValue = 0;
-  }
-  else if (Switch_Flag.Flag.GuardValue == 10 && Switch_Flag.Time.Reset == 0)
-  {
-    Switch_Flag.Flag.GuardValue = 0;
-  }
-  else if (Switch_Flag.Flag.GuardValue == 11 && Switch_Flag.Time.Reset == 0)
-  {
-    Switch_Flag.Flag.GuardValue = 0;
-  }
-  else if (Switch_Flag.Flag.GuardValue == 13 && Switch_Flag.Time.Reset == 0)
+  if ((Switch_Flag.Flag.GuardValue != 4 || Switch_Flag.Flag.GuardValue != 6 || Switch_Flag.Flag.GuardValue != 8 || Switch_Flag.Flag.GuardValue != 12) && Switch_Flag.Time.Reset == 0)
   {
     Switch_Flag.Flag.GuardValue = 0;
   }
@@ -95,20 +70,20 @@ void Switch_Flag_Update(void)
   {
     if ((SCHEDULERTIME.GetMillis() - Switch_Flag.Time.PreviousTimeDebounce) > FLAG_DEBOUNCE_TIME) //DEBOUNCE
     {
-      Switch_Flag.Flag.Count += 1;
-      if (Switch_Flag.Flag.GuardValue >= 4 && Switch_Flag.Flag.GuardValue <= 12)
+      Switch_Flag.Flag.Count += FLAG_ITERATION_COUNT;
+      if (Switch_Flag.Flag.GuardValue >= COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED && Switch_Flag.Flag.GuardValue <= COUNTED_MAX_MAG_CALIB_ZONE_USED)
       {
-        Switch_Flag.Flag.GuardValue += 1;
+        Switch_Flag.Flag.GuardValue += FLAG_ITERATION_COUNT;
       }
     }
-    Switch_Flag.Time.Reset = 5; //5 SEGUNDOS
+    Switch_Flag.Time.Reset = FLAG_TIME_RESET; //SEGUNDOS
     Switch_Flag.Time.PreviousTimeDebounce = SCHEDULERTIME.GetMillis();
   }
 
   //DELAY PARA RESETAR A FLAG PRINCIPAL
   if (Switch_Flag.Time.Reset > 0 && (SCHEDULERTIME.GetMillis() - Switch_Flag.Time.PreviousTimeReset) > FLAG_RESET_TIME)
   {
-    Switch_Flag.Time.Reset -= 0.10f;
+    Switch_Flag.Time.Reset -= FLAG_TIME_DECREMENT;
     Switch_Flag.Time.PreviousTimeReset = SCHEDULERTIME.GetMillis();
   }
 
@@ -130,13 +105,13 @@ void Switch_Flag_Update(void)
   }
 
   //FLAG PRINCIPAL IGUAL A 4?CHAVE AUX ATIVADA?CAL DO MAG ACABOU?SIM...GUARDE O VALOR DA FLAG PRINCIPAL NA VARIAVEL "GUARDVALUE"
-  if (Switch_Flag.Flag.Count == 4 && GetAuxChannelFlagState && !Calibration.Magnetometer.Calibrating)
+  if (Switch_Flag.Flag.Count == COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED && GetAuxChannelFlagState && !Calibration.Magnetometer.Calibrating)
   {
     Switch_Flag.Flag.GuardValue = Switch_Flag.Flag.Count;
   }
 
   //FLAG PRINCIPAL IGUAL A 8?CHAVE AUX ATIVADA?SIM...GUARDE O VALOR DA FLAG PRINCIPAL NA VARIAVEL "GUARDVALUE"
-  if (Switch_Flag.Flag.Count == 8 && GetAuxChannelFlagState)
+  if (Switch_Flag.Flag.Count == COUNTED_MIN_MAG_CALIB_ZONE_USED && GetAuxChannelFlagState)
   {
     Switch_Flag.Flag.GuardValue = Switch_Flag.Flag.Count;
   }
@@ -144,13 +119,13 @@ void Switch_Flag_Update(void)
   if (IS_STATE_ACTIVE(PRIMARY_ARM_DISARM)) //CONTROLADORA ARMADA?SIM...
   {
     //O VALOR GUARDADO É IGUAL A 4?E A DECREMENTAÇÃO ACABOU?SIM...INICIA O SERVO AUTO-TRIM
-    if (Switch_Flag.Flag.GuardValue == 4 && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode)
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode)
     {
       Servo.AutoTrim.Enabled = true;
     }
 
     //O VALOR GUARDADO É IGUAL A 6?E A DECREMENTAÇÃO ACABOU?SIM...DESATIVA O SERVO AUTO-TRIM
-    if (Switch_Flag.Flag.GuardValue == 6 && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode)
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MAX_SERVOS_AUTO_TRIM_ZONE_USED && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode)
     {
       Servo.AutoTrim.Enabled = false;
       Switch_Flag.Flag.GuardValue = 0;
@@ -159,30 +134,30 @@ void Switch_Flag_Update(void)
   else //CONTROLADORA DESARMADA?SIM...
   {
     //O VALOR GUARDADO É IGUAL A 8?E A DECREMENTAÇÃO ACABOU?SIM...INICIA A CALIBRAÇÃO DO COMPASS
-    if (Switch_Flag.Flag.GuardValue == 8 && Switch_Flag.Time.Reset > 2.0f && Switch_Flag.Time.Reset < 4.0f)
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MIN_MAG_CALIB_ZONE_USED && Switch_Flag.Time.Reset > 2.0f && Switch_Flag.Time.Reset < 4.0f)
     {
       Calibration.Magnetometer.Calibrating = true;
     }
 
     //RESETA O VALOR GUARDADO NA FLAG
-    if (Switch_Flag.Flag.GuardValue == 8 && Switch_Flag.Time.Reset == 2.0f)
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MIN_MAG_CALIB_ZONE_USED && Switch_Flag.Time.Reset == 2.0f)
     {
       Switch_Flag.Flag.GuardValue = 0;
     }
 
     //LIMPA A FLAG SE O USUARIO REJEITAR OS VALORES DO SERVO AUTO-TRIM
-    if (Switch_Flag.Flag.GuardValue == 4 && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode && Servo.AutoTrim.Enabled)
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode && Servo.AutoTrim.Enabled)
     {
       Switch_Flag.Flag.GuardValue = 0;
     }
   }
 
   //O VALOR GUARDADO É IGUAL A 12?E A DECREMENTAÇÃO ACABOU?SIM...SE O SERVO AUTO-TRIM ESTIVER ATIVADO NÃO LIMPA A FLAG,CASO CONTRARIO LIMPA
-  if (Switch_Flag.Flag.GuardValue == 12 && Switch_Flag.Time.Reset == 0)
+  if (Switch_Flag.Flag.GuardValue == COUNTED_MAX_MAG_CALIB_ZONE_USED && Switch_Flag.Time.Reset == 0)
   {
     if (Servo.AutoTrim.Enabled)
     {
-      Switch_Flag.Flag.GuardValue = 4;
+      Switch_Flag.Flag.GuardValue = COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED;
     }
     else
     {
