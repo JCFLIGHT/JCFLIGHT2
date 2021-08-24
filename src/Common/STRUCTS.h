@@ -1015,4 +1015,21 @@ typedef struct
   uint8_t ReceiverTypeEnabled = PPM_RECEIVER;
   uint8_t ReceiverSequency = 0;
 } RC_Resources_Struct;
+
+typedef struct
+{
+  struct Flag_Struct
+  {
+    uint8_t Count = 0;
+    uint8_t GuardValue = 0;
+  } Flag;
+
+  struct Time_Struct
+  {
+    float Reset = 0.0f;
+    uint32_t PreviousTimeDebounce = 0;
+    uint32_t PreviousTimeReset = 0;
+  } Time;
+} Switch_Flag_Struct;
+
 #endif
