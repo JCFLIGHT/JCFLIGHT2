@@ -73,7 +73,7 @@ void Super_Fast_Loop(void)
         IBUSRC.Update();
         INERTIALNAVIGATION.Update();
         AIRSPEED.Update();
-        Switch_Flag();
+        Switch_Flag_Update();
         BATTERY.Calculate_Total_Current_In_Mah();
 }
 
