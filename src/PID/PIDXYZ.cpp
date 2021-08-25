@@ -27,7 +27,7 @@
 #include "Yaw/HEADINGHOLD.h"
 #include "RadioControl/CURVESRC.h"
 #include "Scheduler/SCHEDULER.h"
-#include "Filters/BIQUADFILTER.h"
+#include "Filters/BIQUAD.h"
 #include "Filters/PT1.h"
 #include "AirSpeed/AIRSPEED.h"
 #include "AirSpeed/AIRSPEEDBACKEND.h"

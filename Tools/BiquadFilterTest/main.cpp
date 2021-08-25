@@ -15,7 +15,7 @@
   junto com a JCFLIGHT. Caso contrário, consulte <http://www.gnu.org/licenses/>.
 */
 
-#include "BIQUADFILTER.h"
+#include "BIQUAD.h"
 
 static BiquadFilter_Struct Smooth_AnalogRead;
 

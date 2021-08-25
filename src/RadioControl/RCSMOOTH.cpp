@@ -20,7 +20,7 @@
 #include "StorageManager/EEPROMSTORAGE.h"
 #include "Scheduler/SCHEDULERTIME.h"
 #include "BAR/BAR.h"
-#include "Filters/BIQUADFILTER.h"
+#include "Filters/BIQUAD.h"
 #include "Scheduler/SCHEDULER.h"
 #include "Build/BOARDDEFS.h"
 #include "PID/RCPID.h"

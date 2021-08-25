@@ -1,4 +1,4 @@
-#include "BIQUADFILTER.h"
+#include "BIQUAD.h"
 
 BiQuadFilter BIQUADFILTER;
 

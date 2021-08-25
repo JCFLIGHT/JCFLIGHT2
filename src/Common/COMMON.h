@@ -45,7 +45,7 @@
 #include "RadioControl/RCCONFIG.h"
 #include "WayPointNavigation/WAYPOINT.h"
 #include "RadioControl/DESARMLOWTHR.h"
-#include "Filters/KALMANFILTER.h"
+#include "Filters/KALMAN.h"
 #include "EscCalibration/CALIBESC.h"
 #include "SBUS/SBUSREAD.h"
 #include "FastSerial/UART2MODE.h"

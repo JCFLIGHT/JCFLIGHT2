@@ -23,7 +23,7 @@
 #include "Math/MATHSUPPORT.h"
 #include "Common/ENUM.h"
 #include "SafetyButton/SAFETYBUTTON.h"
-#include "Filters/BIQUADFILTER.h"
+#include "Filters/BIQUAD.h"
 #include "Scheduler/SCHEDULER.h"
 #include "MotorsControl/MOTORS.h"
 #include "Build/BOARDDEFS.h"
