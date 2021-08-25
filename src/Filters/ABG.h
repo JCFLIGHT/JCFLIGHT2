@@ -35,6 +35,11 @@ typedef struct
   PT1_Filter_Struct JerkFilter;
 } AlphaBetaGammaFilter_Struct;
 
-void ABG_Initialization(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Alpha, int16_t BoostGain, int16_t HalfLife, float DeltaTime);
-float AlphaBetaGammaApply(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Input);
+class ABGFilterClass
+{
+public:
+  void Initialization(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Alpha, int16_t BoostGain, int16_t HalfLife, float DeltaTime);
+  float Apply(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Input);
+};
+extern ABGFilterClass ABGFILTER;
 #endif

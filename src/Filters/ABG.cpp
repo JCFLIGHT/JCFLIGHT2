@@ -20,6 +20,7 @@
 
 /*
   AUTOR:QUICK-FLASH - EMUFLIGHT
+  ABG = ALPHA,BETA & GAMMA
   O PDF ESTÁ NA PASTA "DOCS" COM O NOME "ABGFilter.pdf"
   https://github.com/emuflight/EmuFlight/blob/master/src/main/common/filter.c
 */
@@ -29,13 +30,15 @@
 #define ACCELERATION_FILTER_CUTOFF 50 //HZ
 #define JERK_FILTER_CUTOFF 25         //HZ
 
-static float PT1FilterApply(PT1_Filter_Struct *Filter_Pointer, float Input)
+ABGFilterClass ABGFILTER;
+
+static float ABG_PT1FilterApply(PT1_Filter_Struct *Filter_Pointer, float Input)
 {
   Filter_Pointer->State = Filter_Pointer->State + Filter_Pointer->RC * (Input - Filter_Pointer->State);
   return Filter_Pointer->State;
 }
 
-void ABG_Initialization(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Alpha, int16_t BoostGain, int16_t HalfLife, float DeltaTime)
+void ABGFilterClass::Initialization(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Alpha, int16_t BoostGain, int16_t HalfLife, float DeltaTime)
 {
   //CALCULA OS COEFICIENTES DO FILTRO
   const float Alpha2 = Alpha * 0.001f;
@@ -52,7 +55,7 @@ void ABG_Initialization(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Alpha
   Filter_Pointer->DeltaTime2 = DeltaTime * DeltaTime;
   Filter_Pointer->DeltaTime3 = DeltaTime * DeltaTime * DeltaTime;
   Filter_Pointer->Boost = (BoostGain * BoostGain / 1000000) * 0.003;
-  Filter_Pointer->HalfLife = HalfLife != 0 ? Fast_Pow(0.5f, DeltaTime / HalfLife / 100.0f) : 1.0f;
+  Filter_Pointer->HalfLife = HalfLife != 0 ? Fast_Pow(0.5f, DeltaTime / (HalfLife / 100.0f)) : 1.0f;
 
   //RESETA E CALCULA O GANHO DOS FILTROS LPF
   Filter_Pointer->BoostFilter.State = 0.0f;
@@ -65,7 +68,7 @@ void ABG_Initialization(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Alpha
   Filter_Pointer->JerkFilter.RC = DeltaTime / (0.5f / (3.1415926535897932384626433832795f * JERK_FILTER_CUTOFF) + DeltaTime);
 }
 
-float AlphaBetaGammaApply(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Input)
+float ABGFilterClass::Apply(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Input)
 {
   float rK; //ERRO RESIDUAL
 
@@ -85,7 +88,7 @@ float AlphaBetaGammaApply(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Inp
   rK = Input - Filter_Pointer->xK;
 
   //AUMENTA ARTIFICIALMENTE O ERRO PARA AUMENTAR A RESPOSTA DO FILTRO
-  rK += PT1FilterApply(&Filter_Pointer->BoostFilter, (ABS(rK) * rK * Filter_Pointer->Boost));
+  rK += ABG_PT1FilterApply(&Filter_Pointer->BoostFilter, (ABS(rK) * rK * Filter_Pointer->Boost));
 
   //ATUALIZA A ESTIMATIVA DE ERRO RESIDUAL
   Filter_Pointer->xK += Filter_Pointer->A * rK;
@@ -94,9 +97,9 @@ float AlphaBetaGammaApply(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Inp
   Filter_Pointer->jK += Filter_Pointer->E / (6.0f * Filter_Pointer->DeltaTime3) * rK;
 
   //FILTRA ALGUNS RECURSOS
-  Filter_Pointer->vK = PT1FilterApply(&Filter_Pointer->VelocityFilter, Filter_Pointer->vK);
-  Filter_Pointer->aK = PT1FilterApply(&Filter_Pointer->AccelerationFilter, Filter_Pointer->aK);
-  Filter_Pointer->jK = PT1FilterApply(&Filter_Pointer->JerkFilter, Filter_Pointer->jK);
+  Filter_Pointer->vK = ABG_PT1FilterApply(&Filter_Pointer->VelocityFilter, Filter_Pointer->vK);
+  Filter_Pointer->aK = ABG_PT1FilterApply(&Filter_Pointer->AccelerationFilter, Filter_Pointer->aK);
+  Filter_Pointer->jK = ABG_PT1FilterApply(&Filter_Pointer->JerkFilter, Filter_Pointer->jK);
 
   return Filter_Pointer->xK;
 }
