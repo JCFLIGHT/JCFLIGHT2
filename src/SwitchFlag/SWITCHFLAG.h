@@ -18,5 +18,5 @@
 #ifndef SWITCHFLAG_H_
 #define SWITCHFLAG_H_
 #include "Build/LIBDEPENDENCIES.h"
-void Switch_Flag(void);
+void Switch_Flag_Update(void);
 #endif
