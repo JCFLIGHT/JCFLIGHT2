@@ -18,20 +18,21 @@
 #ifndef ABG_H_
 #define ABG_H_
 #include <inttypes.h>
-
-typedef struct PT1Filter
-{
-  float State;
-  float K;
-} PT1_Filter_For_ABG_Struct;
+#include "Common/STRUCTS.h"
 
 typedef struct
 {
   float A, B, G, E;
   float aK, vK, xK, jK;
-  float DeltaTime, DeltaTime2, DeltaTime3;
-  float HalfLife, Boost;
-  PT1_Filter_For_ABG_Struct BoostFilter, VelocityFilter, AcelerationFilter, JerkFilter;
+  float DeltaTime;
+  float DeltaTime2;
+  float DeltaTime3;
+  float HalfLife;
+  float Boost;
+  PT1_Filter_Struct BoostFilter;
+  PT1_Filter_Struct VelocityFilter;
+  PT1_Filter_Struct AccelerationFilter;
+  PT1_Filter_Struct JerkFilter;
 } AlphaBetaGammaFilter_Struct;
 
 void ABG_Initialization(AlphaBetaGammaFilter_Struct *Filter_Pointer, float Alpha, int16_t BoostGain, int16_t HalfLife, float DeltaTime);
