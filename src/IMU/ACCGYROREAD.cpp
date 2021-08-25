@@ -17,11 +17,11 @@
 
 #include "ACCGYROREAD.h"
 #include "I2C/I2C.h"
-#include "Filters/KALMANFILTER.h"
+#include "Filters/KALMAN.h"
 #include "Scheduler/SCHEDULERTIME.h"
 #include "StorageManager/EEPROMSTORAGE.h"
 #include "Math/MATHSUPPORT.h"
-#include "Filters/BIQUADFILTER.h"
+#include "Filters/BIQUAD.h"
 #include "Scheduler/SCHEDULER.h"
 #include "Compass/COMPASSREAD.h"
 #include "BAR/BAR.h"
@@ -63,7 +63,7 @@ static void IMU_Filters_Initialization(void)
 {
   //ATUALIZA O ESTADO GUARDADO DO ESTADO DO KALMAN
   KalmanFilterEnabled = STORAGEMANAGER.Read_8Bits(KALMAN_ADDR) == NONE ? false : true;
-  KALMAN.Initialization();
+  KALMANFILTER.Initialization();
 
 #ifdef USE_IMU_FILTERS
 
@@ -345,7 +345,7 @@ void Update_Accelerometer(void)
   //KALMAN
   if (KalmanFilterEnabled)
   {
-    KALMAN.Apply_In_Acc(IMU.Accelerometer.Read);
+    KALMANFILTER.Apply_In_Acc(IMU.Accelerometer.Read);
   }
 
 #ifdef USE_IMU_FILTERS
@@ -382,7 +382,7 @@ void Update_Gyroscope(void)
   //KALMAN
   if (KalmanFilterEnabled)
   {
-    KALMAN.Apply_In_Gyro(IMU.Gyroscope.Read);
+    KALMANFILTER.Apply_In_Gyro(IMU.Gyroscope.Read);
   }
 
 #ifdef USE_IMU_FILTERS

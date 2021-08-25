@@ -15,20 +15,30 @@
   junto com a JCFLIGHT. Caso contrário, consulte <http://www.gnu.org/licenses/>.
 */
 
-#ifndef BIQUADFILTER_h
-#define BIQUADFILTER_h
+#ifndef KALMAN_H_
+#define KALMAN_H_
 #include "Build/LIBDEPENDENCIES.h"
-#include "Common/ENUM.h"
+
 typedef struct
 {
-  float Beta0, Beta1, Beta2, Alpha1, Alpha2;
-  float SampleX1, SampleX2, SampleY1, SampleY2;
-} BiquadFilter_Struct;
-class BiQuadFilter
+  float Q; //RUIDO GERADO NO PROCESSO
+  float R; //RUIDO DE MEDIÇÃO
+  float X; //VALOR INICIAL
+  float P; //ERRO ESTIMADO
+} StructKalmanState;
+
+class KalmanClass
 {
 public:
-  void Settings(BiquadFilter_Struct *Filter, uint16_t FilterFreq, int16_t CutOffFreq, uint32_t SampleIntervalMicros, uint8_t FilterType);
-  float ApplyAndGet(BiquadFilter_Struct *Filter, float DeviceToFilter);
+  void Initialization(void);
+  void Apply_In_Acc(int16_t AccVectorInput[3]);
+  void Apply_In_Gyro(int16_t GyroVectorInput[3]);
+
+private:
+  void AccelInitialization(void);
+  void GyroInitialization(void);
+  void Update(StructKalmanState *State, int16_t *ErrorInput);
+  void State(StructKalmanState *State, float Q, float R, float P, float Initial_Value);
 };
-extern BiQuadFilter BIQUADFILTER;
+extern KalmanClass KALMANFILTER;
 #endif

@@ -15,13 +15,13 @@
   junto com a JCFLIGHT. Caso contrário, consulte <http://www.gnu.org/licenses/>.
 */
 
-#include "KALMANFILTER.h"
+#include "KALMAN.h"
 #include "Common/ENUM.h"
 #include "Build/GCC.h"
 
 FILE_COMPILE_FOR_SPEED
 
-KalmanClass KALMAN;
+KalmanClass KALMANFILTER;
 
 StructKalmanState Kalman_Acc[3];
 StructKalmanState Kalman_Gyro[3];
@@ -36,8 +36,8 @@ StructKalmanState Kalman_Gyro[3];
 
 void KalmanClass::Initialization(void)
 {
-  KALMAN.AccelInitialization();
-  KALMAN.GyroInitialization();
+  KALMANFILTER.AccelInitialization();
+  KALMANFILTER.GyroInitialization();
 }
 
 void KalmanClass::State(StructKalmanState *State, float Q, float R, float P, float Initial_Value)
@@ -63,28 +63,28 @@ void KalmanClass::Update(StructKalmanState *State, int16_t *ErrorInput)
 
 void KalmanClass::AccelInitialization(void)
 {
-  KALMAN.State(&Kalman_Acc[ROLL], ACC_PROCESS_NOISE, ACC_MEDICION_NOISE, ACC_ESTIMATE_ERROR, 0);
-  KALMAN.State(&Kalman_Acc[PITCH], ACC_PROCESS_NOISE, ACC_MEDICION_NOISE, ACC_ESTIMATE_ERROR, 0);
-  KALMAN.State(&Kalman_Acc[YAW], ACC_PROCESS_NOISE, ACC_MEDICION_NOISE, ACC_ESTIMATE_ERROR, 0);
+  KALMANFILTER.State(&Kalman_Acc[ROLL], ACC_PROCESS_NOISE, ACC_MEDICION_NOISE, ACC_ESTIMATE_ERROR, 0);
+  KALMANFILTER.State(&Kalman_Acc[PITCH], ACC_PROCESS_NOISE, ACC_MEDICION_NOISE, ACC_ESTIMATE_ERROR, 0);
+  KALMANFILTER.State(&Kalman_Acc[YAW], ACC_PROCESS_NOISE, ACC_MEDICION_NOISE, ACC_ESTIMATE_ERROR, 0);
 }
 
 void KalmanClass::GyroInitialization(void)
 {
-  KALMAN.State(&Kalman_Gyro[ROLL], GYRO_PROCESS_NOISE, GYRO_MEDICION_NOISE, GYRO_ESTIMATE_ERROR, 0);
-  KALMAN.State(&Kalman_Gyro[PITCH], GYRO_PROCESS_NOISE, GYRO_MEDICION_NOISE, GYRO_ESTIMATE_ERROR, 0);
-  KALMAN.State(&Kalman_Gyro[YAW], GYRO_PROCESS_NOISE, GYRO_MEDICION_NOISE, GYRO_ESTIMATE_ERROR, 0);
+  KALMANFILTER.State(&Kalman_Gyro[ROLL], GYRO_PROCESS_NOISE, GYRO_MEDICION_NOISE, GYRO_ESTIMATE_ERROR, 0);
+  KALMANFILTER.State(&Kalman_Gyro[PITCH], GYRO_PROCESS_NOISE, GYRO_MEDICION_NOISE, GYRO_ESTIMATE_ERROR, 0);
+  KALMANFILTER.State(&Kalman_Gyro[YAW], GYRO_PROCESS_NOISE, GYRO_MEDICION_NOISE, GYRO_ESTIMATE_ERROR, 0);
 }
 
 void KalmanClass::Apply_In_Acc(int16_t AccVectorInput[3])
 {
-  KALMAN.Update(&Kalman_Acc[ROLL], &AccVectorInput[ROLL]);
-  KALMAN.Update(&Kalman_Acc[PITCH], &AccVectorInput[PITCH]);
-  KALMAN.Update(&Kalman_Acc[YAW], &AccVectorInput[YAW]);
+  KALMANFILTER.Update(&Kalman_Acc[ROLL], &AccVectorInput[ROLL]);
+  KALMANFILTER.Update(&Kalman_Acc[PITCH], &AccVectorInput[PITCH]);
+  KALMANFILTER.Update(&Kalman_Acc[YAW], &AccVectorInput[YAW]);
 }
 
 void KalmanClass::Apply_In_Gyro(int16_t GyroVectorInput[3])
 {
-  KALMAN.Update(&Kalman_Gyro[ROLL], &GyroVectorInput[ROLL]);
-  KALMAN.Update(&Kalman_Gyro[PITCH], &GyroVectorInput[PITCH]);
-  KALMAN.Update(&Kalman_Gyro[YAW], &GyroVectorInput[YAW]);
+  KALMANFILTER.Update(&Kalman_Gyro[ROLL], &GyroVectorInput[ROLL]);
+  KALMANFILTER.Update(&Kalman_Gyro[PITCH], &GyroVectorInput[PITCH]);
+  KALMANFILTER.Update(&Kalman_Gyro[YAW], &GyroVectorInput[YAW]);
 }
