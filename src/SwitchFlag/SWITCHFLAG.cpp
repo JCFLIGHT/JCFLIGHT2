@@ -16,7 +16,7 @@
 */
 
 #include "SWITCHFLAG.h"
-#include "FlightModes/AUXFLIGHT.h"
+#include "RadioControl/DECODE.h"
 #include "Scheduler/SCHEDULERTIME.h"
 #include "FrameStatus/FRAMESTATUS.h"
 #include "ServosMaster/SERVOSMASTER.h"
@@ -24,172 +24,147 @@
 #include "BitArray/BITARRAY.h"
 #include "IMU/ACCGYROREAD.h"
 #include "PerformanceCalibration/PERFORMACC.h"
+#include "Common/STRUCTS.h"
 
 //***********************************************************************************************
-//ATIVAÇÃO PARA O CALIBRÇÃO DO MAG,SERVO AUTO-TRIM & TRIMAGEM MANUAL DOS SERVOS VIA CHAVE AUX
+//ATIVAÇÃO PARA O CALIBRÇÃO DO MAG & SERVO AUTO-TRIM DOS SERVOS VIA CANAL AUX
 //
-//PERFIL MULTIROTOR >> CHAVE DO MODO DE VOO SIMPLES
-//PERFIL AERO E ASA-FIXA >> CHAVE DO MODO DE VOO MANUAL
+//O CANAL 5 É USADO PARA ESSE MODO
 //
-//CALIB MAG IMPLEMENTADO       >> 28/06/2020 (8 TOQUES PARA ATIVAR)
-//SERVO-TRIM IMPLEMENTADO      >> 24/09/2020 (4 TOQUES PARA ATIVAR,2 TOQUES PARA DESATIVAR)
-//SERVO AUTO-TRIM IMPLEMENTADO >> 01/02/2021 (4 TOQUES PARA ATIVAR,2 TOQUES PARA DESATIVAR)
+//CALIBRAÇÃO DO MAG IMPLEMENTADO >> 28/06/2020 (8 TOQUES PARA ATIVAR)
+//SERVO AUTO-TRIM IMPLEMENTADO   >> 01/02/2021 (4 TOQUES PARA ATIVAR,2 TOQUES PARA DESATIVAR)
 //
 //OBS:
 //CALIB MAG SÓ FUNCIONA COM A CONTROLADORA DESARMADA
-//SERVO-TRIM SÓ FUNCIONA COM A CONTROLADORA DESARMADA E COM O PERFIL DE AERO
 //SERVO AUTO-TRIM SÓ FUNCIONA COM A CONTROLADORA ARMADA E EM VOO COM O PERFIL DE AERO
 //***********************************************************************************************
 
-bool ServoManualTrimEnabled = false; //REMOVIDO DO ALGORITIMO
+#define FLAG_DEBOUNCE_TIME 50
+#define FLAG_RESET_TIME 100
+#define CH_5_SAFE_US 1400
+#define FLAG_ITERATION_COUNT 1
+#define FLAG_TIME_RESET 5
+#define FLAG_TIME_DECREMENT 0.10f
+#define COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED 4
+#define COUNTED_MAX_SERVOS_AUTO_TRIM_ZONE_USED 6
+#define COUNTED_MIN_MAG_CALIB_ZONE_USED 8
+#define COUNTED_MAX_MAG_CALIB_ZONE_USED 12
 
-uint8_t FlagParameterFunction;
-uint8_t GuardValue;
-
-float CloseReset;
-
-uint32_t TimerFunction;
-uint32_t CR_Clear;
+Switch_Flag_Struct Switch_Flag;
 
 static void Switch_Flag_Clear(void)
 {
-  if (GuardValue == 1 && CloseReset == 0)
+  if ((Switch_Flag.Flag.GuardValue != 4 || Switch_Flag.Flag.GuardValue != 6 || Switch_Flag.Flag.GuardValue != 8 || Switch_Flag.Flag.GuardValue != 12) && Switch_Flag.Time.Reset == 0)
   {
-    GuardValue = 0;
-  }
-  else if (GuardValue == 2 && CloseReset == 0)
-  {
-    GuardValue = 0;
-  }
-  else if (GuardValue == 3 && CloseReset == 0)
-  {
-    GuardValue = 0;
-  }
-  else if (GuardValue == 5 && CloseReset == 0)
-  {
-    GuardValue = 0;
-  }
-  else if (GuardValue == 7 && CloseReset == 0)
-  {
-    GuardValue = 0;
-  }
-  else if (GuardValue == 9 && CloseReset == 0)
-  {
-    GuardValue = 0;
-  }
-  else if (GuardValue == 10 && CloseReset == 0)
-  {
-    GuardValue = 0;
-  }
-  else if (GuardValue == 11 && CloseReset == 0)
-  {
-    GuardValue = 0;
-  }
-  else if (GuardValue == 13 && CloseReset == 0)
-  {
-    GuardValue = 0;
+    Switch_Flag.Flag.GuardValue = 0;
   }
 }
 
-void Switch_Flag(void)
+void Switch_Flag_Update(void)
 {
-  const bool InAirPlaneMode = GetAirPlaneEnabled();
+  const bool GetAuxChannelFlagState = DECODE.GetRxChannelOutput(AUX1) > CH_5_SAFE_US;
+  const bool GetInAirPlaneMode = GetAirPlaneEnabled();
+
   //INICIA A CONTAGEM DA FLAG PRINCIPAL
-  if (AUXFLIGHT.GetModeState[SIMPLE_MODE])
+  if (GetAuxChannelFlagState)
   {
-    if ((SCHEDULERTIME.GetMillis() - TimerFunction) > 50) //DEBOUNCE
+    if ((SCHEDULERTIME.GetMillis() - Switch_Flag.Time.PreviousTimeDebounce) > FLAG_DEBOUNCE_TIME) //DEBOUNCE
     {
-      FlagParameterFunction += 1;
-      if (GuardValue >= 4 && GuardValue <= 12)
+      Switch_Flag.Flag.Count += FLAG_ITERATION_COUNT;
+      if (Switch_Flag.Flag.GuardValue >= COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED && Switch_Flag.Flag.GuardValue <= COUNTED_MAX_MAG_CALIB_ZONE_USED)
       {
-        GuardValue += 1;
+        Switch_Flag.Flag.GuardValue += FLAG_ITERATION_COUNT;
       }
     }
-    CloseReset = 5; //5 SEGUNDOS
-    TimerFunction = SCHEDULERTIME.GetMillis();
+    Switch_Flag.Time.Reset = FLAG_TIME_RESET; //SEGUNDOS
+    Switch_Flag.Time.PreviousTimeDebounce = SCHEDULERTIME.GetMillis();
   }
+
   //DELAY PARA RESETAR A FLAG PRINCIPAL
-  if (CloseReset > 0 && (SCHEDULERTIME.GetMillis() - CR_Clear) > 100)
+  if (Switch_Flag.Time.Reset > 0 && (SCHEDULERTIME.GetMillis() - Switch_Flag.Time.PreviousTimeReset) > FLAG_RESET_TIME)
   {
-    CloseReset -= 0.10f;
-    CR_Clear = SCHEDULERTIME.GetMillis();
+    Switch_Flag.Time.Reset -= FLAG_TIME_DECREMENT;
+    Switch_Flag.Time.PreviousTimeReset = SCHEDULERTIME.GetMillis();
   }
-  if (CloseReset < 0)
+
+  if (Switch_Flag.Time.Reset < 0)
   {
-    CloseReset = 0; //EVITA GUARDAR VALORES NEGATIVOS CAUSADO PELA DECREMENTAÇÃO DA FUNÇÃO ACIMA
+    Switch_Flag.Time.Reset = 0; //EVITA GUARDAR VALORES NEGATIVOS CAUSADO PELA DECREMENTAÇÃO ACIMA
   }
+
   //RESETA A FLAG SE O VALOR DELA FOR IGUAL A 8,E A CHAVE AUX DO MODO SIMPLES FOR FALSA
-  if (FlagParameterFunction == 8 && !AUXFLIGHT.GetModeState[SIMPLE_MODE])
+  if (Switch_Flag.Flag.Count == 8 && !GetAuxChannelFlagState)
   {
-    FlagParameterFunction = 0;
+    Switch_Flag.Flag.Count = 0;
   }
+
   //ESPERA A DECREMENTAÇÃO DA VARIAVEL ACABAR E RESETA A FLAG PRINCIPAL
-  if (!AUXFLIGHT.GetModeState[SIMPLE_MODE] && CloseReset == 0)
+  if (!GetAuxChannelFlagState && Switch_Flag.Time.Reset == 0)
   {
-    FlagParameterFunction = 0;
+    Switch_Flag.Flag.Count = 0;
   }
+
   //FLAG PRINCIPAL IGUAL A 4?CHAVE AUX ATIVADA?CAL DO MAG ACABOU?SIM...GUARDE O VALOR DA FLAG PRINCIPAL NA VARIAVEL "GUARDVALUE"
-  if (FlagParameterFunction == 4 && AUXFLIGHT.GetModeState[SIMPLE_MODE] && !Calibration.Magnetometer.Calibrating)
+  if (Switch_Flag.Flag.Count == COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED && GetAuxChannelFlagState && !Calibration.Magnetometer.Calibrating)
   {
-    GuardValue = FlagParameterFunction;
+    Switch_Flag.Flag.GuardValue = Switch_Flag.Flag.Count;
   }
+
   //FLAG PRINCIPAL IGUAL A 8?CHAVE AUX ATIVADA?SIM...GUARDE O VALOR DA FLAG PRINCIPAL NA VARIAVEL "GUARDVALUE"
-  if (FlagParameterFunction == 8 && AUXFLIGHT.GetModeState[SIMPLE_MODE])
+  if (Switch_Flag.Flag.Count == COUNTED_MIN_MAG_CALIB_ZONE_USED && GetAuxChannelFlagState)
   {
-    GuardValue = FlagParameterFunction;
+    Switch_Flag.Flag.GuardValue = Switch_Flag.Flag.Count;
   }
+
   if (IS_STATE_ACTIVE(PRIMARY_ARM_DISARM)) //CONTROLADORA ARMADA?SIM...
   {
     //O VALOR GUARDADO É IGUAL A 4?E A DECREMENTAÇÃO ACABOU?SIM...INICIA O SERVO AUTO-TRIM
-    if (GuardValue == 4 && CloseReset < 2.51f && InAirPlaneMode)
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode)
     {
       Servo.AutoTrim.Enabled = true;
     }
+
     //O VALOR GUARDADO É IGUAL A 6?E A DECREMENTAÇÃO ACABOU?SIM...DESATIVA O SERVO AUTO-TRIM
-    if (GuardValue == 6 && CloseReset < 2.51f && InAirPlaneMode)
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MAX_SERVOS_AUTO_TRIM_ZONE_USED && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode)
     {
       Servo.AutoTrim.Enabled = false;
-      GuardValue = 0;
+      Switch_Flag.Flag.GuardValue = 0;
     }
   }
   else //CONTROLADORA DESARMADA?SIM...
   {
-    if (GuardValue == 8 && CloseReset > 2.0f && CloseReset < 4.0f)
+    //O VALOR GUARDADO É IGUAL A 8?E A DECREMENTAÇÃO ACABOU?SIM...INICIA A CALIBRAÇÃO DO COMPASS
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MIN_MAG_CALIB_ZONE_USED && Switch_Flag.Time.Reset > 2.0f && Switch_Flag.Time.Reset < 4.0f)
     {
-      Calibration.Magnetometer.Calibrating = true; //O VALOR GUARDADO É IGUAL A 8?E A DECREMENTAÇÃO ACABOU?SIM...INICIA A CALIBRAÇÃO DO COMPASS
+      Calibration.Magnetometer.Calibrating = true;
     }
-    if (GuardValue == 8 && CloseReset == 2.0f)
+
+    //RESETA O VALOR GUARDADO NA FLAG
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MIN_MAG_CALIB_ZONE_USED && Switch_Flag.Time.Reset == 2.0f)
     {
-      GuardValue = 0;
+      Switch_Flag.Flag.GuardValue = 0;
     }
+
     //LIMPA A FLAG SE O USUARIO REJEITAR OS VALORES DO SERVO AUTO-TRIM
-    if (GuardValue == 4 && CloseReset < 2.51f && InAirPlaneMode && Servo.AutoTrim.Enabled)
+    if (Switch_Flag.Flag.GuardValue == COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED && Switch_Flag.Time.Reset < 2.51f && GetInAirPlaneMode && Servo.AutoTrim.Enabled)
     {
-      GuardValue = 0;
-    }
-    //ATIVA O MANUAL SERVO-TRIM
-    if (GuardValue == 4 && CloseReset < 2.51f)
-    {
-      ServoManualTrimEnabled = true;
-    }
-    //DESATIVA O MANUAL SERVO-TRIM
-    if (GuardValue == 6 && CloseReset < 2.51f)
-    {
-      ServoManualTrimEnabled = false;
-      GuardValue = 0;
+      Switch_Flag.Flag.GuardValue = 0;
     }
   }
+
   //O VALOR GUARDADO É IGUAL A 12?E A DECREMENTAÇÃO ACABOU?SIM...SE O SERVO AUTO-TRIM ESTIVER ATIVADO NÃO LIMPA A FLAG,CASO CONTRARIO LIMPA
-  if (GuardValue == 12 && CloseReset == 0)
+  if (Switch_Flag.Flag.GuardValue == COUNTED_MAX_MAG_CALIB_ZONE_USED && Switch_Flag.Time.Reset == 0)
   {
-    if (Servo.AutoTrim.Enabled || ServoManualTrimEnabled)
+    if (Servo.AutoTrim.Enabled)
     {
-      GuardValue = 4;
+      Switch_Flag.Flag.GuardValue = COUNTED_MIN_SERVOS_AUTO_TRIM_ZONE_USED;
     }
     else
     {
-      GuardValue = 0;
+      Switch_Flag.Flag.GuardValue = 0;
     }
   }
+
+  //LIMPA A FLAG QUANDO O VALOR DA MESMA FOR UM QUE NÃO É UTILIZAVEL
   Switch_Flag_Clear();
 }
